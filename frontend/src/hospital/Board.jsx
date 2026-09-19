@@ -11,12 +11,13 @@ import ApprovalDrawer from './ApprovalDrawer.jsx'
 import PatientDetail from './PatientDetail.jsx'
 import StoryStrip from './StoryStrip.jsx'
 import { Hint, HintProvider, useHints } from './Hints.jsx'
-import PlainView from './PlainView.jsx'
+import DashboardView from './DashboardView.jsx'
 import { BusCrashButton, BusyNightButton, useScenario, useView } from './scenario.jsx'
 import { ModeBadge, ResultsButton } from './results.jsx'
 import './Board.css'
 import './Simple.css'
 import './Plain.css'
+import './Dashboard.css'
 
 export default function Board() {
   return (
@@ -79,7 +80,7 @@ function BoardInner() {
   if (view === 'simple') {
     return (
       <>
-        <PlainView st={st} ev={ev} run={run} onFull={() => setView('full')} />
+        <DashboardView st={st} ev={ev} run={run} onFull={() => setView('full')} />
         {detail}
         {toastEl}
       </>

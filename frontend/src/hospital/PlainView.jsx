@@ -9,8 +9,8 @@ import { factPhrase } from './format.js'
 // The default screen for anyone watching: a list of patients, free beds, and what needs a person.
 // No patient codes are shown anywhere on this view; names only.
 
-const URGENCY = { 1: 'Critical', 2: 'Very urgent', 3: 'Urgent', 4: 'Standard', 5: 'Minor' }
-const WHERE = {
+export const URGENCY = { 1: 'Critical', 2: 'Very urgent', 3: 'Urgent', 4: 'Standard', 5: 'Minor' }
+export const WHERE = {
   RESUS: 'Resuscitation room',
   ER: 'Emergency bed',
   HALLWAY: 'Hallway bed',
@@ -23,7 +23,7 @@ const WHERE = {
   HOME: 'Gone home',
   PARTNER: 'Another hospital',
 }
-const TO_WORDS = {
+export const TO_WORDS = {
   RESUS: 'the resuscitation room',
   ER: 'an emergency bed',
   HALLWAY: 'a hallway bed',
@@ -55,38 +55,51 @@ const BY_WORDS = {
 }
 const SHOW_FIRST = 8
 const RECENT = 10 // sim-minutes a move counts as recent
-const sentence = (s = '') => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '')
-const nameOf = (p) => p?.name || 'A patient'
-const firstName = (p) => (p?.name ? p.name.split(' ')[0] : 'this patient')
+export const sentence = (s = '') => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '')
+export const nameOf = (p) => p?.name || 'A patient'
+export const firstName = (p) => (p?.name ? p.name.split(' ')[0] : 'this patient')
 
-export default function PlainView({ st, ev, run, onFull }) {
-  const sc = useScenario(run)
-  const [openPid, setOpenPid] = useState(null)
-  const [aiOpen, setAiOpen] = useState(false)
-  const [everyone, setEveryone] = useState(false)
-  const [resultsOpen, setResultsOpen] = useState(false)
+// Recent moves and arrivals from the event log, and whether a bus crash is under way.
+export function useRecent(st, feed) {
   const clock = st.clock ?? 0
-
-  const byPid = useMemo(() => Object.fromEntries((st.patients || []).map((p) => [p.pid, p])), [st.patients])
-  const names = useMemo(() => Object.fromEntries((st.patients || []).filter((p) => p.name).map((p) => [p.pid, p.name])), [st.patients])
-  const holdsByPid = useMemo(() => Object.fromEntries((st.holds || []).map((h) => [h.pid, h])), [st.holds])
-
-  // recent moves and arrivals from the event log (newest first)
-  const { moved, arrived, busCrash } = useMemo(() => {
+  return useMemo(() => {
     const moved = {}
     const arrived = new Set()
-    let busCrash = false
-    for (let i = ev.feed.length - 1; i >= 0; i--) {
-      const e = ev.feed[i]
+    let busCrash = st.bus_crash_at != null && clock - st.bus_crash_at <= 90
+    for (let i = feed.length - 1; i >= 0; i--) {
+      const e = feed[i]
       const age = clock - (e.clock ?? 0)
       if (e.type === 'notice' && age <= 90 && /bus crash|mass casualty/i.test(e.data?.text || '')) busCrash = true
-      if (st.bus_crash_at != null && clock - st.bus_crash_at <= 90) busCrash = true
       if (age > RECENT) continue
       if (e.type === 'move.applied' && !moved[e.data?.pid]) moved[e.data.pid] = { ...e.data, clock: e.clock }
       if (e.type === 'patient.arrived' && age <= 3) arrived.add(e.data?.pid)
     }
     return { moved, arrived, busCrash }
-  }, [ev.feed, clock])
+  }, [feed, clock, st.bus_crash_at])
+}
+
+export function statusPhrase(st, busCrash) {
+  const clock = st.clock ?? 0
+  const incoming = (st.patients || []).filter((p) => p.state === 'incoming').length
+  const busyLeft = st.busy_until != null ? st.busy_until - clock : 0
+  if (busCrash && incoming > 0) return `Bus crash: ${incoming} patient${incoming === 1 ? '' : 's'} arriving`
+  if (busCrash) return 'Bus crash: everyone has arrived'
+  if (busyLeft > 0) return `Busy night: ${busyLeft} min left`
+  return 'A normal evening'
+}
+
+export default function PlainView({ st, ev, run, onFull, embedded }) {
+  const sc = useScenario(run)
+  const [openPid, setOpenPid] = useState(null)
+  const [aiOpen, setAiOpen] = useState(false)
+  const [everyone, setEveryone] = useState(false)
+  const [resultsOpen, setResultsOpen] = useState(false)
+
+  const byPid = useMemo(() => Object.fromEntries((st.patients || []).map((p) => [p.pid, p])), [st.patients])
+  const names = useMemo(() => Object.fromEntries((st.patients || []).filter((p) => p.name).map((p) => [p.pid, p.name])), [st.patients])
+  const holdsByPid = useMemo(() => Object.fromEntries((st.holds || []).map((h) => [h.pid, h])), [st.holds])
+
+  const { moved, arrived, busCrash } = useRecent(st, ev.feed)
 
   const rows = useMemo(() => {
     const here = (st.patients || []).filter((p) => {
@@ -111,12 +124,7 @@ export default function PlainView({ st, ev, run, onFull }) {
     )
   }, [st.patients, moved])
 
-  const incoming = (st.patients || []).filter((p) => p.state === 'incoming').length
-  const busyLeft = st.busy_until != null ? st.busy_until - clock : 0
-  let status = 'A normal evening'
-  if (busCrash && incoming > 0) status = `Bus crash: ${incoming} patient${incoming === 1 ? '' : 's'} arriving`
-  else if (busCrash) status = 'Bus crash: everyone has arrived'
-  else if (busyLeft > 0) status = `Busy night · ${busyLeft} min left`
+  const status = statusPhrase(st, busCrash)
 
   // By default only what's happening now: arriving, waiting, needing an OK, or just moved.
   const active = rows.filter((p) => p.state !== 'placed' || moved[p.pid])
@@ -130,6 +138,46 @@ export default function PlainView({ st, ev, run, onFull }) {
     }
     return m
   }, [ev.feed])
+
+  if (embedded) {
+    return (
+      <div className="plain-embedded">
+      <main className="p-list" aria-label="Who goes where">
+          <div className="p-list-head">
+            <h2>Who goes where</h2>
+            <button className="p-ai" onClick={() => setAiOpen(true)}>
+              See how the AI decided
+            </button>
+          </div>
+          {rows.length === 0 && <p className="p-empty">No patients right now. Everyday patients arrive every few minutes.</p>}
+          <ul>
+            {shown.map((p) => (
+              <PatientRow key={p.pid} p={p} hold={holdsByPid[p.pid]} moved={moved[p.pid]} justArrived={arrived.has(p.pid)} onOpen={() => setOpenPid(p.pid)} />
+            ))}
+          </ul>
+          {(everyone || rows.length > shown.length) && (
+            <button className="p-more" onClick={() => setEveryone((v) => !v)} aria-expanded={everyone}>
+              {everyone ? 'Show only what is happening now' : `Show everyone in the hospital (${rows.length})`}
+            </button>
+          )}
+        </main>
+      {openPid && byPid[openPid] && (
+          <Sheet title={nameOf(byPid[openPid])} onClose={() => setOpenPid(null)}>
+            <PatientSheet p={byPid[openPid]} hold={holdsByPid[openPid]} moved={moved[openPid]} justArrived={arrived.has(openPid)} run={run} />
+          </Sheet>
+        )}
+        {aiOpen && (
+          <Sheet title="How the AI decided" wide onClose={() => setAiOpen(false)}>
+            <div className="p-ai-chat">
+              <NamesContext.Provider value={names}>
+                <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={(pid) => byPid[pid] && (setAiOpen(false), setOpenPid(pid))} />
+              </NamesContext.Provider>
+            </div>
+          </Sheet>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className={`plain${decisions.length ? '' : ' plain-nodecide'}`}>
@@ -208,7 +256,7 @@ export default function PlainView({ st, ev, run, onFull }) {
   )
 }
 
-function whereWords(p, hold) {
+export function whereWords(p, hold) {
   if (p.state === 'held') return { text: 'Waiting: needs your OK', tone: 'ok' }
   if (p.state === 'incoming') return { text: `On the way by ambulance · ${p.eta ?? '?'} min`, tone: 'coming' }
   if (p.state === 'waiting') return { text: `Waiting for a bed · ${p.waited || 0} min`, tone: 'waiting' }
@@ -217,7 +265,7 @@ function whereWords(p, hold) {
   return { text: WHERE[p.unit] || 'In a bed', tone: 'placed', hold }
 }
 
-function whyWords(p, hold, moved, justArrived) {
+export function whyWords(p, hold, moved, justArrived) {
   let note = p.note
   if (!note && hold) note = hold.sentence || `${firstName(p)} can't be moved yet: two hospitals' records disagree.`
   if (!note && (p.state === 'waiting' || p.state === 'incoming') && justArrived) note = 'Just arrived; waiting for a bed'
@@ -245,12 +293,12 @@ function PatientRow({ p, hold, moved, justArrived, onOpen }) {
   )
 }
 
-function holdSentencePlain(h, p) {
+export function holdSentencePlain(h, p) {
   if (h.sentence) return h.sentence
   const facts = [...new Set((h.conflicts || []).map((c) => factPhrase(c.fact)))].join(' and ')
   return `${nameOf(p)} can't be moved to ${TO_WORDS[h.to_unit] || 'a new bed'} yet: two hospitals' records disagree about ${facts || 'something the move relies on'}.`
 }
-function approvalSentencePlain(a) {
+export function approvalSentencePlain(a) {
   if (a.sentence) return a.sentence
   if (a.action === 'cancel_elective') return "Cancel tonight's planned operations so the recovery room can take intensive care patients?"
   if (a.action === 'call_in_staff') return "Call in 2 off-duty nurses? They'd arrive in about 45 minutes."
@@ -259,7 +307,7 @@ function approvalSentencePlain(a) {
   return `${sentence(String(a.action || '').replace(/_/g, ' '))}?`
 }
 
-function HoldButtons({ h, run }) {
+export function HoldButtons({ h, run }) {
   const [busy, setBusy] = useState(null)
   const act = async (outcome) => {
     setBusy(outcome)
@@ -284,7 +332,7 @@ function HoldButtons({ h, run }) {
   )
 }
 
-function ApprovalButtons({ a, run }) {
+export function ApprovalButtons({ a, run }) {
   const [busy, setBusy] = useState(null)
   const act = async (yes) => {
     setBusy(yes ? 'yes' : 'no')
@@ -334,7 +382,7 @@ function NeedsOk({ items, byPid, run }) {
   )
 }
 
-function PatientSheet({ p, hold, moved, justArrived, run }) {
+export function PatientSheet({ p, hold, moved, justArrived, run }) {
   const sev = p.severity || 0
   const where = whereWords(p, hold)
   const why = whyWords(p, hold, moved, justArrived)
@@ -371,7 +419,7 @@ function PatientSheet({ p, hold, moved, justArrived, run }) {
   )
 }
 
-function MoreMenu({ st, sc, onFull, source, onResults }) {
+export function MoreMenu({ st, sc, onFull, source, onResults }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -436,7 +484,7 @@ function MoreMenu({ st, sc, onFull, source, onResults }) {
   )
 }
 
-function Sheet({ title, onClose, wide, children }) {
+export function Sheet({ title, onClose, wide, children }) {
   const ref = useRef(null)
   const onCloseRef = useRef(onClose)
   useEffect(() => {

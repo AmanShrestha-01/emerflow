@@ -149,6 +149,7 @@ def build_hospital(seed: int = 7) -> tuple[Hospital, list[dict]]:
                                                         "sepsis", "COPD flare", "hip fracture"]),
                          arrived_at=-rng.randint(60, 600), unit=unit, state="placed")
             p.placed_at = p.arrived_at + rng.randint(5, 60)
+            p.moved_at = p.placed_at  # so everyday flow (ER visits ending, etc.) applies to them too
             if unit == "ICU" and i < 3:
                 p.improving, p.severity = True, 2  # ready to step down
             if unit == "STEPDOWN" and i < 3:

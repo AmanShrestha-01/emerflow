@@ -47,8 +47,11 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
             p.state = "held"
             p.heading_to = m.to_unit
             about = facts_phrase([c.fact for c in verdict.conflicts])
-            p.note, p.note_by = (f"Can't move {p.name.split()[0]} to {place(m.to_unit)} yet: two hospitals' records "
-                                 f"disagree about {about}. A person needs to check.", "Records check")
+            first = p.name.split()[0]
+            what = (f"Can't send {first} home yet" if m.to_unit == "HOME" else
+                    f"Can't move {first} to {place(m.to_unit)} yet")
+            p.note, p.note_by = (f"{what}: two hospitals' records disagree about {about}. A person needs to check.",
+                                 "Records check")
             emit("move.held", {"hold_id": hold.hold_id, "pid": p.pid, "to_unit": m.to_unit,
                                "because": m.because, "conflicts": conflicts_json(verdict)}, **ev)
             return "held"

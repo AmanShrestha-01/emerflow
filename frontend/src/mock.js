@@ -130,7 +130,7 @@ const EVERYDAY = [
   [5, 'sore throat', {}],
 ]
 const NOTE_BY = { fastlane: 'Hospital rules', swarm: 'AI agents', fallback: 'Hospital rules' }
-const TO_WORDS = { RESUS: 'the resuscitation room', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'an intensive care (ICU) bed', STEPDOWN: 'a step-down bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'the recovery room', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'another hospital' }
+const TO_WORDS = { RESUS: 'the resuscitation room', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'an intensive care (ICU) bed', STEPDOWN: 'a close-watch bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'the recovery room', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'another hospital' }
 const FACT_ABOUT = { anticoagulant: 'whether they take blood thinners', penicillin_allergy: 'whether they are allergic to penicillin', vitals_stable: 'whether their heart rate and breathing are stable', icu_need: 'whether they need intensive care', on_pressors: 'whether they are on a blood-pressure drip', blood_type: 'their blood type' }
 const UNIT_NEED = {
   ICU: 'Intensive care',
@@ -146,7 +146,7 @@ function needFor(p) {
   if (p.needs_surgery) return 'Emergency surgery'
   if (p.pid.startsWith('IN')) return UNIT_NEED[p.unit] || 'Ongoing care'
   if (p.severity === 1) return 'Resuscitation now, then intensive care'
-  if (p.severity === 2) return /chest|breath|heart|blue/.test(p.complaint) ? 'Heart and lung monitoring (ICU)' : 'Close monitoring (step-down)'
+  if (p.severity === 2) return /chest|breath|heart|blue/.test(p.complaint) ? 'Heart and lung monitoring (ICU)' : 'Close watching (close-watch bed)'
   if (p.severity === 3) return 'Tests and treatment in the ER'
   if (p.severity === 4) return 'Treat in the ER, then home'
   return 'Quick check, then home'
@@ -795,7 +795,7 @@ export function createMock() {
     S.units.RESUS.occupants.map((pid) => S.patients[pid]).filter((p) => !p.needs_surgery && p.improving && !p.locked).slice(0, 1).forEach((p) => avail('ICU') > 0 && push(p, 'ICU', 'step_down', 'Stable enough to leave resuscitation: to an ICU bed'))
     // free beds upstream first (the dependency order)
     inUnit('WARD', 'ready').slice(0, 2).forEach((p, i) => push(p, i === 0 && free('LOUNGE') > 0 ? 'LOUNGE' : 'HOME', 'discharge', 'Well enough to go home'))
-    inUnit('STEPDOWN', 'ready').slice(0, 2).forEach((p) => avail('WARD') > 0 && push(p, 'WARD', 'transfer', 'Ready to leave step-down for a ward bed'))
+    inUnit('STEPDOWN', 'ready').slice(0, 2).forEach((p) => avail('WARD') > 0 && push(p, 'WARD', 'transfer', 'Ready to leave the close-watch beds for a ward bed'))
     inUnit('ICU', 'improving').slice(0, 2).forEach((p) => avail('STEPDOWN') > 0 && push(p, 'STEPDOWN', 'step_down', 'Getting better, which frees an intensive care bed'))
     inUnit('ER', 'ready').slice(0, 2).forEach((p) => push(p, p.severity <= 3 && avail('WARD') > 0 ? 'WARD' : 'HOME', p.severity <= 3 ? 'admit' : 'discharge', 'Finished treatment in the ER'))
     // then place the waiting, sickest first
@@ -837,7 +837,7 @@ export function createMock() {
 
   // ---------- the conversation ----------
   const UNIT_AGENT = { RESUS: 'ER', ER: 'ER', HALLWAY: 'ER', ICU: 'ICU', PACU: 'OR', OR: 'OR', STEPDOWN: 'STEPDOWN', WARD: 'STEPDOWN', LOUNGE: 'STEPDOWN' }
-  const UNIT_NAME = { RESUS: 'resuscitation', ER: 'the ER', HALLWAY: 'an ER hallway bed', ICU: 'ICU', PACU: 'PACU', OR: 'the OR', STEPDOWN: 'step-down', WARD: 'the ward', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'a partner hospital' }
+  const UNIT_NAME = { RESUS: 'resuscitation', ER: 'the ER', HALLWAY: 'an ER hallway bed', ICU: 'ICU', PACU: 'the recovery room', OR: 'the OR', STEPDOWN: 'a close-watch bed', WARD: 'the ward', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'a partner hospital' }
   const agentFor = (u) => UNIT_AGENT[u] || 'ER'
   const think = (from, to, ctx) => emit('agent.thinking', { from, to }, ctx)
   const PERSONA = { ER: 'Apex', ICU: 'Veil', STEPDOWN: 'Forge', OR: 'Crux', STAFFING: 'Root', IMAGING: 'Trace', BLOODBANK: 'Void', EMS: 'Orbit', COORDINATOR: 'Prism' }

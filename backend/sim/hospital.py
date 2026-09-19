@@ -35,8 +35,10 @@ def _hold_sentence(h: "Hospital", hold: "Hold") -> str:
     from backend.sim.words import facts_phrase, place
     p = h.patients[hold.move.pid]
     about = facts_phrase([c.fact for c in hold.verdict.conflicts])
-    return (f"{p.name} can't be moved to {place(hold.move.to_unit)} yet: two hospitals' records disagree "
-            f"about {about}.")
+    to = hold.move.to_unit
+    what = ("can't be sent home yet" if to == "HOME" else "can't be transferred to another hospital yet"
+            if to == "PARTNER" else f"can't be moved to {place(to)} yet")
+    return f"{p.name} {what}: two hospitals' records disagree about {about}."
 
 
 def _approval_sentence(h: "Hospital", a: "Approval") -> str:

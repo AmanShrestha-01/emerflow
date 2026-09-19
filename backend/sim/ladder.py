@@ -15,7 +15,7 @@ from backend.sim.words import place
 OPTIONS: dict[int, list[str]] = {
     1: ["RESUS", "ICU", "HALLWAY"],
     2: ["ICU", "PACU", "HALLWAY"],
-    3: ["STEPDOWN", "ER", "HALLWAY"],
+    3: ["STEPDOWN", "WARD", "ER", "HALLWAY"],
     4: ["ER", "HALLWAY"],
     5: ["ER", "HALLWAY"],
 }
@@ -57,7 +57,7 @@ def _make_room(h: Hospital, unit: str, moves: list[PlanMove], depth: int = 0) ->
 def _place(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
     opts = OPTIONS[p.severity]
     if p.severity == 3 and p.needs_ct and not p.ct_done:
-        opts = ["ER", "HALLWAY"]  # must be scanned before step-down
+        opts = ["ER", "HALLWAY"]  # must be scanned before a close-watch or ward bed
     for unit in opts:
         if _try(h, p.pid, None, unit, "admit", f"{p.need or 'Needs care'}: {place(unit)} was free", moves):
             return True
