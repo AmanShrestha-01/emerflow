@@ -6,6 +6,21 @@ disagree across the patient's records, and one human approves the big actions.
 
 **AI talks, code counts, a human approves big moves.**
 
+## Where things live
+| Path | What's there |
+|---|---|
+| `backend/sim/` | The simulated hospital: state, rules, the one move pipeline, escalation, scenarios |
+| `backend/agents/` | The department agents, coordinator, Gemini client, recorded replays |
+| `backend/deepchart/` | DeepChart portal: records per hospital, identity matching, merged chart, sessions |
+| `backend/gate.py`, `engine.py`, `main.py` | The records check, the running loop, and the FastAPI app |
+| `frontend/src/hospital/` | The command board screens |
+| `frontend/src/deepchart/` | The doctor portal (`/doctor`) and patient link (`/p/<token>`) |
+| `frontend/agent-workflow/` | Vendored agent-workflow UI package (see its `SOURCE.md`) |
+| `tests/` | pytest suite (`EMERFLOW_STUB=1 .venv/bin/pytest`) |
+| `tools/` | One-off scripts, such as recording a 20-patient run |
+| `docs/` | Pitch, DeepChart spec, demos, screenshots, and the archived "Concord" planning docs (index: `docs/README.md`) |
+| `CONTRACT.md` | The backend ↔ frontend API and event shapes |
+
 ## Run it (no cloud needed)
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -68,7 +83,7 @@ Each patient can get a private link at **`/p/<token>`**. It shows their status a
 `GET /api/deepchart/score` checks the results against the answer key. After one 25-patient surge (seed 7) it's 11/11 record
 conflicts and 11/11 lookalikes, with no false alarms. That's plain code checking conflicts we planted, so it isn't a claim about real-world records.
 
-Spec: `09-deepchart-portal-spec.md` · Build notes: `10-deepchart-implementation-plan.md` · Routes: `CONTRACT.md` → "DeepChart portal".
+Spec: `docs/deepchart/spec.md` · Build notes: `docs/deepchart/build-plan.md` · Routes: `CONTRACT.md` → "DeepChart portal".
 
 ## Honest notes
 - **All patients are synthetic.** We planted the record conflicts ourselves, and keep an answer key, so what the records check catches can be measured.

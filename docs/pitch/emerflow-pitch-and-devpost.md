@@ -1,7 +1,7 @@
 # Emer Flow — pitch, demo script, Devpost text, submission checklist
 
 Numbers marked ⟨…⟩ get filled in from the recorded demo run (`GET /api/results`, `GET /api/deepchart/score`).
-DeepChart-specific judge Q&A lives in `11-deepchart-pitch.md`; this file covers the whole product.
+DeepChart-specific judge Q&A lives in `docs/pitch/deepchart-pitch.md`; this file covers the whole product.
 
 ## The line
 > When 25 patients arrive at once, a hospital decides where people go in seconds, from records that often
@@ -73,7 +73,7 @@ There are 10.
 Every live run is recorded. Replay mode plays a recorded Gemini run back exactly, with no network needed. If the hospital drifts from the recording, the rules fill in.
 
 **"Isn't this a medical device?"**
-It never gives a clinical instruction and never says which record is right. It shows the disagreement and a human decides. The triage note ("needs emergency surgery") names the kind of bed or service, not a treatment. See `11-deepchart-pitch.md` for more.
+It never gives a clinical instruction and never says which record is right. It shows the disagreement and a human decides. The triage note ("needs emergency surgery") names the kind of bed or service, not a treatment. See `docs/pitch/deepchart-pitch.md` for more.
 
 ## Devpost
 

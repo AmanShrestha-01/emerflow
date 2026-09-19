@@ -17,7 +17,7 @@ disagree about.
 > - **Extra routes:** `/api/portal/patients`, `/api/patient-link`, and `/api/deepchart/score`. There's also an event `record.unlinked`.
 > - **The patient log** uses a separate patient-safe `public` text for each entry.
 
-**Spec:** `09-deepchart-portal-spec.md`. **Contract:** `CONTRACT.md`, section "DeepChart portal".
+**Spec:** `docs/deepchart/spec.md`. **Contract:** `CONTRACT.md`, section "DeepChart portal".
 
 **Architecture:** Nothing new at the core. The portal feeds more `SourceRecord`s into
 `Patient.sources` and calls the existing `gate.check` from new places:
@@ -32,7 +32,7 @@ disagree about.
 
 - **The code is the authority on vocabulary.** Facts are exactly `backend/sim/models.py:FACTS`
   (`anticoagulant`, `penicillin_allergy`, `vitals_stable`, `icu_need`, `on_pressors`, `blood_type`).
-  Claim status is `present | active | stopped | absent`. `02-implementation-plan.md` has an older
+  Claim status is `present | active | stopped | absent`. `docs/archive/concord/implementation-plan.md` has an older
   list of facts, so don't copy from it.
 - **Safety copy:** `VERIFICATION REQUIRED` and `sources disagree; a human must resolve`, exactly. No response may
   say which version is correct or tell a doctor to do or not do something.

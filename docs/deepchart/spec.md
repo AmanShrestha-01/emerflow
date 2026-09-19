@@ -178,7 +178,7 @@ It never shows conflict details, clinical values, or anyone else.
 
 ## 6. Identity matching rules
 - Large hospital systems carry duplicate patient records at rates between **8 and 16 percent**
-  (`06-notebooklm-two-ideas.md`, Part B). Matching by name is where this feature can do harm.
+  (`docs/archive/concord/notebooklm-two-ideas.md`, Part B). Matching by name is where this feature can do harm.
 - **STRONG** means name, date of birth, and sex are equal after normalizing (case, whitespace, accents)
   **and** at least one of phone last four digits, insurance ID, or address is equal.
 - **POSSIBLE** means name, date of birth, and sex are equal, but nothing else is.

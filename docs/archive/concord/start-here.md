@@ -14,17 +14,17 @@ about to change where a patient goes.
 
 | File | What it is | Read it when |
 |---|---|---|
-| `01-PRD.md` | Build spec: stack, two-person split, timeline, cut order | First. This is the working document. |
-| `02-implementation-plan.md` | 14 tasks with actual test + implementation code | While building, one task at a time |
-| `03-design-spec.md` | Why the design is what it is; safety boundary; policy framing | Before talking to judges |
-| `04-notebooklm-concord.md` | Plain-language explainer of the merged project | Upload to NotebookLM for an audio overview |
+| `docs/archive/concord/prd.md` | Build spec: stack, two-person split, timeline, cut order | First. This is the working document. |
+| `docs/archive/concord/implementation-plan.md` | 14 tasks with actual test + implementation code | While building, one task at a time |
+| `docs/archive/concord/design-spec.md` | Why the design is what it is; safety boundary; policy framing | Before talking to judges |
+| `docs/archive/concord/notebooklm-concord.md` | Plain-language explainer of the merged project | Upload to NotebookLM for an audio overview |
 | `05-…-questions.md` | Questions to ask NotebookLM about it | With the above |
-| `06-notebooklm-two-ideas.md` | Deep explainer of both original ideas separately | To understand the reasoning behind the merge |
+| `docs/archive/concord/notebooklm-two-ideas.md` | Deep explainer of both original ideas separately | To understand the reasoning behind the merge |
 | `07-…-questions.md` | Questions to ask about those | With the above |
-| `08-visual-explainer.html` | Visual walkthrough for non-technical people | Open in a browser; show it to anyone |
-| `09-deepchart-portal-spec.md` | DeepChart doctor portal: cross-hospital lookup, merged chart, order warnings, login | Before building the portal |
-| `10-deepchart-implementation-plan.md` | Portal build tasks with tests first, split, and cut order | While building the portal |
-| `11-deepchart-pitch.md` | Demo script and judge Q&A for DeepChart | Before judging |
+| `docs/archive/concord/visual-explainer.html` | Visual walkthrough for non-technical people | Open in a browser; show it to anyone |
+| `docs/deepchart/spec.md` | DeepChart doctor portal: cross-hospital lookup, merged chart, order warnings, login | Before building the portal |
+| `docs/deepchart/build-plan.md` | Portal build tasks with tests first, split, and cut order | While building the portal |
+| `docs/pitch/deepchart-pitch.md` | Demo script and judge Q&A for DeepChart | Before judging |
 
 ## Online versions
 

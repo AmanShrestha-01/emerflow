@@ -5,7 +5,7 @@ HopHacks 2026 (Johns Hopkins, Sept 18–20), team of 2. Emer Flow has two interf
 - **DeepChart** (next): checks that a patient's records agree before a move. A patient phone view comes later.
 
 Build plan: `~/.claude/plans/alright-we-are-trying-stateful-scroll.md`. The API and event shapes are in `CONTRACT.md`.
-The numbered `0x-*.md` files and `08-visual-explainer.html` are the planning docs for an earlier design ("Concord"). They're background only.
+Docs live in `docs/` (index: `docs/README.md`). `docs/archive/concord/` holds the planning docs for an earlier design ("Concord"); they're background only.
 
 ## Commands
 ```bash

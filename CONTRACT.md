@@ -204,7 +204,7 @@ The `round` field is `status`, `question`, `plan`, `apply`, or `null` for events
 ### Board → DeepChart handoff
 "Compare records" on a held patient links to `/doctor?pid=<pid>&hold=<hold_id>`, the DeepChart chart for that patient. A doctor resolves the hold there (`POST /api/holds/{id}/resolve`) and returns to the board.
 
-# DeepChart portal (built; spec in `09-deepchart-portal-spec.md`)
+# DeepChart portal (built; spec in `docs/deepchart/spec.md`)
 
 Everything above stays valid, and the board routes stay open (no session needed). The portal adds the routes below.
 They reuse the existing `Conflict` shape (`{fact, reason, versions:[{source_name, recorded_date, value, status, resource_id}]}`).
