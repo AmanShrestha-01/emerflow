@@ -9,6 +9,7 @@ import {
 } from '@hospital-swarm/agent-workflow'
 import '@hospital-swarm/agent-workflow/styles.css'
 import { EMERFLOW_WORKFLOW, latestRound, roundEvents } from './workflowAdapter.js'
+import './AiWorkflow.css'
 
 // The teammate's workflow view, driven by our live swarm rounds instead of its own simulation.
 export default function AiWorkflowPage({ st, ev }) {
@@ -56,7 +57,7 @@ export default function AiWorkflowPage({ st, ev }) {
       ) : (
         <div className="d-wf-grid">
           <div className="d-wf-canvas">
-            <WorkflowCanvas swarm={swarm} layout="horizontal" className="h-[560px]" />
+            <WorkflowCanvas key={cid} swarm={swarm} layout="horizontal" className="h-[560px]" />
           </div>
           <div className="d-wf-side">
             <StepDetails swarm={swarm} />

@@ -1,0 +1,15 @@
+/* AI workflow page: fit the whole chart, never overflow the page, readable header button */
+.d-wf, .d-wf-grid, .d-wf-canvas, .d-wf-side, .d-wf-log, .d-wf-snap { min-width: 0; max-width: 100%; }
+.d-wf-canvas { height: min(640px, calc(100vh - 260px)); min-height: 420px; }
+.d-wf-canvas > div { height: 100% !important; }
+.d-wf-intro { font-size: 15px; }
+@media (max-width: 1280px) {
+  .d-wf-grid { grid-template-columns: 1fr; }
+  .d-wf-side, .d-wf-log, .d-wf-snap { grid-column: 1; grid-row: auto; }
+}
+/* the header "AI workflow" button: text stays visible when the page is open */
+.d-actions .d-wfbtn, .d-actions .d-wfbtn.on { color: #1E3A5F; }
+.d-actions .d-wfbtn.on, .d-actions .d-wfbtn:hover { background: #1E3A5F; color: #fff !important; }
+.d-actions .d-wfbtn svg { stroke: currentColor; }
+.dash .d-actions .d-wfbtn.on, .dash .d-actions .d-wfbtn:hover { background: #1E3A5F; color: #fff; }
+.dash .d-actions .d-wfbtn { background: #fff; color: #1E3A5F; }
