@@ -1,0 +1,430 @@
+<title>How Concord Works</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7;
+    --surface:#FFFFFF;
+    --sunk:#EDF1F1;
+    --ink:#16202B;
+    --muted:#5C6B78;
+    --rule:#D8E0E3;
+    --accent:#0E7C86;
+    --hold:#9A5A0B;
+    --hold-bg:#FBF1E0;
+    --clear:#1B6E45;
+    --clear-bg:#E8F3EC;
+    --alarm:#9E2222;
+    --shadow:0 1px 2px rgba(22,32,43,.06),0 8px 24px rgba(22,32,43,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0D1317;
+      --surface:#161E24;
+      --sunk:#111A1F;
+      --ink:#E3EAEE;
+      --muted:#93A3AD;
+      --rule:#2A363D;
+      --accent:#4FB3BC;
+      --hold:#E3A64A;
+      --hold-bg:#251C0E;
+      --clear:#5DBF8C;
+      --clear-bg:#0F2419;
+      --alarm:#E06A6A;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0D1317;
+    --surface:#161E24;
+    --sunk:#111A1F;
+    --ink:#E3EAEE;
+    --muted:#93A3AD;
+    --rule:#2A363D;
+    --accent:#4FB3BC;
+    --hold:#E3A64A;
+    --hold-bg:#251C0E;
+    --clear:#5DBF8C;
+    --clear-bg:#0F2419;
+    --alarm:#E06A6A;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Source Serif 4",Georgia,serif;
+    font-size:17px;
+    line-height:1.6;
+    padding:0 16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding-block:48px 72px}
+
+  h1,h2,h3,.label,.node-num,.chip,.btn{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{
+    font-size:clamp(32px,6vw,46px);line-height:1.08;font-weight:700;
+    letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance;
+  }
+  h2{
+    font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 20px;
+  }
+  h3{font-size:19px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+  p{margin:0 0 16px;max-width:62ch}
+  .lede{font-size:20px;color:var(--muted);max-width:56ch;margin-bottom:0}
+  section{margin-top:56px}
+  .rule{height:1px;background:var(--rule);border:0;margin:56px 0 0}
+
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+
+  /* problem panels */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:620px){.two{grid-template-columns:1fr}}
+  .panel{
+    background:var(--surface);border:1px solid var(--rule);border-radius:3px;
+    padding:20px 18px;box-shadow:var(--shadow);
+  }
+  .panel .label{
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);display:block;margin-bottom:8px;
+  }
+  .panel p{font-size:15.5px;margin:0;color:var(--ink)}
+  .collide{
+    margin-top:14px;background:var(--sunk);border:1px solid var(--rule);
+    border-left:3px solid var(--alarm);border-radius:3px;padding:18px;
+  }
+  .collide p{margin:0;font-size:17px}
+  .collide strong{font-weight:600}
+
+  /* the flow */
+  .flow{margin-top:8px}
+  .step{
+    display:grid;grid-template-columns:44px 1fr;gap:16px;
+    position:relative;padding-bottom:26px;
+  }
+  .step:before{
+    content:"";position:absolute;left:21px;top:38px;bottom:0;
+    width:2px;background:var(--rule);
+  }
+  .step:last-child:before{display:none}
+  .node-num{
+    width:44px;height:38px;display:flex;align-items:center;justify-content:center;
+    background:var(--surface);border:1px solid var(--rule);border-radius:3px;
+    font-size:14px;font-weight:600;color:var(--muted);
+    font-variant-numeric:tabular-nums;position:relative;z-index:1;
+  }
+  .step.key .node-num{
+    background:var(--accent);border-color:var(--accent);color:#fff;
+  }
+  .step-body{padding-top:6px}
+  .step-body p{font-size:16px;margin:0 0 8px}
+  .step-body p:last-child{margin-bottom:0}
+  .quote{
+    font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:1.55;
+    background:var(--sunk);border:1px solid var(--rule);border-radius:3px;
+    padding:11px 13px;color:var(--ink);margin:0 0 8px;
+    overflow-x:auto;
+  }
+  .step.key .step-body h3{color:var(--accent)}
+  .aside{font-size:14.5px;color:var(--muted);font-style:italic;margin:0}
+
+  /* fork */
+  .fork{color:var(--rule);margin-left:44px}
+  .fork svg{display:block;width:100%;height:42px}
+  .branches{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-left:44px}
+  @media (max-width:620px){
+    .branches{grid-template-columns:1fr}
+    .fork{display:none}
+  }
+  .branch{border:1px solid var(--rule);border-radius:3px;padding:18px;background:var(--surface)}
+  .branch.held{border-color:var(--hold);background:var(--hold-bg)}
+  .branch.placed{border-color:var(--clear);background:var(--clear-bg)}
+  .chip{
+    display:inline-block;font-size:11px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;padding:3px 8px;border-radius:2px;margin-bottom:10px;
+  }
+  .branch.held .chip{background:var(--hold);color:#fff}
+  .branch.placed .chip{background:var(--clear);color:#fff}
+  .branch p{font-size:15px;margin:0}
+  .branch p + p{margin-top:8px}
+
+  /* board mockup */
+  .board{
+    background:var(--surface);border:1px solid var(--rule);border-radius:3px;
+    overflow:hidden;box-shadow:var(--shadow);font-family:"IBM Plex Mono",monospace;
+  }
+  .board-top{
+    padding:14px 16px;border-bottom:1px solid var(--rule);background:var(--sunk);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .bars{display:grid;gap:6px;flex:1 1 240px;min-width:0}
+  .bar-row{display:grid;grid-template-columns:78px 1fr 44px;gap:10px;align-items:center;font-size:11.5px}
+  .track{height:10px;background:var(--rule);border-radius:1px;overflow:hidden}
+  .fill{height:100%;background:var(--clear)}
+  .fill.warn{background:var(--hold)}
+  .fill.over{background:var(--alarm)}
+  .pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .btn{
+    background:var(--alarm);color:#fff;border:0;border-radius:3px;
+    padding:11px 16px;font-size:11.5px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;white-space:nowrap;
+  }
+  .brow{
+    display:grid;grid-template-columns:52px 1fr 92px 108px;gap:10px;
+    padding:10px 16px;border-bottom:1px solid var(--rule);
+    font-size:12.5px;align-items:center;border-left:3px solid transparent;
+  }
+  .brow:last-child{border-bottom:0}
+  .brow.ok{border-left-color:var(--clear)}
+  .brow.hold{border-left-color:var(--hold);background:var(--hold-bg)}
+  .brow .st{text-align:right;font-size:10.5px;letter-spacing:.06em;color:var(--muted)}
+  .brow.hold .st{color:var(--hold);font-weight:500}
+  .dest{color:var(--muted)}
+  @media (max-width:560px){
+    .brow{grid-template-columns:46px 1fr 74px;}
+    .brow .st{grid-column:1 / -1;text-align:left;padding-left:0}
+  }
+  .receipt{
+    border-top:1px solid var(--rule);padding:16px;background:var(--sunk);
+    font-size:12.5px;
+  }
+  .receipt .rhead{color:var(--hold);font-weight:500;margin-bottom:10px}
+  .rtable{width:100%;border-collapse:collapse;font-size:12px}
+  .rtable td{padding:6px 8px 6px 0;border-top:1px solid var(--rule);vertical-align:top}
+  .rtable tr:first-child td{border-top:0}
+  .rtable .src{white-space:nowrap}
+  .rtable .dt{color:var(--muted);white-space:nowrap}
+  .verdict{margin-top:12px;color:var(--hold);font-weight:500}
+  .scroller{overflow-x:auto}
+
+  /* real vs pretend */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:620px){.split{grid-template-columns:1fr}}
+  .col{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:20px 18px}
+  .col.must{border-left:3px solid var(--accent)}
+  .col h3{font-size:16px;margin-bottom:12px}
+  .col ul{margin:0;padding-left:18px}
+  .col li{font-size:15px;margin-bottom:7px}
+  .col li:last-child{margin-bottom:0}
+
+  .pull{
+    margin:40px 0 0;padding:26px 24px;background:var(--surface);
+    border:1px solid var(--rule);border-top:3px solid var(--accent);border-radius:3px;
+  }
+  .pull p{font-size:21px;line-height:1.45;margin:0;max-width:44ch;font-weight:600}
+  .pull .who{font-size:14px;color:var(--muted);margin-top:12px;font-weight:400;font-family:Archivo,sans-serif}
+
+  dl{margin:0}
+  dt{font-family:Archivo,sans-serif;font-weight:600;font-size:15px;margin-top:16px}
+  dt:first-child{margin-top:0}
+  dd{margin:4px 0 0;font-size:15.5px;color:var(--muted);max-width:58ch}
+  .foot{margin-top:56px;font-size:13.5px;color:var(--muted);font-family:Archivo,sans-serif}
+</style>
+
+<div class="wrap">
+
+  <h1>A hospital board that stops a decision made from a bad record</h1>
+  <p class="lede">Built at HopHacks 2026. Here is the whole thing, explained without jargon.</p>
+
+  <hr class="rule">
+
+  <section>
+    <h2>The two problems</h2>
+    <div class="two">
+      <div class="panel">
+        <span class="label">Problem one</span>
+        <p>Your medical history sits in pieces at every place that ever treated you — a hospital, an urgent care, a pharmacy. Nobody ever merges them. So the pieces disagree. One says you take 5mg. Another says 2.5mg. One lists a penicillin allergy. Another lists none.</p>
+      </div>
+      <div class="panel">
+        <span class="label">Problem two</span>
+        <p>When a hospital is calm, a nurse has time to notice a record looks wrong and go check. When twenty-five patients arrive at once, nobody has that time. Decisions get made in seconds from whatever is on the screen.</p>
+      </div>
+    </div>
+    <div class="collide">
+      <p>Put those together and you get the thing that actually hurts people: <strong>a decision about where a patient goes that was completely logical — made from information that was wrong.</strong></p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>What happens, step by step</h2>
+    <p>Follow one patient from the moment the button is pressed.</p>
+
+    <div class="flow">
+
+      <div class="step">
+        <div class="node-num">1</div>
+        <div class="step-body">
+          <h3>Patients arrive</h3>
+          <p>Someone presses a button marked <span class="mono">MASS CASUALTY</span>. Twenty-five patients arrive at once.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="node-num">2</div>
+        <div class="step-body">
+          <h3>Each department reports in</h3>
+          <p class="quote">ICU &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 bed left, holding it for critical patients only<br>STEP-DOWN&nbsp;3 beds open, accepting patients<br>ER &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6 beds open, accepting patients</p>
+          <p>Each part of the hospital says what it can take right now.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="node-num">3</div>
+        <div class="step-body">
+          <h3>The system picks a destination</h3>
+          <p>For a 68-year-old who fainted at home, it chooses the <strong>step-down unit</strong> — not intensive care, because he does not appear to need it.</p>
+        </div>
+      </div>
+
+      <div class="step key">
+        <div class="node-num">4</div>
+        <div class="step-body">
+          <h3>And it writes down why</h3>
+          <p class="quote">step-down &nbsp;BECAUSE&nbsp; no blood thinner<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; vital signs stable<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; does not need intensive care</p>
+          <p>This is the part nothing else does. The decision has to name the facts it leaned on — so we know exactly what to go check.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="node-num">5</div>
+        <div class="step-body">
+          <h3>Only those three facts get checked</h3>
+          <p>Not the whole 700-page history. Just those three, looked up in every file this patient has anywhere.</p>
+          <p class="aside">This is why it is fast enough to run while patients are arriving.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="node-num">6</div>
+        <div class="step-body">
+          <h3>Do the files agree?</h3>
+          <p>A computer can spot that two numbers differ. What it cannot do with simple rules is tell that “Coumadin 5mg,” “warfarin 5 mg,” and “on anticoagulation” are the same fact written three ways — while “no anticoagulants” contradicts all three. That judgment is the one job we give the AI.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="fork" aria-hidden="true">
+      <svg viewBox="0 0 400 42" preserveAspectRatio="none">
+        <path d="M22 0 V14 M22 14 H300 M22 14 V42 M300 14 V42"
+              stroke="currentColor" stroke-width="2" fill="none" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+
+    <div class="branches">
+      <div class="branch held">
+        <span class="chip">They disagree &rarr; held</span>
+        <p><strong>The patient does not move.</strong> The row turns amber. Both versions appear on screen with the date each was written and where it came from.</p>
+        <p>It never says which one is right — because it genuinely does not know. It says a person has to resolve this first.</p>
+      </div>
+      <div class="branch placed">
+        <span class="chip">They agree &rarr; placed</span>
+        <p><strong>The patient moves.</strong> The row turns green and a bed count drops by one.</p>
+        <p>Most patients go this way. Out of twenty-five, maybe three get stopped — which is the point. A short list worth reading, not a long list nobody reads.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>What you see on screen</h2>
+    <div class="board">
+      <div class="board-top">
+        <div class="bars">
+          <div class="bar-row"><span>ER</span><div class="track"><div class="fill over" style="width:100%"></div></div><span class="pct">112%</span></div>
+          <div class="bar-row"><span>ICU</span><div class="track"><div class="fill warn" style="width:90%"></div></div><span class="pct">90%</span></div>
+          <div class="bar-row"><span>STEP-DOWN</span><div class="track"><div class="fill" style="width:74%"></div></div><span class="pct">74%</span></div>
+          <div class="bar-row"><span>OR</span><div class="track"><div class="fill" style="width:53%"></div></div><span class="pct">53%</span></div>
+        </div>
+        <button class="btn" type="button" disabled>Mass casualty</button>
+      </div>
+
+      <div class="brow ok"><span>P-07</span><span>chest pain</span><span class="dest">&rarr; ICU</span><span class="st">Placed</span></div>
+      <div class="brow hold"><span>P-14</span><span>fainted at home</span><span class="dest">&rarr; step-down</span><span class="st">Held &middot; verify</span></div>
+      <div class="brow ok"><span>P-15</span><span>fractured wrist</span><span class="dest">&rarr; ER</span><span class="st">Placed</span></div>
+      <div class="brow hold"><span>P-18</span><span>abdominal pain</span><span class="dest">&rarr; step-down</span><span class="st">Held &middot; verify</span></div>
+
+      <div class="receipt">
+        <div class="rhead">P-14 &mdash; this placement relied on “no blood thinner”</div>
+        <div class="scroller">
+          <table class="rtable">
+            <tbody>
+              <tr>
+                <td class="src">Hospital B &mdash; Cardiology</td>
+                <td class="dt">21 days ago</td>
+                <td>warfarin 5mg</td>
+                <td>active</td>
+              </tr>
+              <tr>
+                <td class="src">Local intake</td>
+                <td class="dt">today</td>
+                <td>none recorded</td>
+                <td>absent</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="verdict">Sources disagree &mdash; a human must resolve this before the patient moves.</div>
+      </div>
+    </div>
+    <p class="aside" style="margin-top:12px">Anyone can click a held row and see the original records behind it. Nothing is hidden, and nothing can be quietly faked.</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>What is pretend, and what is not</h2>
+    <p>A student team cannot legally get real patient data in a weekend. So the hospital is invented — and we say so out loud. What matters is which parts are genuine.</p>
+    <div class="split">
+      <div class="col">
+        <h3>Invented, openly</h3>
+        <ul>
+          <li>The bed counts, though they match what real American hospitals actually run at</li>
+          <li>The patients arriving, and what they came in with</li>
+          <li>The clock</li>
+        </ul>
+      </div>
+      <div class="col must">
+        <h3>Genuinely real</h3>
+        <ul>
+          <li>The record format — the same national standard hospitals use to send records to each other</li>
+          <li>The real medical codes inside those records</li>
+          <li>The disagreements: we planted them ourselves and kept a written list</li>
+          <li>Every source link on screen — click it and you get the actual record</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:20px">That written list is the important bit. Because we know exactly what we hid, we can say how much got caught — <strong>46 of 50</strong> — instead of just claiming it works. Almost nothing at a student science fair can put a real number on itself.</p>
+  </section>
+
+  <div class="pull">
+    <p>We don’t flag every contradiction. We flag the ones that are about to change where a patient goes.</p>
+    <p class="who">If you remember one sentence about this project, that’s the one.</p>
+  </div>
+
+  <hr class="rule">
+
+  <section>
+    <h2>Words you might hear us use</h2>
+    <dl>
+      <dt>Held</dt>
+      <dd>A patient whose move has been paused because the records behind it disagree. The opposite is placed.</dd>
+
+      <dt>Provenance</dt>
+      <dd>Knowing exactly where a piece of information came from — which file, which hospital, what date. It’s why you can click a conflict and see the receipt.</dd>
+
+      <dt>Answer key</dt>
+      <dd>The list of problems we deliberately planted in the data, so results can be measured instead of guessed at.</dd>
+
+      <dt>Agent</dt>
+      <dd>People use this word as though it means something enormous. Here it’s a small piece of code with one narrow job — one looks at medications, one looks at dates, one looks at whether the departments have room.</dd>
+    </dl>
+  </section>
+
+  <p class="foot">Concord &middot; HopHacks 2026, Johns Hopkins University &middot; Synthetic patient records only — no real patient data.</p>
+
+</div>

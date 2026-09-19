@@ -1,0 +1,129 @@
+:root {
+  /* clinical walls */
+  --wall: #f2f5f6;
+  --panel: #ffffff;
+  --ink: #16242c;
+  --muted: #5a6b75;
+  --rule: #d5dee2;
+  --sunk: #e8eef0;
+
+  /* meaning */
+  --placed: #1e7f52;
+  --placed-bg: #e6f4ec;
+  --held: #b86e00;
+  --held-ink: #8a5300;
+  --held-bg: #fff3dc;
+  --crit: #c2302b;
+  --crit-bg: #fbe9e7;
+  --coord: #2f3a8f;
+  --coord-bg: #eceefa;
+  --slate: #5a6b75;
+
+  /* wayfinding: one colour per department, used everywhere for it */
+  --c-ER: #d9480f;
+  --t-ER: #b33a0a;
+  --c-ICU: #1c6dd0;
+  --t-ICU: #1a63bd;
+  --c-STEPDOWN: #0f9d8a;
+  --t-STEPDOWN: #0b7a6b;
+  --c-OR: #7b4fc4;
+  --t-OR: #6c42b3;
+  --c-STAFFING: #c2185b;
+  --t-STAFFING: #b0154f;
+  --c-IMAGING: #5c7c12;
+  --t-IMAGING: #52700f;
+  --c-BLOODBANK: #a61e3a;
+  --t-BLOODBANK: #a61e3a;
+  --c-EMS: #c99700;
+  --t-EMS: #8a6a00;
+
+  /* urgency (ESI) */
+  --sev1: #c2302b;
+  --sev2: #e0701b;
+  --sev3: #d9a400;
+  --sev4: #1e7f52;
+  --sev5: #1c6dd0;
+
+  --sans: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Atkinson Hyperlegible Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  color-scheme: light;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--wall);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1800px) {
+  :root {
+    font-size: 17px;
+  }
+}
+@media (max-width: 1360px) {
+  :root {
+    font-size: 14px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: var(--wall);
+}
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+dd,
+dt {
+  margin: 0;
+  padding: 0;
+}
+ul,
+ol {
+  list-style: none;
+}
+button,
+textarea,
+input,
+summary {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+button:disabled {
+  cursor: default;
+}
+:focus-visible {
+  outline: 3px solid var(--coord);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,9 @@
+__pycache__/
+.venv/
+node_modules/
+frontend/dist/
+.env
+*.pyc
+.pytest_cache/
+.playwright-mcp/
+backend/agents/replays/*.jsonl

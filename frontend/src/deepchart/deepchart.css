@@ -1,0 +1,478 @@
+/* DeepChart portal + patient link. Uses the board's tokens from index.css. */
+
+.dc {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 12px 16px 24px;
+  gap: 12px;
+}
+.dc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 8px;
+}
+.dc-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.dc-sub {
+  color: var(--muted);
+}
+.dc-nav {
+  display: flex;
+  gap: 16px;
+}
+.dc-h2 {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 6px 0;
+}
+.dc-h3 {
+  font-size: 1rem;
+  font-weight: 800;
+}
+.dc-empty {
+  color: var(--muted);
+  padding: 24px 4px;
+}
+.dc-error {
+  color: var(--crit);
+  background: var(--crit-bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.dc-ok {
+  color: var(--placed);
+  font-weight: 700;
+  margin-top: 8px;
+}
+.dc-toast {
+  background: var(--coord-bg);
+  color: var(--coord);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.dc-fine {
+  font-size: 0.82rem;
+}
+
+/* ---- controls ---- */
+.dc input:not([type='checkbox']):not([type='radio']),
+.dc select,
+.dc-login input,
+.dc-login select {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--panel);
+  min-width: 0;
+}
+.dc-btn {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 6px 12px;
+  background: var(--panel);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.dc-btn:hover:not(:disabled) {
+  border-color: var(--coord);
+}
+.dc-btn:disabled {
+  opacity: 0.5;
+}
+.dc-btn-primary {
+  background: var(--coord);
+  border-color: var(--coord);
+  color: #fff;
+}
+.dc-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 12px;
+  font-size: 0.9rem;
+}
+.dc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.dc-actions input {
+  flex: 1 1 240px;
+}
+
+/* ---- login ---- */
+.dc-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.dc-card {
+  width: min(380px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 700;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.dc-field legend {
+  margin-bottom: 4px;
+}
+
+/* ---- desk layout ---- */
+.dc-desk {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.dc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 8px;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+.dc-main,
+.dc-single {
+  min-width: 0;
+}
+.dc-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.dc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 7px 9px;
+}
+.dc-row-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dc-pick:hover {
+  border-color: var(--coord);
+}
+.dc-pick.is-on {
+  border-color: var(--coord);
+  box-shadow: inset 3px 0 0 var(--coord);
+}
+.dc-chip-held,
+.dc-chip-soft,
+.dc-chip-ok {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.dc-chip-held {
+  background: var(--held-bg);
+  color: var(--held-ink);
+}
+.dc-chip-soft {
+  background: var(--sunk);
+  color: var(--held-ink);
+}
+.dc-chip-ok {
+  background: var(--placed-bg);
+  color: var(--placed);
+}
+
+/* ---- workspace ---- */
+.dc-ws {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dc-ws-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: 10px;
+}
+.dc-ws-title {
+  font-size: 1.2rem;
+}
+.dc-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.dc-block {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.dc-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.dc-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* the safety copy: amber, exact words */
+.dc-hold {
+  background: var(--held-bg);
+  border: 1px solid var(--held);
+  border-left: 5px solid var(--held);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+.dc-verify {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--held-ink);
+}
+.dc-notice {
+  color: var(--held-ink);
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* matches */
+.dc-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dc-match {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.dc-match.is-possible {
+  border-color: var(--held);
+  background: var(--held-bg);
+}
+.dc-match-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.dc-match-top .muted {
+  flex: 1;
+}
+.dc-identity {
+  color: var(--held-ink);
+  margin-top: 4px;
+}
+
+/* chart */
+.dc-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dc-fact {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.dc-fact.is-conflict {
+  border-color: var(--held);
+  border-left: 5px solid var(--held);
+}
+.dc-fact.is-gap {
+  background: var(--wall);
+}
+.dc-fact-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.dc-kind {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.dc-kind.is-conflict {
+  color: var(--held-ink);
+}
+.dc-kind.is-agree {
+  color: var(--placed);
+}
+.dc-kind.is-gap {
+  color: var(--muted);
+}
+.dc-versions {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.dc-versions td {
+  padding: 3px 8px 3px 0;
+  vertical-align: top;
+}
+.dc-versions td:first-child {
+  width: 36%;
+}
+.dc-status {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-align: right;
+}
+.dc-val {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  text-align: left;
+}
+.dc-rid {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* order */
+.dc-order {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.dc-order .dc-btn {
+  align-self: flex-start;
+}
+.dc-because {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  align-items: center;
+}
+.dc-because > .muted {
+  margin-right: 10px;
+}
+
+/* log */
+.dc-log {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.88rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .dc-desk,
+  .dc-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dc-side {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* ---- patient link (phone first) ---- */
+.pl {
+  min-height: 100vh;
+  display: grid;
+  place-items: start center;
+  padding: 24px 16px;
+}
+.pl-card {
+  width: min(460px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pl-brand {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.pl-hi {
+  font-size: 1.6rem;
+}
+.pl-status {
+  font-size: 1.15rem;
+  line-height: 1.45;
+}
+.pl-h2 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin-top: 8px;
+}
+.pl-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pl-log li {
+  display: grid;
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  gap: 8px;
+}
+.pl-when {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.pl-foot {
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
