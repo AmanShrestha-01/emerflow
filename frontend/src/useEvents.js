@@ -158,9 +158,13 @@ function reducer(s, a) {
     case 'error':
       return { ...s, error: a.error }
     case 'state': {
-      // reconcile from GET /api/state; never go backwards in version
-      if (s.state && (a.state.version ?? 0) < (s.state.version ?? 0)) return s
+      // reconcile from GET /api/state; never go backwards in version within one run.
+      // A different run (backend restarted or reset) starts its version over, so take it whole.
       const st = normalize(a.state)
+      if (s.state && a.state.run && a.state.run !== s.state.run) {
+        return { ...s, state: st, ...splitFeed(st.feed || []), lastEventId: 0, flashes: [], typing: {}, pulses: [] }
+      }
+      if (s.state && (a.state.version ?? 0) < (s.state.version ?? 0)) return s
       if (s.feed.length || s.messages.length) return { ...s, state: st }
       return { ...s, state: st, ...splitFeed(st.feed || []) }
     }

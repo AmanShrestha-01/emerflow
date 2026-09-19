@@ -10,6 +10,9 @@ from backend.sim.pipeline import Emit, _noop, commit
 from backend.sim.scenarios import walk_in
 
 CT_EVERY = 6          # minutes per CT scan
+XRAY_EVERY = 3        # minutes per X-ray image
+XRAY_ROOMS = 2        # X-ray rooms working at once
+LAB_MIN = 8           # no lab result sooner than this after arrival
 WALKIN_RATE = 0.10    # chance per minute of an everyday patient (~6 an hour)
 BUSY_FACTOR = 3       # a busy night triples everyday arrivals
 ER_VISIT_MIN = 90     # minor ER patients (severity 4-5) are treated and ready to go home after this
@@ -65,6 +68,25 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
         done.ct_done = True
         h.version += 1
         emit("notice", {"text": f"CT done for {done.pid}"}, clock=t)
+
+    # X-ray: two rooms, an image every few minutes in each, most critical first.
+    active = ("waiting", "placed", "held")
+    need = [p for p in h.patients.values() if p.needs_xray and not p.xray_done and p.state in active]
+    h.xray_queue = [p.pid for p in sorted(need, key=lambda p: (p.severity, p.arrived_at))]
+    if h.xray_queue and t % XRAY_EVERY == 0:
+        for pid in h.xray_queue[:XRAY_ROOMS]:
+            h.patients[pid].xray_done = True
+        h.xray_queue = h.xray_queue[XRAY_ROOMS:]
+        h.version += 1
+
+    # Lab: one result a minute, sickest first; a sample needs LAB_MIN minutes before its result can be back.
+    need = [p for p in h.patients.values() if p.needs_labs and not p.labs_done and p.state in active]
+    order = sorted(need, key=lambda p: (p.severity, p.arrived_at))
+    ready = [p for p in order if t - p.arrived_at >= LAB_MIN]
+    if ready:
+        ready[0].labs_done = True
+        h.version += 1
+    h.lab_queue = [p.pid for p in order if not p.labs_done]
 
     # Patients get better: ICU patients improve; ward patients become ready to go home.
     if t % 15 == 0:

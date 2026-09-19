@@ -93,7 +93,7 @@ def test_gate_holds_when_sources_disagree():
              Claim("anticoagulant", "warfarin 5mg", "active", "r2"))
     v = gate.check(p, ["anticoagulant"], "STEPDOWN")
     assert len(v.conflicts) == 1 and v.blocking
-    assert {x.source_name for x in v.conflicts[0].versions} == {"Local intake", "Hospital B - Cardiology"}
+    assert {x.source_name for x in v.conflicts[0].versions} == {"Local intake", "Fells Point Heart - Cardiology"}
 
 
 def test_not_mentioned_is_a_gap_not_a_conflict():

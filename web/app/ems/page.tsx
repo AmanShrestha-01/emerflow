@@ -1,33 +1,56 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
-import { Ambulance, BedDouble, Building2, Clock3, CloudLightning, ExternalLink, LocateFixed, Play, Siren, Users } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Ambulance, BedDouble, Building2, Clock3, CloudLightning, ExternalLink, LocateFixed, Siren, Users } from "lucide-react"
 import { Nav } from "@/components/emer/nav"
 import { TextReveal } from "@/components/ui/text-reveal"
 import { CapacityMap } from "@/components/capacity/components/capacity-map"
-import { SimulationPanel, SimulationTimeline, SimulationVerdict } from "@/components/capacity/components/simulation-panel"
+import { SimulationKey, SimulationPanel, SimulationTimeline, SimulationVerdict } from "@/components/capacity/components/simulation-panel"
+import { IncidentHandoff } from "@/components/emer/incident-handoff"
+import { DEMO_INCIDENT } from "@/lib/emer/incident"
 import { StatusLegend } from "@/components/capacity/components/status-legend"
 import { countByStatus, directionsUrl, formatTime, formatWait, miles, rankHospitals, type RankedHospital } from "@/components/capacity/geo"
-import { recordedSource, swarmSource, withFallback } from "@/components/capacity/sources"
-import type { LatLon, SortBy, Status } from "@/components/capacity/types"
+import { recordedSource, swarmSource, withFallback, type RegionSource } from "@/components/capacity/sources"
+import { simulateLocal } from "@/components/capacity/simulate-local"
+import { dispatchPlan } from "@/lib/emer/dispatch"
+import type { Hospital, LatLon, SortBy, Status } from "@/components/capacity/types"
 import { useLocation } from "@/components/capacity/use-location"
 import { useRegion } from "@/components/capacity/use-region"
 import { useSimulation } from "@/components/capacity/use-simulation"
 import { useWeatherAlerts } from "@/components/capacity/use-weather-alerts"
-import { OUR_HOSPITAL_ID, withLiveHopkins } from "@/lib/emer/capacity"
+import { OUR_HOSPITAL_ID, withOurHospital } from "@/lib/emer/capacity"
+import { CMS_PERIOD, withCmsHospitals, withEdas } from "@/lib/emer/cms"
+import { useEdas } from "@/lib/emer/use-edas"
 import { useHospital } from "@/lib/emer/hospital"
 
 // Robert's capacity map (github.com/RobertxPearce/emerflow, capacity-map) with our own text and template.
 // Data: his swarm server if NEXT_PUBLIC_SWARM_URL is set, otherwise his recorded Baltimore snapshot.
 const SWARM_URL = process.env.NEXT_PUBLIC_SWARM_URL
 const source = SWARM_URL ? withFallback(swarmSource({ url: SWARM_URL })) : recordedSource()
-const DEMO_INCIDENT = { point: [39.278, -76.6227] as LatLon, casualties: 80 }
+// Without Robert's server, what-ifs are worked out in the browser from the hospitals on the map
+// (components/capacity/simulate-local.ts), so the spot and size you pick are the ones simulated.
+const mapHospitals: { current: Hospital[] } = { current: [] }
+const simSource: RegionSource = SWARM_URL
+  ? source
+  : {
+      ...source,
+      simulate: async (p) => {
+        const hs = mapHospitals.current
+        return simulateLocal(p, hs, await dispatchPlan([p.lat, p.lon], p.casualties, hs))
+      },
+    }
+// The demo incident lives in lib/emer/incident.ts, so the map pin, the handoff and the board agree on it.
 const MAX_REGION_MILES = 60
 
 const PILL: Record<Status, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-mist text-jade-deep" },
   busy: { label: "Busy", cls: "bg-human-soft text-human" },
   critical: { label: "Full", cls: "bg-critical-soft text-critical" },
+}
+
+/** 248 → "4 h 8 min" */
+function hm(min: number) {
+  return `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}`
 }
 
 function median(values: number[]) {
@@ -115,7 +138,8 @@ function WhereToGo({
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-x-2 font-semibold text-ink">
                     <span className="truncate">{h.name}</span>
-                    {ours && <span className="text-xs font-semibold text-jade-deep">live</span>}
+                    {ours && <span className="text-xs font-semibold text-jade-deep">our demo hospital · simulated numbers</span>}
+                    {h.live && <span className="text-xs font-semibold text-jade-deep">live · MIEMSS</span>}
                     {best && <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-white">Fastest care</span>}
                   </span>
                   <span className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
@@ -126,6 +150,20 @@ function WhereToGo({
                     {h.distance.toFixed(1)} mi · {h.drive} min drive · ER wait {formatWait(h.er_wait_min)} · ER {h.er.occupied}/{h.er.capacity}
                     {h.trauma ? ` · ${h.trauma} trauma` : ""}
                   </span>
+                  {h.live && (
+                    <span className="block text-xs font-medium text-ink">
+                      ER crowding level {h.live.level} of 4
+                      {h.live.alerts.length > 0 && ` · ${h.live.alerts.join(", ")} alert`}
+                      {` · ${h.live.at_hospital} ${h.live.at_hospital === 1 ? "ambulance" : "ambulances"} at the ER`}
+                      {h.live.en_route > 0 && `, ${h.live.en_route} on the way`}
+                    </span>
+                  )}
+                  {h.cms?.ed_minutes && (
+                    <span className="block text-xs text-ink-soft">
+                      CMS: a typical ER visit takes {hm(h.cms.ed_minutes)}
+                      {h.cms.left_unseen_pct != null ? ` · ${h.cms.left_unseen_pct}% leave before being seen` : ""}
+                    </span>
+                  )}
                 </span>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${pill.cls}`}>{pill.label}</span>
                 <span className="w-14 text-right tabular text-lg font-bold text-ink">
@@ -176,7 +214,8 @@ function buildReport(
 export default function EmsPage() {
   const { st } = useHospital()
   const region = useRegion(source)
-  const sim = useSimulation(source)
+  const sim = useSimulation(simSource)
+  const edas = useEdas()
   const loc = useLocation()
   const [sortBy, setSortBy] = useState<SortBy>("fastest")
   const [visible, setVisible] = useState<Record<Status, boolean>>({ open: true, busy: true, critical: true })
@@ -184,11 +223,20 @@ export default function EmsPage() {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const mapRef = useRef<HTMLElement>(null)
 
-  const data = region.data
+  // Recorded data gets every CMS emergency department around Baltimore; Robert's live server keeps its own list.
+  const data = useMemo(() => (region.data && region.kind !== "live" ? withCmsHospitals(region.data) : region.data), [region.data, region.kind])
   const simulating = sim.phase !== "off"
+  const incidentLabel = DEMO_INCIDENT.name  // one named incident for the whole demo, wherever it is placed
   const frame = sim.result && (sim.phase === "playing" || sim.phase === "paused") ? sim.result.frames[sim.frame] : null
   // During a what-if run the map shows the simulated frame; otherwise Hopkins is live from our sim.
-  const hospitals = useMemo(() => frame?.hospitals ?? withLiveHopkins(data?.hospitals ?? [], st), [frame, data, st])
+
+  // Right now: MIEMSS live status where we have it, Hopkins from our own sim, everything else simulated.
+  const baseHospitals = useMemo(() => withOurHospital(withEdas(data?.hospitals ?? [], edas), st), [data, edas, st])
+  // During a what-if run the map shows the simulated frame instead.
+  const hospitals = frame?.hospitals ?? baseHospitals
+  useEffect(() => {
+    mapHospitals.current = baseHospitals
+  }, [baseHospitals])
 
   const center = data?.region.center
   const inRegion = !!(loc.coords && center && miles(loc.coords, center) <= MAX_REGION_MILES)
@@ -203,16 +251,11 @@ export default function EmsPage() {
     const ok = rankHospitals(hospitals, location, "fastest").filter((h) => !(h.id === OUR_HOSPITAL_ID && st?.diversion))
     return ok.find((h) => h.status !== "critical") ?? ok[0]
   }, [hospitals, location, st?.diversion])
-  const report = data ? buildReport(withLiveHopkins(data.hospitals, st), data.incidents, alerts?.alerts ?? [], data.generated_at) : []
+  const report = data ? buildReport(baseHospitals, data.incidents, alerts?.alerts ?? [], data.generated_at) : []
   const note = inRegion ? "From where you are." : loc.state === "granted" ? "You're outside Baltimore, so this is measured from downtown." : "Measured from downtown Baltimore."
 
   const pick = (p: "accepting" | "full" | "all") =>
     setVisible(p === "accepting" ? { open: true, busy: true, critical: false } : p === "full" ? { open: false, busy: false, critical: true } : { open: true, busy: true, critical: true })
-  const runDemo = () => {
-    setSelectedId(null)
-    sim.start(DEMO_INCIDENT.point, DEMO_INCIDENT.casualties)
-    mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
 
   return (
     <main className="min-h-screen bg-background pb-16">
@@ -221,7 +264,7 @@ export default function EmsPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <p className="text-sm text-ink-soft">
-              {data ? `Baltimore · ${region.kind === "live" ? "live" : "recorded"} numbers · updated ${formatTime(data.generated_at)}` : "Loading Baltimore…"}
+              {data ? (edas?.available ? `Baltimore · live ER status from MIEMSS · updated ${edas.fetched_at ? formatTime(edas.fetched_at) : "now"}` : `Baltimore · ${region.kind === "live" ? "live" : "simulated"} numbers · updated ${formatTime(data.generated_at)}`) : "Loading Baltimore…"}
             </p>
             <TextReveal as="h1" per="char" preset="fade-in-blur" speedReveal={1.5} className="mt-1 text-4xl font-bold tracking-tight text-ink">
               EMS map
@@ -232,9 +275,6 @@ export default function EmsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={runDemo} className="inline-flex h-11 items-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white">
-              <Play className="size-3.5 fill-current" /> Run the crisis demo
-            </button>
             {loc.state !== "granted" && (
               <button onClick={loc.locate} className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-ink">
                 <LocateFixed className="size-4" /> Find care near me
@@ -260,7 +300,9 @@ export default function EmsPage() {
             route={best && !simulating ? { to: best } : null}
             simulation={{
               point: sim.point,
+              label: incidentLabel,
               assignments: frame ? sim.result?.assignments : undefined,
+              inTransit: frame?.in_transit,
               placing: sim.phase === "placing" || sim.phase === "ready" || sim.phase === "error",
               onPlace: sim.place,
             }}
@@ -272,15 +314,19 @@ export default function EmsPage() {
                   <Ambulance className="size-3.5" /> What if a crash happened here?
                 </button>
               )}
-              {sim.phase === "placing" && <p className="pointer-events-auto rounded-xl bg-ink px-3 py-2 text-xs font-semibold text-white">Click the map where it happens</p>}
+              {sim.phase === "placing" && <p className="pointer-events-auto rounded-xl bg-ink px-3 py-2 text-sm font-semibold text-white">Click the map to put the crash there</p>}
             </div>
             <SimulationVerdict sim={sim} className="absolute left-1/2 top-16 z-[1000] w-[min(92%,460px)] -translate-x-1/2" />
+            <SimulationKey sim={sim} className="absolute bottom-28 left-3 z-[1000]" />
             <SimulationTimeline sim={sim} className="absolute inset-x-3 bottom-8 z-[1000]" />
           </CapacityMap>
 
           <aside className="glass flex max-h-[600px] flex-col overflow-hidden rounded-2xl lg:h-[640px] lg:max-h-none">
             {simulating ? (
-              <SimulationPanel sim={sim} hospitals={hospitals} recorded={region.kind !== "live"} className="min-h-0 flex-1" />
+              <div className="flex min-h-0 flex-1 flex-col">
+                <SimulationPanel sim={sim} hospitals={hospitals} recorded={region.kind !== "live"} className="min-h-0 flex-1" />
+                <IncidentHandoff sim={sim} className="m-3 mt-0 shrink-0" />
+              </div>
             ) : (
               <WhereToGo
                 ranked={shown}
@@ -329,7 +375,16 @@ export default function EmsPage() {
         </section>
 
         <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs leading-relaxed text-ink-soft">
-          <span className="flex items-center gap-1"><Clock3 className="size-3.5" /> Johns Hopkins is live from our hospital simulation. The other hospitals are real places with simulated numbers.</span>
+          <span className="flex items-center gap-1"><Clock3 className="size-3.5" /> {edas?.available
+            ? <>ER crowding levels and ambulance counts are live from MIEMSS EDAS (updated {edas.fetched_at ? formatTime(edas.fetched_at) : "now"}). Bed counts and waits are estimates. The Johns Hopkins row is our own simulation standing in for a large academic ER, not real Hopkins data.</>
+            : <>Live MIEMSS status is unavailable, so the numbers are simulated. The Johns Hopkins row is our own simulation standing in for a large academic ER, not real Hopkins data.</>}</span>
+          <span>
+            Demo with synthetic data. Hospital names are used for illustration only; EmerFlow is not affiliated with,
+            endorsed by, or connected to these institutions.
+          </span>
+          <span>
+            Hospital list and typical ER times: CMS Provider Data (ER time {CMS_PERIOD.replace("–", " to ")}), reported averages, not live.
+          </span>
           <span>Drive times are estimates.</span>
           {selectedId && (() => {
             const h = hospitals.find((x) => x.id === selectedId)

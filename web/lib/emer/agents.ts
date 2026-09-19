@@ -1,6 +1,6 @@
-// The nine AI agents, in plain words. Mirrors backend/agents/departments.py (personas) and the old frontend's labels.
+// The eleven AI agents, in plain words. Mirrors backend/agents/departments.py (personas) and the old frontend's labels.
 export type AgentId =
-  | "ER" | "ICU" | "STEPDOWN" | "OR" | "STAFFING" | "IMAGING" | "BLOODBANK" | "EMS" | "COORDINATOR"
+  | "ER" | "ICU" | "STEPDOWN" | "OR" | "STAFFING" | "IMAGING" | "XRAY" | "LAB" | "BLOODBANK" | "EMS" | "COORDINATOR"
 
 export interface Agent {
   id: AgentId
@@ -19,7 +19,9 @@ export const AGENTS: Agent[] = [
   { id: "STEPDOWN", name: "Close-watch", persona: "Forge", ini: "CW", role: "Takes patients leaving intensive care", pushesFor: "Moving improving patients on quickly", from: "#3fc3a4", to: "#1f8a70" },
   { id: "OR", name: "Surgery", persona: "Crux", ini: "SU", role: "Protects urgent operations", pushesFor: "Urgent surgery first, planned cases can wait", from: "#c77dff", to: "#8a3fd1" },
   { id: "STAFFING", name: "Nurses", persona: "Root", ini: "NU", role: "Keeps nurse numbers safe", pushesFor: "No bed opened without a nurse for it", from: "#ffc861", to: "#d98e04" },
-  { id: "IMAGING", name: "Scans", persona: "Trace", ini: "SC", role: "Scans the most urgent first", pushesFor: "CT for head and chest injuries before anything else", from: "#5cc8ff", to: "#1f7fcf" },
+  { id: "IMAGING", name: "CT scan", persona: "Trace", ini: "CT", role: "Scans the most urgent first", pushesFor: "CT for head and chest injuries before anything else", from: "#5cc8ff", to: "#1f7fcf" },
+  { id: "XRAY", name: "X-ray", persona: "Lumen", ini: "XR", role: "Images broken bones and chest injuries", pushesFor: "The quick image that frees a bed", from: "#7ee0e0", to: "#2a9d9d" },
+  { id: "LAB", name: "Lab", persona: "Cipher", ini: "LB", role: "Runs blood tests, sickest first", pushesFor: "Nobody goes upstairs before their results are back", from: "#b8a4ff", to: "#7a5fd6" },
   { id: "BLOODBANK", name: "Blood bank", persona: "Void", ini: "BB", role: "Watches the blood supply", pushesFor: "Never running out of O-negative", from: "#ff7a9c", to: "#c73a5e" },
   { id: "EMS", name: "Ambulances", persona: "Orbit", ini: "AM", role: "Tracks who is on the way", pushesFor: "Warning the hospital before patients arrive", from: "#9ee06d", to: "#4d9a2a" },
   { id: "COORDINATOR", name: "Coordinator", persona: "Prism", ini: "CO", role: "Reads every report and writes one plan", pushesFor: "The best plan for the whole hospital, not one ward", from: "#6d5df6", to: "#1f8a70" },

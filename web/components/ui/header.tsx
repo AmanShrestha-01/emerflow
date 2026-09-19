@@ -10,12 +10,13 @@ import {
     NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Menu, MoveRight, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/emer/logo";
-import { CLASSIC } from "@/lib/emer/session";
+import { SignInPanel } from "@/components/emer/sign-in-panel";
+import { loadSession } from "@/lib/emer/session";
 
 // Header1 (twblocks) with Emer Flow's pages. Links go through next/link; buttons use the project's Base UI button styles.
 const navigationItems: {
@@ -31,8 +32,8 @@ const navigationItems: {
     },
     {
         title: "Hospital Swarm",
-        description: "Nine AI agents agree where every patient goes. The hospital rules check each move, and a person makes the big calls.",
-        cta: { label: "Start the guided demo", href: "/board?demo=1" },
+        description: "Eleven AI agents agree where every patient goes. The hospital rules check each move, and a person makes the big calls.",
+        cta: { label: "Open the command board", href: "/board" },
         items: [
             { title: "Command board", href: "/board" },
             { title: "AI workflow", href: "/workflow" },
@@ -43,26 +44,35 @@ const navigationItems: {
     {
         title: "Crews & doctors",
         description: "The same live hospital, seen by the people around it: ambulance crews on the road and doctors checking records.",
-        cta: { label: "Staff login", href: "/login" },
         items: [
             { title: "EMS map", href: "/" },
-            { title: "DeepChart records", href: `${CLASSIC}/doctor` },
+            { title: "DeepChart records", href: "/doctor" },
             { title: "Log in", href: "/login" },
         ],
     },
 ];
 
+// Re-read the session when a page logs in or out (lib/emer/session.ts fires "emerflow:session").
+const onSession = (cb: () => void) => {
+    window.addEventListener("emerflow:session", cb);
+    return () => window.removeEventListener("emerflow:session", cb);
+};
+
 function Header1() {
     const [isOpen, setOpen] = useState(false);
     const path = usePathname();
+    // The front page (EMS map) and a signed-out visitor get just the brand and Sign in; the rest lives inside, after login.
+    const hasSession = useSyncExternalStore(onSession, () => !!loadSession(), () => false);
+    const front = path === "/" || path.startsWith("/ems") || path.startsWith("/login");
+    const signedIn = hasSession && !front;
     const isOn = (href: string) => (href === "/" ? path === "/" : path.startsWith(href.split("?")[0].split("#")[0]) && !href.includes("#"));
     return (
         <header className="w-full z-40 fixed top-0 left-0 bg-background/75 backdrop-blur-xl border-b border-white/60">
-            <div className="container relative mx-auto min-h-20 flex gap-4 lg:gap-8 flex-row items-center px-4">
+            <div className="relative mx-auto min-h-20 w-[min(1400px,calc(100%-24px))] flex gap-4 lg:gap-8 flex-row items-center">
                 <Link href="/" aria-label="EmerFlow home" className="shrink-0 rounded-md">
                     <Logo />
                 </Link>
-                <div className="justify-start items-center gap-4 lg:flex hidden flex-row">
+                {signedIn && <div className="justify-start items-center gap-4 lg:flex hidden flex-row">
                     <NavigationMenu className="flex justify-start items-start">
                         <NavigationMenuList className="flex justify-start gap-4 flex-row">
                             {navigationItems.map((item) => (
@@ -118,20 +128,17 @@ function Header1() {
                             ))}
                         </NavigationMenuList>
                     </NavigationMenu>
-                </div>
+                </div>}
                 <div className="ml-auto flex justify-end gap-4">
-                    <Link href="/board?demo=1" className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex h-10 px-4")}>
-                        Guided demo
-                    </Link>
-                    <div className="border-r hidden md:inline"></div>
-                    <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), "hidden sm:inline-flex h-10 px-4")}>
-                        Sign in
-                    </Link>
-                    <Link href="/board" className={cn(buttonVariants(), "h-10 px-4")}>
-                        Open the board
-                    </Link>
+                    {signedIn ? (
+                        <Link href="/board" className={cn(buttonVariants(), "h-10 px-4")}>
+                            Open the board
+                        </Link>
+                    ) : (
+                        <SignInPanel className={cn(buttonVariants(), "h-10 px-4")} />
+                    )}
                 </div>
-                <div className="flex w-12 shrink lg:hidden items-end justify-end">
+                {signedIn && <div className="flex w-12 shrink lg:hidden items-end justify-end">
                     <button
                         className={cn(buttonVariants({ variant: "ghost" }), "h-10 w-10")}
                         onClick={() => setOpen(!isOpen)}
@@ -176,7 +183,7 @@ function Header1() {
                             ))}
                         </div>
                     )}
-                </div>
+                </div>}
             </div>
         </header>
     );

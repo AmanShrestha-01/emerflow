@@ -9,7 +9,7 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 - **Facts** (the `because` lists): `anticoagulant`, `penicillin_allergy`, `vitals_stable`, `icu_need`, `on_pressors`, `blood_type`
 - **Levels:** `0 NORMAL`, `1 MAKE ROOM`, `2 STRETCH`, `3 DIVERT`, `4 CRISIS`
 - **Agents** (the `unit` field in agent events):
-  - Departments: `ER`, `ICU`, `STEPDOWN`, `OR`, `STAFFING`, `IMAGING`, `BLOODBANK`, `EMS`
+  - Departments: `ER`, `ICU`, `STEPDOWN`, `OR`, `STAFFING`, `IMAGING` (CT), `XRAY`, `LAB`, `BLOODBANK`, `EMS`
   - The coordinator is `COORDINATOR`
   - Rule-keepers (code, not AI): `FASTLANE`, `VALIDATOR`, `DEEPCHART`, `ESCALATION`
 
@@ -30,14 +30,14 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 ### State
 ```json
 {
-  "clock": 42, "version": 318, "level": 2, "level_name": "STRETCH", "diversion": false,
+  "clock": 42, "version": 318, "run": "3f9a1c2e", "level": 2, "level_name": "STRETCH", "diversion": false,
   "paused": false, "speed": 0.5, "mode": "stub", "busy_until": null,
   "units": [{"unit": "ICU", "beds": 10, "occupied": 9, "reserved": 1, "percent": 100, "nurses": 5,
              "occupants": ["IN-10"], "reserved_for": ["MC-03"]}],
   "patients": [{"pid": "MC-03", "name": "Lena Cho", "age": 54, "complaint": "head injury, confused",
                 "severity": 2, "state": "held", "unit": null, "waited": 7, "eta": null,
-                "needs_ct": true, "needs_blood": false, "retriage": false, "records_flag": false, "locked": true}],
-  "ct_queue": ["MC-03"], "blood": {"O-": 8}, "or_cases": [], "partners": {"Mercy General": 4},
+                "needs_ct": true, "needs_xray": false, "needs_labs": true, "improving": false, "ready_for_discharge": false, "needs_blood": false, "retriage": false, "records_flag": false, "locked": true}],
+  "ct_queue": ["MC-03"], "xray_queue": [], "lab_queue": ["MC-03"], "blood": {"O-": 8}, "or_cases": [], "partners": {"Mercy General": 4},
   "off_duty_nurses": 6,
   "holds": [{"hold_id": "H12", "pid": "MC-03", "to_unit": "ICU", "because": ["icu_need", "anticoagulant"],
              "created_at": 40,
@@ -45,7 +45,7 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
                             "versions": [{"source_name": "Local intake", "recorded_date": "2026-09-19",
                                           "value": "none recorded", "status": "absent",
                                           "resource_id": "MedicationStatement/loc-MC-03-ac"},
-                                         {"source_name": "Hospital B - Cardiology", "recorded_date": "2026-03-02",
+                                         {"source_name": "Fells Point Heart - Cardiology", "recorded_date": "2026-03-02",
                                           "value": "warfarin 5mg", "status": "active",
                                           "resource_id": "MedicationStatement/hb-MC-03-ac"}]}]}],
   "approvals": [{"approval_id": "A4", "action": "cancel_elective", "level": 2,
@@ -96,7 +96,7 @@ Trauma cases (gunshot, stab wound, internal bleeding) go Resus → OR → Recove
 | `coordinator.question` | `{unit, question}` |
 | `agent.answer` | `{unit, answer}` |
 | `coordinator.plan` | `{summary, moves:[{pid,to_unit,kind,reason}], escalations:[{action,reason}]}` |
-| `move.applied` | `{move_id, pid, from_unit, to_unit, source, because[]}`. `source` is `fastlane`, `swarm` or `fallback` |
+| `move.applied` | `{move_id, pid, name, from_unit, to_unit, source, because[], reason}`. `source` is `fastlane`, `swarm` or `fallback` |
 | `move.held` | `{hold_id, pid, to_unit, because[], conflicts[]}`. DeepChart stopped it |
 | `move.flagged` | `{pid, to_unit, conflicts[]}`. Life-saving placement went ahead, but the records disagree |
 | `move.dropped` | `{pid, to_unit, reason}`. The validator rejected it |
@@ -181,7 +181,7 @@ The `round` field is `status`, `question`, `plan`, `apply`, or `null` for events
 ### AuditRow
 `{"time": "21:42", "clock": 42, "round": "cy7", "event": "move.held", "patient": "MC-06", "from": "", "to": "ICU",
   "decided_by": "Records check (code)", "relied_on": "icu_need, anticoagulant",
-  "records_disagree": "anticoagulant: Local intake=none recorded vs Hospital B - Cardiology=warfarin 5mg",
+  "records_disagree": "anticoagulant: Local intake=none recorded vs Fells Point Heart - Cardiology=warfarin 5mg",
   "detail": "paused: sources disagree; a human must resolve"}`
 
 `decided_by` is one of:
@@ -210,44 +210,50 @@ Everything above stays valid, and the board routes stay open (no session needed)
 They reuse the existing `Conflict` shape (`{fact, reason, versions:[{source_name, recorded_date, value, status, resource_id}]}`).
 
 **Demo hospitals** (`GET /api/hospitals`):
-- `Emer Flow General` is the board hospital. Its records are the existing `Local intake` source.
-- `Hospital B` holds the existing `Hospital B - Cardiology` source, plus three patients of its own (`HB-01..03`) that it can transfer.
-- `Hospital C` holds `Hospital C - Primary care` records: a real one for about a third of the patients, and a **lookalike** (same name, birth date and sex, but a different person) for every patient with a planted conflict.
+- `Johns Hopkins Hospital` is the board hospital. Its records are the existing `Local intake` source.
+- `Fells Point Heart Institute` holds the existing `Fells Point Heart - Cardiology` source, plus three patients of its own (`HB-01..03`) that it can transfer.
+- `Hampden Family Health` holds `Hampden Family Health - Primary care` records: a real one for about a third of the patients, and a **lookalike** (same name, birth date and sex, but a different person) for every patient with a planted conflict.
 
 Source names are unchanged from the board. Render `source_name` as given.
 
 ## Sessions and roles
-- `POST /api/login` with `{"hospital", "role": "doctor" | "commander", "pin"}` returns `{"token", "hospital", "role"}`. The PIN is `EMERFLOW_DEMO_KEY` (default `demo`).
+- `POST /api/login` with `{"hospital", "role": "doctor" | "commander", "pin", "doctor"?}` returns `{"token", "hospital", "role", "name"}`. The PIN is `EMERFLOW_DEMO_KEY` (default `demo`).
+- Each hospital has three made-up demo doctors (`GET /api/hospitals`). `doctor` must be one of that hospital's; left out, it's the first one. `name` is `""` for a commander.
 - Send `X-Session: <token>` on portal calls. No session gets a `401`. The wrong role, the wrong hospital, a wrong PIN, or no reason for access gets a `403`.
-- `commander` can only log in at `Emer Flow General` (the board hospital).
-- Portal routes are for `doctor` only. `Hospital B` doctors can only list and transfer their own patients. Only `Emer Flow General` doctors can open board patients.
+- `commander` can only log in at `Johns Hopkins Hospital` (the board hospital).
+- Portal routes are for `doctor` only. `Fells Point Heart Institute` doctors can only list and transfer their own patients. Only `Johns Hopkins Hospital` doctors can open board patients.
 
 ## REST
 | Method | Path | Body / query | Returns |
 |---|---|---|---|
-| POST | `/api/login` | see above | `{token, hospital, role}` |
-| GET | `/api/hospitals` | | `[{"name"}]` |
-| GET | `/api/me` | | `{hospital, role}` for the current session, or `401` when it's missing or stale |
-| GET | `/api/portal/patients` | | Emer Flow General: patient rows plus `conflicts` and `held`, with held patients first. Hospital B: its own patients |
+| POST | `/api/login` | see above | `{token, hospital, role, name}` |
+| GET | `/api/hospitals` | | `[{"name", "doctors": [name]}]` |
+| GET | `/api/me` | | `{hospital, role, name}` for the current session, or `401` when it's missing or stale |
+| GET | `/api/portal/patients` | | Johns Hopkins Hospital: patient rows plus `conflicts` and `held`, with held patients first. Fells Point Heart Institute: its own patients |
 | GET | `/api/lookup` | `?pid=MC-03&reason=er`, or `?name=&dob=&sex=&phone4=&reason=` | `{"query", "candidates": [Candidate]}` |
 | POST | `/api/lookup/confirm` | `{"pid", "record_ref", "same_person": bool, "reason"}` | `{"ok": true, "linked": bool}` |
 | GET | `/api/chart/{pid}` | `?reason=er` | `Chart` |
 | POST | `/api/chart/{pid}/resolve` | `{"hold_id", "outcome": "proceed" \| "cancel", "reason": "er"}` | `{"ok", "detail", "outcome", "to_unit"}`. The same `resolve_hold` as `POST /api/holds/{id}/resolve`, but logged as a doctor action with its reason |
+| POST | `/api/chart/{pid}/entries` | `{"fact", "value", "status": "present" \| "active" \| "stopped" \| "absent", "reason": "er"}` | `{"ok", "fact", "source_name", "kind": "conflict" \| "ok"}`. The doctor's own entry, kept as one more source (`<hospital> - Doctor's entry`) that the gate compares like any other. It never replaces or hides another source |
 | POST | `/api/orders` | `{"pid", "text", "because": [fact]}` | `{"order_id", "status": "saved" \| "needs_ack", "warnings": [Conflict]}` |
 | POST | `/api/orders/{order_id}/ack` | `{"reason"}` (must not be empty) | `{"order_id", "status": "saved"}` |
-| POST | `/api/transfers` | `{"pid": "HB-01", "to_hospital": "Emer Flow General"}` (Hospital B only) | `{"transfer_id", "pid": "TR-01"}` |
+| POST | `/api/transfers` | `{"pid": "HB-01", "to_hospital": "Johns Hopkins Hospital"}` (Fells Point Heart Institute only) | `{"transfer_id", "pid": "TR-01"}` |
 | GET | `/api/inbox` | | `[{"transfer_id", "pid", "name", "from_hospital", "to_hospital", "at", "conflicts", "from_pid"}]` |
-| GET | `/api/access-log/{pid}` | | `[{"at", "clock", "pid", "hospital", "role", "action", "public", "reason"}]` |
+| GET | `/api/access-log/{pid}` | | `[{"at", "clock", "pid", "hospital", "role", "name", "action", "public", "reason"}]` (`name`: the doctor) |
 | POST | `/api/patient-link` | `{"pid"}` | `{"token", "path": "/p/<token>"}` |
-| GET | `/api/p/{token}` | no session | `PatientView` |
+| POST | `/api/p/{token}` | `{"dob": "YYYY-MM-DD"}`, no session | `PatientView`. Missing or wrong date of birth: `403` with nothing about the patient. Five wrong tries lock the link (`403`); `POST /api/patient-link` then issues a new token and the old one is `404`. POST so the date never sits in a URL |
 | GET | `/api/deepchart/score` | no session | precision and recall against the answer key (records and identity) |
 
 `reason` is one of `er` (Treating in the ER), `admit`, `transfer`, `consult`.
 
-**One login for the app (frontend):** `/login` is the staff login (hospital → role → PIN). A commander lands on the board (`/`), and a doctor lands in DeepChart (`/doctor`).
-The board asks for any staff login at Emer Flow General (`?mock=1` skips it); `/doctor` asks for a doctor login; `/p/<token>` never asks.
+**Screens:** DeepChart lives in the Next.js site: `/doctor` (`web/app/doctor/page.tsx`, blue doctor theme) and `/p/<token>`
+(`web/app/p/page.tsx`, one static page that reads the token from the URL; FastAPI serves it for every `/p/...`). The older
+Vite screens in `frontend/src/deepchart/` still build but are no longer served at those paths.
+
+**One login for the app (frontend):** `/login` is the staff login (hospital → role → PIN). A commander lands on the board (`/board`), and a doctor lands in DeepChart (`/doctor`).
+The board asks for any staff login at Johns Hopkins Hospital (`?mock=1` skips it); `/doctor` asks for a doctor login; `/p/<token>` never asks for a staff login, only the patient's date of birth.
 **Deep link from the board:** `/doctor?pid=MC-03&hold=H12` opens that patient's chart with the reason preset to `er`.
-With no session, the login is prefilled (Emer Flow General, doctor). `&pin=demo` logs in automatically, for the demo.
+With no session, the login is prefilled (Johns Hopkins Hospital, doctor). `&pin=demo` logs in automatically, for the demo.
 
 **Rules:**
 - Nothing links to a patient without a human. `confirm` with `same_person: true` appends the record to `Patient.sources`. `false` hides it from later lookups, and it also unlinks the record if it was already linked (logged).
@@ -256,7 +262,7 @@ With no session, the login is prefilled (Emer Flow General, doctor). `&pin=demo`
 
 ### Candidate
 ```json
-{"record_ref": "Hospital C/pcx-MC-03", "hospital": "Hospital C", "source_name": "Hospital C - Primary care",
+{"record_ref": "Hampden Family Health/pcx-MC-03", "hospital": "Hampden Family Health", "source_name": "Hampden Family Health - Primary care",
  "recorded_date": "2025-06-01", "name": "Lena Cho", "dob": "1972-03-02", "sex": "F",
  "match": "strong" | "possible", "differs": ["phone4", "insurance_id", "address"],
  "linked": false, "confirmed": false, "facts": 3}
@@ -265,7 +271,7 @@ A `possible` match is an identity conflict. The UI says: `Is this the same perso
 
 ### Chart
 ```json
-{"patient": { /* patient row */ }, "hospital": "Emer Flow General", "identity": {"name", "dob", "sex", "phone4", "insurance_id", "address"},
+{"patient": { /* patient row */ }, "hospital": "Johns Hopkins Hospital", "identity": {"name", "dob", "sex", "phone4", "insurance_id", "address"},
  "sources": [{"source_name", "recorded_date", "hospital"}],
  "facts": [{"fact", "kind": "conflict" | "agree" | "gap", "reason", "versions": [...], "missing_from": [source_name],
             "verified_by_human": bool}],
@@ -277,7 +283,8 @@ A `possible` match is an identity conflict. The UI says: `Is this the same perso
 ### PatientView
 ```json
 {"first_name": "Lena", "status_line": "You're waiting for a bed. Staff are double-checking your records.",
- "access_log": [{"at", "hospital", "role", "action", "reason"}]}
+ "records": [{"hospital", "kind": "when you arrived" | "your doctor's notes" | "earlier visits" | "your primary care", "recorded_date"}],
+ "access_log": [{"at", "hospital", "role", "name", "action", "reason"}]}
 ```
 `action` here is the patient-safe `public` text. It never contains facts, values, conflicts, or other patients.
 
@@ -285,6 +292,7 @@ A `possible` match is an identity conflict. The UI says: `Is this the same perso
 | type | data |
 |---|---|
 | `record.linked` / `record.unlinked` | `{pid, record_ref, hospital, by_hospital}` |
+| `record.added` | `{pid, fact, hospital, conflict: bool}` (a doctor's entry) |
 | `transfer.received` | `{transfer_id, pid, from_hospital, to_hospital}` |
 | `order.warning` | `{order_id, pid, because[], conflicts[]}` |
 | `order.acknowledged` | `{order_id, pid, facts[]}`. The reason text stays in the access log |

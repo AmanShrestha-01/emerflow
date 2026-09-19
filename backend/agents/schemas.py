@@ -25,7 +25,7 @@ class DeptStatus(BaseModel):
     blockers: list[str] = []
 
 
-Dept = Literal["ER", "ICU", "STEPDOWN", "OR", "STAFFING", "IMAGING", "BLOODBANK", "EMS"]
+Dept = Literal["ER", "ICU", "STEPDOWN", "OR", "STAFFING", "IMAGING", "XRAY", "LAB", "BLOODBANK", "EMS"]
 
 
 class DeptAnswer(BaseModel):

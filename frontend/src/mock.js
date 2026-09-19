@@ -80,7 +80,7 @@ const MC_COMPLAINTS = [
 ]
 
 const OTHER_SOURCES = [
-  ['Hospital B - Cardiology', '2026-03-02'],
+  ['Fells Point Heart - Cardiology', '2026-03-02'],
   ['Mercy General ED', '2025-11-14'],
   ['CVS pharmacy fill history', '2026-08-27'],
   ['Urgent Care North', '2026-06-09'],

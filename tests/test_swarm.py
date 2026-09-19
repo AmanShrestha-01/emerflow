@@ -27,12 +27,12 @@ def _events():
     return log, lambda t, d, **k: log.append((t, d, k))
 
 
-def test_cycle_runs_all_eight_departments_then_one_plan():
+def test_cycle_runs_all_ten_departments_then_one_plan():
     h, _ = _surged()
     log, emit = _events()
     asyncio.run(Swarm(LLM(mode="stub", fake_latency=False)).run_cycle(h, emit, "test"))
     statuses = [d["unit"] for t, d, _ in log if t == "agent.status"]
-    assert sorted(statuses) == sorted(["ER", "ICU", "STEPDOWN", "OR", "STAFFING", "IMAGING", "BLOODBANK", "EMS"])
+    assert sorted(statuses) == sorted(["ER", "ICU", "STEPDOWN", "OR", "STAFFING", "IMAGING", "XRAY", "LAB", "BLOODBANK", "EMS"])
     assert [t for t, _, _ in log].count("coordinator.plan") == 1
     assert log[-1][0] == "cycle.end"
     assert all(k.get("cycle_id") for _, _, k in log)

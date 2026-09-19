@@ -27,7 +27,8 @@ OWNER: dict[str, str] = {
 # ---------- views: what each department is allowed to see ----------
 def _er_view(h: Hospital) -> dict:
     return {"waiting": [{"pid": p.pid, "severity": p.severity, "complaint": p.complaint,
-                         "waited_min": h.clock - p.arrived_at, "needs_ct": p.needs_ct and not p.ct_done}
+                         "waited_min": h.clock - p.arrived_at, "needs_ct": p.needs_ct and not p.ct_done,
+                         "tests_pending": p.tests_pending()}
                         for p in h.waiting()],
             "ER": h.unit_view("ER"), "RESUS": h.unit_view("RESUS"), "HALLWAY_free": h.units["HALLWAY"].free,
             "level": h.level}
@@ -58,6 +59,18 @@ def _staff_view(h: Hospital) -> dict:
 def _imaging_view(h: Hospital) -> dict:
     return {"ct_queue": [{"pid": pid, "severity": h.patients[pid].severity} for pid in h.ct_queue],
             "minutes_per_scan": 6}
+
+
+def _xray_view(h: Hospital) -> dict:
+    return {"xray_queue": [{"pid": pid, "severity": h.patients[pid].severity, "complaint": h.patients[pid].complaint}
+                           for pid in h.xray_queue],
+            "rooms": 2, "minutes_per_image": 3}
+
+
+def _lab_view(h: Hospital) -> dict:
+    return {"lab_queue": [{"pid": pid, "severity": h.patients[pid].severity,
+                           "waited_min": h.clock - h.patients[pid].arrived_at} for pid in h.lab_queue],
+            "results_per_minute": 1, "minimum_minutes_per_sample": 8}
 
 
 def _blood_view(h: Hospital) -> dict:
@@ -123,6 +136,18 @@ def _imaging_stub(h: Hospital) -> DeptStatus:
     q = h.ct_queue
     line = f"CT queue {len(q)}; next scan within 6 min" if q else "CT scanner free"
     return DeptStatus(line=line, blockers=[f"{pid} can't leave ER until scanned" for pid in q[:3]])
+
+
+def _xray_stub(h: Hospital) -> DeptStatus:
+    q = h.xray_queue
+    line = f"X-ray queue {len(q)}; about {-(-len(q) // 2) * 3} min to clear with both rooms" if q else "X-ray rooms free"
+    return DeptStatus(line=line, blockers=[f"{pid} can't go to a regular bed until X-rayed" for pid in q[:3]])
+
+
+def _lab_stub(h: Hospital) -> DeptStatus:
+    q = h.lab_queue
+    line = f"{len(q)} samples waiting; the last result in about {max(len(q), 8)} min" if q else "Lab caught up"
+    return DeptStatus(line=line, blockers=[f"{pid} can't go to a regular bed until results are back" for pid in q[:3]])
 
 
 def _blood_stub(h: Hospital) -> DeptStatus:
@@ -204,13 +229,31 @@ DEPARTMENTS: list[DeptConfig] = [
         archetype="Root", lens="You go to first principles: every bed needs a nurse. Count people before counting beds."),
     DeptConfig(
         "IMAGING", "Scan the most critical patients first.",
-        "One CT scanner, one scan at a time (~6 min).", _imaging_view, _imaging_stub,
+        "One CT scanner, one scan at a time (~6 min). X-rays are a different department.", _imaging_view, _imaging_stub,
         role="the CT lead technologist",
         persona="Methodical and queue-focused. Speaks in minutes and positions in line.",
         pushes_for="scanning by severity, not by who shouts loudest",
         pushes_back="when patients are moved upstairs before their scan is done",
         temperature=0.2,
         archetype="Trace", lens="You track dependencies: which patients cannot move anywhere until something else happens first?"),
+    DeptConfig(
+        "XRAY", "Image the most critical patients first, so they can move on.",
+        "Two X-ray rooms, about 3 minutes per image.", _xray_view, _xray_stub,
+        role="the X-ray lead technologist",
+        persona="Brisk and practical. Talks in images waiting and minutes to clear.",
+        pushes_for="imaging fractures and chest injuries by severity, so beds can open",
+        pushes_back="when a patient with a suspected fracture is moved before their X-ray is done",
+        temperature=0.3,
+        archetype="Lumen", lens="You see the whole picture: which quick image unblocks the most beds?"),
+    DeptConfig(
+        "LAB", "Get test results back fast, sickest first.",
+        "One result a minute; no result sooner than 8 minutes after the sample.", _lab_view, _lab_stub,
+        role="the lab supervisor",
+        persona="Precise and calm. Always states how many samples are waiting and the longest wait.",
+        pushes_for="running samples for the sickest patients first",
+        pushes_back="when patients are sent upstairs before their results are back",
+        temperature=0.2,
+        archetype="Cipher", lens="You read the signal in the noise: which result, once back, frees a patient to move?"),
     DeptConfig(
         "BLOODBANK", "Never run out of O-negative.",
         "Stock is fixed until the next delivery.", _blood_view, _blood_stub,
@@ -267,7 +310,7 @@ Your current state (JSON): {json.dumps(view)}
 {asker} asks you: "{question}"
 Answer in one or two plain sentences. List any patients you could move out (ids from your state only).
 If freeing space depends on ANOTHER department accepting your patients or helping you, set ask_unit to that
-department (ER, ICU, STEPDOWN, OR, STAFFING, IMAGING, BLOODBANK, EMS) and ask_text to one short question to it.
+department (ER, ICU, STEPDOWN, OR, STAFFING, IMAGING, XRAY, LAB, BLOODBANK, EMS) and ask_text to one short question to it.
 Otherwise leave ask_unit empty. Report only what your state shows."""
 
 

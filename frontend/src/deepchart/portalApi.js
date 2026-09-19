@@ -60,7 +60,7 @@ export const portal = {
   inbox: (s) => request('GET', '/api/inbox', { session: s }),
   accessLog: (s, pid) => request('GET', `/api/access-log/${encodeURIComponent(pid)}`, { session: s }),
   patientLink: (s, pid) => request('POST', '/api/patient-link', { session: s, body: { pid } }),
-  patientView: (token) => request('GET', `/api/p/${encodeURIComponent(token)}`),
+  patientView: (token, dob) => request('POST', `/api/p/${encodeURIComponent(token)}`, { body: { dob } }),
   resolveHold: (s, pid, holdId, outcome, reason) =>
     request('POST', `/api/chart/${encodeURIComponent(pid)}/resolve`, {
       session: s,

@@ -6,28 +6,47 @@ import './deepchart.css'
 export default function PatientLink({ token }) {
   const [view, setView] = useState(null)
   const [error, setError] = useState(null)
+  const [dob, setDob] = useState('') // memory only: never in the URL or browser storage
+  const [checked, setChecked] = useState(null)
 
+  const check = (e) => {
+    e.preventDefault()
+    portal
+      .patientView(token, dob)
+      .then((v) => (setView(v), setChecked(dob), setError(null)))
+      .catch((err) => setError(err.message))
+  }
   useEffect(() => {
+    if (!checked) return
     let alive = true
-    const load = () =>
-      portal
-        .patientView(token)
-        .then((v) => alive && (setView(v), setError(null)))
-        .catch((e) => alive && setError(e.message))
-    load()
-    const t = setInterval(load, 5000)
+    const t = setInterval(
+      () =>
+        portal
+          .patientView(token, checked)
+          .then((v) => alive && setView(v))
+          .catch((e) => alive && (setView(null), setChecked(null), setError(e.message))),
+      5000,
+    )
     return () => {
       alive = false
       clearInterval(t)
     }
-  }, [token])
+  }, [token, checked])
 
   return (
     <main className="pl">
       <div className="pl-card">
-        <p className="pl-brand">Emer Flow General</p>
+        <p className="pl-brand">Johns Hopkins Hospital</p>
+        {!view && (
+          <form onSubmit={check}>
+            <p className="pl-status">To keep this page private, confirm your date of birth.</p>
+            <input type="date" required value={dob} onChange={(e) => setDob(e.target.value)} aria-label="Date of birth" />{' '}
+            <button className="dc-btn dc-btn-primary" disabled={!dob}>
+              Open my page
+            </button>
+          </form>
+        )}
         {error && <p className="pl-status">{error === 'this link is not valid' ? 'This link is not valid.' : error}</p>}
-        {!error && !view && <p className="muted">Loading…</p>}
         {view && (
           <>
             <h1 className="pl-hi">Hi {view.first_name}.</h1>

@@ -6,7 +6,7 @@ import './auth.css'
 // One login for the whole app: hospital, then role, then PIN.
 // Commander → the board (/). Doctor → DeepChart (/doctor). Patients never log in; they use their private link.
 export default function Login({ presetRole = 'commander', next = null, banner = null, onIn = null }) {
-  const [hospitals, setHospitals] = useState([HOME, 'Hospital B', 'Hospital C'])
+  const [hospitals, setHospitals] = useState([HOME, 'Fells Point Heart Institute', 'Hampden Family Health'])
   const [hospital, setHospital] = useState(HOME)
   const [role, setRole] = useState(presetRole)
   const [pin, setPin] = useState('')

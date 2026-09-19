@@ -70,7 +70,7 @@ Department reports:
 {"Answers to your questions: " + json.dumps({k: v.model_dump() for k, v in answers.items()}) if answers else ""}
 
 Waiting patients, most critical first. "may_go_to" is the ONLY list of units each may use (code already
-applied severity, CT-scan and level rules; capacity is shown separately):
+applied severity, test (CT, X-ray, lab results) and level rules; capacity is shown separately):
 {json.dumps(waiting)}
 
 Inpatients who can move on to make room, and admitted ER patients waiting for an upstairs bed

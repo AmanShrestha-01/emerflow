@@ -8,9 +8,15 @@ import os
 import secrets
 from dataclasses import dataclass
 
-from backend.deepchart.records import HOME, HOSPITALS
+from backend.deepchart.records import HOME, HOSP_B, HOSP_C, HOSPITALS
 
 ROLES = ("doctor", "commander")
+# Made-up demo doctors, three per hospital. None shares a first or last name with a generated patient.
+DOCTORS: dict[str, tuple[str, ...]] = {
+    HOME: ("Dr. Amara Whitfield", "Dr. Daniel Osei", "Dr. Rebecca Lindqvist"),
+    HOSP_B: ("Dr. Samuel Achebe", "Dr. Hannah Morales", "Dr. Marcus Delaney"),
+    HOSP_C: ("Dr. Claire Donovan", "Dr. Julian Ashby", "Dr. Naomi Fairbanks"),
+}
 REASONS = {"er": "Treating in the ER", "admit": "Admitting", "transfer": "Transfer received",
            "consult": "Consult"}
 
@@ -20,13 +26,14 @@ class Session:
     token: str
     hospital: str
     role: str
+    name: str = ""  # the doctor's name; empty for the commander
 
 
 class Access:
     def __init__(self) -> None:
         self.sessions: dict[str, Session] = {}
 
-    def login(self, hospital: str, role: str, pin: str) -> Session:
+    def login(self, hospital: str, role: str, pin: str, doctor: str | None = None) -> Session:
         if hospital not in HOSPITALS:
             raise ValueError("unknown hospital")
         if role not in ROLES:
@@ -35,7 +42,12 @@ class Access:
             raise ValueError(f"the command board belongs to {HOME}")
         if pin != os.environ.get("EMERFLOW_DEMO_KEY", "demo"):
             raise PermissionError("wrong PIN")
-        s = Session(secrets.token_urlsafe(16), hospital, role)
+        name = ""
+        if role == "doctor":
+            name = doctor or DOCTORS[hospital][0]  # no pick (e.g. the board's demo deep link): the first doctor
+            if name not in DOCTORS[hospital]:
+                raise ValueError(f"{name} is not a doctor at {hospital}")
+        s = Session(secrets.token_urlsafe(16), hospital, role, name)
         self.sessions[s.token] = s
         return s
 

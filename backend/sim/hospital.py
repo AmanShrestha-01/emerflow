@@ -66,6 +66,8 @@ class Hospital:
     callins: list[tuple[int, str, int]] = field(default_factory=list)  # (arrives_at, unit, count)
     patients: dict[str, Patient] = field(default_factory=dict)
     ct_queue: list[str] = field(default_factory=list)
+    xray_queue: list[str] = field(default_factory=list)
+    lab_queue: list[str] = field(default_factory=list)
     blood: dict[str, int] = field(default_factory=lambda: {"O-": 8, "O+": 14, "A+": 10, "A-": 3, "B+": 6, "AB+": 3})
     or_cases: list[ORCase] = field(default_factory=list)
     partners: dict[str, int] = field(default_factory=lambda: {"Mercy General": 4, "St. Luke's": 3})
@@ -181,7 +183,8 @@ class Hospital:
             "patients": [
                 {"pid": p.pid, "severity": p.severity, "complaint": p.complaint,
                  "improving": p.improving, "ready_for_discharge": p.ready_for_discharge,
-                 "needs_ct": p.needs_ct and not p.ct_done, "locked": p.pid in self.locked}
+                 "needs_ct": p.needs_ct and not p.ct_done, "tests_pending": p.tests_pending(),
+                 "locked": p.pid in self.locked}
                 for p in self.in_unit(unit)
             ],
         }
@@ -194,6 +197,8 @@ class Hospital:
             if p.state != "incoming" else 0,
             "eta": p.arrived_at - self.clock if p.state == "incoming" else None,
             "needs_ct": p.needs_ct and not p.ct_done, "needs_blood": p.needs_blood,
+            "needs_xray": p.needs_xray and not p.xray_done, "needs_labs": p.needs_labs and not p.labs_done,
+            "improving": p.improving, "ready_for_discharge": p.ready_for_discharge, "incident": p.incident,
             "retriage": p.retriage_flag, "records_flag": p.records_flag,
             "locked": p.pid in self.locked,
             "need": p.need, "needs_surgery": p.needs_surgery,
@@ -217,6 +222,8 @@ class Hospital:
             "patients": [self.patient_row(p) for p in self.patients.values()
                          if p.state not in ("discharged", "transferred")],
             "ct_queue": list(self.ct_queue),
+            "xray_queue": list(self.xray_queue),
+            "lab_queue": list(self.lab_queue),
             "blood": dict(self.blood),
             "or_cases": [c.__dict__ for c in self.or_cases if not c.cancelled and c.ends_at > self.clock],
             "partners": dict(self.partners),

@@ -1,27 +1,29 @@
-// The same session the classic app uses: the token rides in X-Session and lives in sessionStorage (per tab).
-export type Session = { token: string; hospital: string; role: "commander" | "doctor" }
+// The same session the classic app uses: the token rides in X-Session. It lives in localStorage so the map tab
+// and the board tab share one login; a server restart still ends it.
+export type Session = { token: string; hospital: string; role: "commander" | "doctor"; name?: string } // name: the doctor's
 const KEY = "deepchart.session"
-export const HOME = "Emer Flow General"
+export const HOME = "Johns Hopkins Hospital"
 // The classic app (DeepChart doctor portal) lives on the FastAPI server: same origin in production, :8000 in dev.
 export const CLASSIC = process.env.NODE_ENV === "development" ? "http://localhost:8000" : ""
 
 export function loadSession(): Session | null {
   try {
-    return JSON.parse(sessionStorage.getItem(KEY) || "null")
+    return JSON.parse(localStorage.getItem(KEY) || "null")
   } catch {
     return null
   }
 }
 export function saveSession(s: Session | null) {
   try {
-    if (s) sessionStorage.setItem(KEY, JSON.stringify(s))
-    else sessionStorage.removeItem(KEY)
+    if (s) localStorage.setItem(KEY, JSON.stringify(s))
+    else localStorage.removeItem(KEY)
+    window.dispatchEvent(new Event("emerflow:session")) // the header re-checks who is signed in
   } catch {
     /* private mode: the session just won't survive a reload */
   }
 }
-export async function login(hospital: string, role: string, pin: string): Promise<Session> {
-  const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospital, role, pin }) })
+export async function login(hospital: string, role: string, pin: string, doctor?: string): Promise<Session> {
+  const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospital, role, pin, doctor }) })
   if (!r.ok) {
     let msg = "Login failed"
     try {

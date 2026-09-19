@@ -24,7 +24,11 @@ export interface CapacityMapProps {
   /** What-if mode: where the incident is, where casualties go, and click-to-place. */
   simulation?: {
     point: LatLon | null;
+    /** What to call the incident on its pin. */
+    label?: string;
     assignments?: Simulation["assignments"];
+    /** Ambulances driving to each hospital at the current minute. */
+    inTransit?: Record<string, number>;
     placing: boolean;
     onPlace: (point: LatLon) => void;
   };

@@ -18,7 +18,7 @@ def preferred_unit(p: Patient) -> str:
     if p.severity == 2:
         return "ICU"
     if p.severity == 3:
-        return "ER" if p.needs_ct and not p.ct_done else "STEPDOWN"
+        return "ER" if p.tests_pending() else "STEPDOWN"
     return "ER"
 
 

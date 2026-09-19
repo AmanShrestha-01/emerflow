@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
-import { Ambulance, BedDouble, Bus, Clock3, Flame, Hand, HeartPulse, Pause, Play, Sparkles, UserRound } from "lucide-react"
+import { Ambulance, BedDouble, Bus, Clock3, Flame, Hand, HeartPulse, Pause, Play, Siren, Sparkles, Square, UserRound } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
 import { api, type Approval, type HState, type Patient, useHospital } from "@/lib/emer/hospital"
@@ -166,7 +166,7 @@ export function approvalSentence(a: Approval) {
 }
 
 export function ApproveButtons({ a, big = false, onDark = false }: { a: Approval; big?: boolean; onDark?: boolean }) {
-  const { run } = useHospital()
+  const { run, ev } = useHospital()
   const [busy, setBusy] = useState<null | "yes" | "no">(null)
   const act = async (yes: boolean) => {
     setBusy(yes ? "yes" : "no")
@@ -174,6 +174,8 @@ export function ApproveButtons({ a, big = false, onDark = false }: { a: Approval
       await run(() => (api as any).resolveApproval(a.approval_id, yes), yes ? "Approved" : "Declined") // eslint-disable-line @typescript-eslint/no-explicit-any
     } catch {
       setBusy(null)
+    } finally {
+      ev.refresh?.() // decided elsewhere or expired: the fresh state drops the card
     }
   }
   const size = big ? "px-6 py-2.5 text-base" : "px-4 py-1.5 text-sm"
@@ -189,14 +191,53 @@ export function ApproveButtons({ a, big = false, onDark = false }: { a: Approval
   )
 }
 
+// A move the records check paused (EMERFLOW_RECORDS_CHECK=1). A person decides: here, or a doctor in DeepChart.
+function HoldCard({ h }: { h: { hold_id: string; pid: string; to_unit: string; name?: string; sentence?: string } }) {
+  const { run, ev, names } = useHospital()
+  const [busy, setBusy] = useState<null | "proceed" | "cancel">(null)
+  const act = async (outcome: "proceed" | "cancel") => {
+    setBusy(outcome)
+    try {
+      await run(() => (api as any).resolveHold(h.hold_id, outcome), outcome === "proceed" ? "Move released" : "Move stopped") // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch {
+      setBusy(null)
+    } finally {
+      ev.refresh?.()
+    }
+  }
+  const who = h.name || names?.[h.pid] || "A patient"
+  return (
+    <motion.li layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: 20 }} className="card-dark rounded-2xl p-5">
+      <p className="text-xs font-black tracking-wide text-[#ffc861]">VERIFICATION REQUIRED</p>
+      <p className="mt-2 text-[17px] leading-snug text-white">{h.sentence || `${who} can't be moved to ${PLACE[h.to_unit] || h.to_unit} yet: two hospitals' records disagree.`}</p>
+      <p className="mt-3 text-sm text-white/60">Sources disagree; a human must resolve.</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {ev.source !== "mock" && (
+          <a href={`/doctor?pid=${encodeURIComponent(h.pid)}&hold=${encodeURIComponent(h.hold_id)}`} className="rounded-xl bg-white px-4 py-1.5 text-sm font-semibold text-ink">
+            Check records in DeepChart
+          </a>
+        )}
+        <button onClick={() => act("proceed")} disabled={!!busy} className="rounded-xl bg-transparent px-4 py-1.5 text-sm font-semibold text-white ring-1 ring-white/30 disabled:opacity-60">
+          {busy === "proceed" ? "Saving…" : "Records checked: move"}
+        </button>
+        <button onClick={() => act("cancel")} disabled={!!busy} className="rounded-xl bg-transparent px-4 py-1.5 text-sm font-semibold text-white ring-1 ring-white/30 disabled:opacity-60">
+          {busy === "cancel" ? "Saving…" : "Don't move"}
+        </button>
+      </div>
+    </motion.li>
+  )
+}
+
 export function Decisions({ st }: { st: HState }) {
   const list = st.approvals || []
-  if (!list.length) {
+  const holds = st.holds || []
+  if (!list.length && !holds.length) {
     return <p className="rounded-2xl bg-white/50 px-4 py-3 text-sm text-ink-soft">Nothing to decide right now. When the AI wants to call in staff or postpone surgery, it asks you here.</p>
   }
   return (
     <ul className="space-y-2.5">
       <AnimatePresence initial={false}>
+        {holds.map((h) => <HoldCard key={h.hold_id} h={h} />)}
         {list.map((a) => (
           <motion.li key={a.approval_id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: 20 }} className="card-dark rounded-2xl p-5">
             <p className="text-[17px] leading-snug text-white">{approvalSentence(a)}</p>
@@ -211,11 +252,36 @@ export function Decisions({ st }: { st: HState }) {
 
 /* ---------- Arriving now ---------- */
 export function Arrivals({ st, recent, onOpen }: { st: HState; recent: Set<string>; onOpen: (pid: string) => void }) {
-  const rows = (st.patients || [])
+  const all = (st.patients || [])
     .filter((p) => p.state === "incoming" || p.state === "waiting" || (p.state === "placed" && recent.has(p.pid)))
     .sort((a, b) => a.severity - b.severity)
-    .slice(0, 8)
-  if (!rows.length) return <p className="rounded-2xl bg-white/50 px-4 py-3 text-sm text-ink-soft">No one is on the way. Press Bus crash or Busy night to put the hospital under pressure.</p>
+  // Casualties from the incident the EMS map handed over are kept together, so a commander can see the wave.
+  const fromIncident = all.filter((p) => p.incident)
+  const everyday = all.filter((p) => !p.incident).slice(0, 6)
+  const incidentName = fromIncident[0]?.incident || st.incident
+  if (!all.length) return <p className="rounded-2xl bg-white/50 px-4 py-3 text-sm text-ink-soft">No one is on the way. Press Bus crash or Busy night to put the hospital under pressure.</p>
+  return (
+    <div className="space-y-4">
+      {fromIncident.length > 0 && (
+        <div className="rounded-2xl bg-critical-soft/70 p-3.5 ring-1 ring-critical/20">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-critical">
+            <Siren className="size-4" /> From the {incidentName}
+            <span className="ml-auto rounded-full bg-critical px-2 py-0.5 text-[11px] font-bold text-white">{fromIncident.length}</span>
+          </p>
+          <ArrivalRows rows={fromIncident.slice(0, 8)} onOpen={onOpen} />
+        </div>
+      )}
+      {everyday.length > 0 && (
+        <div>
+          {fromIncident.length > 0 && <p className="mb-1 text-xs font-bold uppercase tracking-wide text-ink-soft">Everyone else</p>}
+          <ArrivalRows rows={everyday} onOpen={onOpen} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ArrivalRows({ rows, onOpen }: { rows: Patient[]; onOpen: (pid: string) => void }) {
   return (
     <ul className="divide-y divide-ink/5">
       {rows.map((p) => {
@@ -274,6 +340,17 @@ export function PatientSheet({ pid, onClose }: { pid: string | null; onClose: ()
                 ))}
               </div>
             )}
+            {p.incident && (
+              <p className="text-sm font-semibold text-ink">From the {p.incident}, brought in by ambulance.</p>
+            )}
+            {(() => {
+              const tests = [p.needs_ct && "CT scan", p.needs_xray && "X-ray", p.needs_labs && "lab results"].filter(Boolean)
+              return tests.length > 0 && p.state !== "incoming" ? (
+                <p className="rounded-2xl bg-human-soft/70 px-4 py-2.5 text-sm font-semibold text-ink">
+                  Waiting for {tests.join(", ").replace(/, ([^,]*)$/, " and $1")}. A regular bed has to wait until they&apos;re back.
+                </p>
+              ) : null
+            })()}
             {p.need && <p className="flex items-center gap-2 text-sm font-semibold text-ink"><HeartPulse className="size-4 text-critical" /> Needs: {p.need.toLowerCase()}</p>}
             {p.note && (
               <div className="rounded-2xl bg-ai-soft/70 p-4">
@@ -291,6 +368,19 @@ export function PatientSheet({ pid, onClose }: { pid: string | null; onClose: ()
 /* ---------- Speed and scenarios ---------- */
 const SPEEDS = [0.25, 0.5, 1, 2, 5]
 const SPEED_LABEL: Record<number, string> = { 0.25: "¼×", 0.5: "½×", 1: "1×", 2: "2×", 5: "5×" }
+
+export function StopButton({ st }: { st: HState }) {
+  const { control, run } = useHospital()
+  const stopped = !!st.paused
+  return (
+    <button
+      onClick={() => run(() => control(stopped ? "resume" : "pause"), stopped ? "Simulation running" : "Simulation stopped").catch(() => {})}
+      className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold ${stopped ? "bg-jade text-white" : "bg-ink text-white"}`}
+    >
+      {stopped ? <><Play className="size-3.5 fill-current" /> Start simulation</> : <><Square className="size-3.5 fill-current" /> Stop simulation</>}
+    </button>
+  )
+}
 
 export function SpeedMeter({ st }: { st: HState }) {
   const { control, run } = useHospital()

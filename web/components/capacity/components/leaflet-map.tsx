@@ -26,6 +26,37 @@ const youIcon = L.divIcon({
   html: `<div class="emf-you"></div>`,
 });
 
+const TRIAGE_COLORS = { urgent: "#dc2626", delayed: "#d97706", minor: "#059669" } as const;
+
+/** Ambulance lines take the color of the most urgent group they carry. */
+function lineColor(groups?: Record<keyof typeof TRIAGE_COLORS, number>) {
+  if (!groups) return "#ef4444";
+  return groups.urgent ? TRIAGE_COLORS.urgent : groups.delayed ? TRIAGE_COLORS.delayed : TRIAGE_COLORS.minor;
+}
+
+const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+
+/** "Johns Hopkins Hospital" → "Johns Hopkins", "UMMC R Adams Cowley Shock Trauma" → "Shock Trauma". */
+function shortName(name: string) {
+  let s = name.replace(/ (General Hospital|Hospital of Baltimore|Hospital|Medical Center|Campus|Hospital Center)$/, "");
+  if (s.length > 18) s = s.replace(/^(UMMC|UM|MedStar|Ascension|LifeBridge|Luminis Health|Johns Hopkins) /, "");
+  if (s.length > 18) s = s.split(" ").slice(-2).join(" ");
+  return s;
+}
+
+/** Label beside a receiving hospital: short name, people by triage color, and ambulances on the way now. */
+function countLabel(h: Hospital, a: { casualties: number; groups?: Record<keyof typeof TRIAGE_COLORS, number> }, driving: number) {
+  const short = escapeHtml(shortName(h.name));
+  const chips = a.groups
+    ? (Object.keys(TRIAGE_COLORS) as (keyof typeof TRIAGE_COLORS)[])
+        .filter((g) => a.groups![g] > 0)
+        .map((g) => `<i style="background:${TRIAGE_COLORS[g]}">${a.groups![g]}</i>`)
+        .join("")
+    : `<i style="background:#111">+${a.casualties}</i>`;
+  const road = driving ? `<em>🚑 ${driving} on the way</em>` : "";
+  return `<span class="emf-count"><b>${short}</b>${chips}${road}</span>`;
+}
+
 function radius(h: Hospital) {
   return 5 + Math.sqrt(h.er.capacity) * 0.75; // bigger ER, bigger dot
 }
@@ -158,12 +189,12 @@ export default function LeafletMap({
               <Polyline
                 key={`flow-${h.id}`}
                 positions={[simPoint, [h.lat, h.lon]]}
-                pathOptions={{ color: "#ef4444", weight: 1.5 + Math.sqrt(a.casualties) * 1.1, opacity: 0.55, className: "emf-flow" }}
+                pathOptions={{ color: lineColor(a.groups), weight: 1.5 + Math.sqrt(a.casualties) * 1.1, opacity: 0.6, className: "emf-flow" }}
               >
                 <Tooltip sticky className="emf-tooltip">
-                  <b>{a.casualties}</b> casualties → {h.name}
+                  <b>{a.casualties}</b> people → {h.name}
                   <br />
-                  {a.severe} severe · {a.drive_min} min drive
+                  {a.groups ? `${a.groups.urgent} urgent · ${a.groups.delayed} can wait · ${a.groups.minor} minor` : `${a.severe} severe`} · {a.drive_min} min drive
                 </Tooltip>
               </Polyline>
             );
@@ -190,11 +221,26 @@ export default function LeafletMap({
 
       {simPoint && (
         <Marker position={simPoint} icon={incidentIcon} zIndexOffset={500}>
-          <Tooltip direction="top" offset={[0, -8]} className="emf-tooltip">
+          <Tooltip direction="top" offset={[0, -8]} className="emf-tooltip" permanent={!!simulation?.label}>
             <span className="emf-tooltip-kicker">Simulated incident</span>
+            {simulation?.label && <span className="emf-tooltip-title">{simulation.label}</span>}
           </Tooltip>
         </Marker>
       )}
+
+      {/* How many casualties each hospital receives */}
+      {simPoint &&
+        hospitals
+          .filter((h) => incoming[h.id])
+          .map((h) => (
+            <Marker
+              key={`count-${h.id}`}
+              position={[h.lat, h.lon]}
+              interactive={false}
+              zIndexOffset={800}
+              icon={L.divIcon({ className: "emf-pin", iconSize: [0, 0], html: countLabel(h, incoming[h.id], simulation?.inTransit?.[h.id] ?? 0) })}
+            />
+          ))}
 
       {/* Full hospitals pulse */}
       {shown
@@ -276,6 +322,14 @@ export default function LeafletMap({
                   </b>
                   <span>ER wait</span>
                   <b>{formatWait(h.er_wait_min)}</b>
+                  {h.cms?.ed_minutes && (
+                    <>
+                      <span>Typical visit</span>
+                      <b>
+                        {Math.floor(h.cms.ed_minutes / 60)} h {h.cms.ed_minutes % 60} min <span style={{ fontWeight: 400, opacity: 0.6 }}>(CMS)</span>
+                      </b>
+                    </>
+                  )}
                 </div>
                 <a href={directionsUrl(h)} target="_blank" rel="noreferrer" className="emf-popup-link">
                   Directions →

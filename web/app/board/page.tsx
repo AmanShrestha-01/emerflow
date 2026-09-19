@@ -2,24 +2,27 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { BedDouble, Play, Sparkles, Workflow } from "lucide-react"
+import { BedDouble, Sparkles, Workflow } from "lucide-react"
 import { LiveBadge, Nav } from "@/components/emer/nav"
 import { TextReveal } from "@/components/ui/text-reveal"
 import { LiveChat } from "@/components/emer/live-chat"
-import { Arrivals, BedWall, Decisions, Kpis, PatientSheet, ScenarioButtons, SpeedMeter } from "@/components/emer/board/parts"
+import { Arrivals, BedWall, Decisions, Kpis, PatientSheet, ScenarioButtons, SpeedMeter, StopButton } from "@/components/emer/board/parts"
 import { DemoStory, useStory } from "@/components/emer/board/demo-story"
+import { MyUnit } from "@/components/emer/board/my-unit"
 import { useBedGroups } from "@/lib/emer/beds"
 import { useHospital, type Patient } from "@/lib/emer/hospital"
 import { Gate } from "@/components/emer/gate"
 
 const RECENT = 10 // hospital-minutes a move keeps glowing
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 function status(st: NonNullable<ReturnType<typeof useHospital>["st"]>) {
   const incoming = (st.patients || []).filter((p) => p.state === "incoming").length
   const busyLeft = st.busy_until != null ? st.busy_until - (st.clock ?? 0) : 0
   const crash = st.bus_crash_at != null && (st.clock ?? 0) - st.bus_crash_at < 120
-  if (crash && incoming) return `Bus crash: ${incoming} patient${incoming === 1 ? "" : "s"} arriving`
-  if (crash) return "Bus crash: everyone has arrived"
+  const what = cap(st.incident || "bus crash")
+  if (crash && incoming) return `${what}: ${incoming} patient${incoming === 1 ? "" : "s"} arriving`
+  if (crash) return `${what}: everyone has arrived`
   if (busyLeft > 0) return `Busy night: ${busyLeft} min left`
   return "A normal evening"
 }
@@ -80,7 +83,14 @@ function Board() {
       <div className="mx-auto mt-6 w-[min(1400px,calc(100%-24px))] space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-3"><p className="tabular text-sm font-medium text-ink-soft">{st ? clockText(st) : "--:--"} · Emer Flow General</p><LiveBadge /></div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-2.5">
+                <span className="h-7 w-1 rounded-full bg-[#1a2e5a]" aria-hidden="true" />
+                <span className="font-[Georgia,'Times_New_Roman',serif] text-[19px] leading-none tracking-tight text-[#1a2e5a]">Johns Hopkins Hospital</span>
+              </span>
+              <p className="tabular text-sm font-medium text-ink-soft">{st ? clockText(st) : "--:--"}</p>
+              <LiveBadge />
+            </div>
             <TextReveal as="h1" per="char" preset="fade-in-blur" speedReveal={1.5} className="mt-1 font-heading text-4xl font-bold tracking-tight text-ink">Command board</TextReveal>
             <p className="mt-1 text-[15px] font-medium text-ink-soft" aria-live="polite">
               {st ? status(st) : "Connecting to the hospital…"}
@@ -89,11 +99,7 @@ function Board() {
           </div>
           {st && (
             <div className="flex flex-wrap items-center gap-2">
-              {!story.step && (
-                <button onClick={() => story.go(1)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white">
-                  <Play className="size-3.5 fill-current" /> Guided demo
-                </button>
-              )}
+              <StopButton st={st} />
               <SpeedMeter st={st} />
               <ScenarioButtons st={st} />
             </div>
@@ -142,9 +148,16 @@ function Board() {
                 </Panel>
               </div>
             </div>
+            <Panel title="My unit: handoffs" className="mt-5">
+              <MyUnit onOpen={setOpenPid} />
+            </Panel>
           </>
         )}
       </div>
+      <p className="mx-auto mt-8 w-[min(1400px,calc(100%-24px))] text-xs leading-relaxed text-ink-soft">
+        Demo with synthetic data: every patient, bed and number on this board is simulated. Hospital names are used for
+        illustration only; EmerFlow is not affiliated with, endorsed by, or connected to these institutions.
+      </p>
       <PatientSheet pid={openPid} onClose={() => setOpenPid(null)} />
     </main>
   )

@@ -2,9 +2,9 @@
 until a human links a record.
 
 - HOME (the board hospital) holds each patient's "Local intake" source.
-- Hospital B holds the "Hospital B - Cardiology" source the scenario already attached, plus a small
+- Fells Point Heart Institute holds the "Fells Point Heart - Cardiology" source the scenario already attached, plus a small
   roster of its own patients who can be transferred to HOME.
-- Hospital C (primary care) holds a real matching record for some patients and a LOOKALIKE (same
+- Hampden Family Health (primary care) holds a real matching record for some patients and a LOOKALIKE (same
   name, date of birth and sex, different person) for every patient with a planted conflict.
 
 Identity details (dob, sex, phone, insurance, address) live here, derived deterministically from the pid,
@@ -20,9 +20,9 @@ from dataclasses import dataclass
 from backend.sim.models import Claim, Patient, SourceRecord
 from backend.sim.scenarios import FIRST, LAST, TODAY, give_records
 
-HOME = "Emer Flow General"
-HOSP_B = "Hospital B"
-HOSP_C = "Hospital C"
+HOME = "Johns Hopkins Hospital"
+HOSP_B = "Fells Point Heart Institute"
+HOSP_C = "Hampden Family Health"
 HOSPITALS = (HOME, HOSP_B, HOSP_C)
 STREETS = ["Charles St", "Greenmount Ave", "Eastern Ave", "Light St", "Cathedral St", "Pratt St",
            "Boston St", "Falls Rd", "York Rd", "Harford Rd"]
@@ -110,7 +110,7 @@ class Registry:
     def set_identity(self, pid: str, ident: Identity) -> None:
         self._ident[pid] = ident
 
-    # ---------- Hospital B's own patients (transfer demo) ----------
+    # ---------- Fells Point Heart Institute's own patients (transfer demo) ----------
     def _build_roster(self) -> None:
         r = _rng(self.seed, "roster")
         for i, (sev, complaint) in enumerate([(2, "chest pain, on anticoagulation"),
@@ -161,14 +161,14 @@ class Registry:
         if want_true and "true" not in kinds:
             r = _rng(self.seed, pid, "c-true")
             days = r.randint(400, 1500)
-            src = SourceRecord("hospital_c", "Hospital C - Primary care",
+            src = SourceRecord("hospital_c", "Hampden Family Health - Primary care",
                                (TODAY - _dt.timedelta(days=days)).isoformat(), _copy_claims(local, "hc"))
             for fact in ("on_pressors", "icu_need", "vitals_stable"):
                 src.claims.pop(fact, None)  # a years-old primary-care chart doesn't mention acute facts: gaps
             have.append(self._remember(HeldRecord(f"{HOSP_C}/pc-{pid}", HOSP_C, self.identity(pid), src, pid=pid)))
         if want_look and "look" not in kinds:
             r = _rng(self.seed, pid, "c-look")
-            src = SourceRecord("hospital_c", "Hospital C - Primary care",
+            src = SourceRecord("hospital_c", "Hampden Family Health - Primary care",
                                (TODAY - _dt.timedelta(days=r.randint(60, 900))).isoformat(), {})
             for f, c in local.claims.items():
                 rid = c.resource_id.replace("/loc-", "/hcx-")

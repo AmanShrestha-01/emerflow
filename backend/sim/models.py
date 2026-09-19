@@ -54,6 +54,11 @@ class Patient:
     sources: list[SourceRecord] = field(default_factory=list)
     needs_ct: bool = False
     ct_done: bool = False
+    incident: str = ""            # the mass-casualty incident that brought them in, in plain words
+    needs_xray: bool = False
+    xray_done: bool = False
+    needs_labs: bool = False         # blood tests ordered in the ER
+    labs_done: bool = False
     needs_blood: bool = False
     blood_type: str = "O+"
     improving: bool = False          # ICU/STEPDOWN patient who could step down
@@ -73,6 +78,12 @@ class Patient:
     bp: str = ""                     # simulated vital signs, matched to severity (synthetic)
     hr: int = 0
     spo2: int = 0
+
+    def tests_pending(self) -> list[str]:
+        """ER tests still outstanding, in plain words. A patient can't go to a regular bed until these are back."""
+        return [name for need, done, name in ((self.needs_ct, self.ct_done, "CT scan"),
+                                              (self.needs_xray, self.xray_done, "X-ray"),
+                                              (self.needs_labs, self.labs_done, "lab results")) if need and not done]
     ambulance: str = ""              # e.g. "Medic 12" for ambulance arrivals
 
 

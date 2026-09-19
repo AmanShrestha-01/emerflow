@@ -9,8 +9,13 @@ const nextConfig: NextConfig = exporting
   ? { output: "export", trailingSlash: true, images: { unoptimized: true } }
   : {
       images: { unoptimized: true },
+      // gzip buffers the proxied live event stream (/api/events), so the board would only see the 15 s poll.
+      compress: false,
       async rewrites() {
-        return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];
+        return [
+          { source: "/api/:path*", destination: `${backend}/api/:path*` },
+          { source: "/p/:token", destination: "/p" }, // patient links: one page reads the token from the URL
+        ];
       },
     };
 

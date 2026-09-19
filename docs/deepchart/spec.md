@@ -5,9 +5,11 @@ them and flags any disagreement on a fact a decision relies on, **before** the d
 
 **Pitch line:** hospitals can already share records. Nobody checks them at the moment it matters.
 
-**Status:** built. Backend in `backend/deepchart/`, screens in `frontend/src/deepchart/` (`/doctor`, `/p/<token>`),
+**Status:** built. Backend in `backend/deepchart/`, screens in the Next.js site (`web/app/doctor/`, `web/app/p/`),
 tests in `tests/test_deepchart.py`, routes in `CONTRACT.md` → "DeepChart portal". It sits on the board's
-records gate (`backend/gate.py`) and does not change it.
+records gate (`backend/gate.py`) and does not change it. The board only holds moves when `EMERFLOW_RECORDS_CHECK=1`.
+The older Vite screens in `frontend/src/deepchart/` still build but are no longer served at `/doctor` or `/p/`.
+Legal and regulatory research: `legal.md`.
 
 ---
 
@@ -15,10 +17,10 @@ records gate (`backend/gate.py`) and does not change it.
 
 | Today (board only) | With the portal |
 |---|---|
-| Each patient has two fixed sources (local intake plus "Hospital B - Cardiology") | Each hospital holds its own records. A doctor **pulls** the matching ones by lookup, or a hospital **pushes** them on transfer |
+| Each patient has two fixed sources (local intake plus "Fells Point Heart - Cardiology") | Each hospital holds its own records. A doctor **pulls** the matching ones by lookup, or a hospital **pushes** them on transfer |
 | DeepChart checks only bed moves | DeepChart also checks **orders and intake notes** a doctor writes |
 | Only the incident commander sees holds | A **doctor** reviews conflicts, confirms identity, and resolves holds |
-| No login | Pick a **hospital, then a role, then a demo PIN**. Patients get a **private link** |
+| No login | Pick a **hospital, then a role, then a demo PIN**. Patients get a **private link** and confirm their date of birth |
 
 ## 2. What makes DeepChart different
 
@@ -49,23 +51,25 @@ records between hospitals. DeepChart does not compete with them. It reads what t
 
 | Who | Where | Logs in with | Can do |
 |---|---|---|---|
-| Incident commander | `/board` | Hospital, `commander` role, PIN | Everything on the board today: approve escalations, resolve holds |
-| Doctor | `/doctor` | Hospital, `doctor` role, PIN | Look up patients, confirm identity, view the merged chart, write orders, acknowledge warnings, resolve holds, send transfers |
-| Patient | `/p/<token>` | Nothing. The unguessable link *is* the access | See their own plain-language status and who viewed their record |
+| Incident commander | `/board` | Hospital, `commander` role (labelled "Hospital" on the login), PIN | Everything on the board: approve escalations, resolve holds (or open them in DeepChart) |
+| Doctor | `/doctor` | Hospital, `doctor` role, their name (three demo doctors per hospital), PIN | Look up patients, confirm identity, view the merged chart, add their own record entries, write orders, acknowledge warnings, resolve holds, send transfers |
+| Patient | `/p/<token>` | The unguessable link plus their date of birth. Five wrong tries lock the link | See their own plain-language status, which hospitals' records are in use (names and dates only), and who viewed their record |
 
 Demo hospitals:
-- **Emer Flow General** runs the board, where the surge happens. Its records are the `Local intake` source.
-- **Hospital B** holds the `Hospital B - Cardiology` records and sends patients by transfer.
-- **Hospital C** only holds old primary-care records, including a lookalike for every patient with a planted conflict.
+- **Johns Hopkins Hospital** runs the board, where the surge happens. Its records are the `Local intake` source.
+- **Fells Point Heart Institute** holds the `Fells Point Heart - Cardiology` records and sends patients by transfer.
+- **Hampden Family Health** only holds old primary-care records (`Hampden Family Health - Primary care`), including a lookalike for every patient with a planted conflict.
+
+The board hospital is real (Johns Hopkins Hospital, where this hackathon is held); the two outside hospitals and every doctor are made up (checked on 2026-09-19 that no hospital uses those names). The UI says the data is synthetic and that we're not affiliated with or endorsed by any named hospital.
 
 ## 4. Screens
 
 ### 4.1 Login (one for the whole app, built as `frontend/src/auth/`)
-The role picks the screen: Commander → board (`/`), Doctor → DeepChart (`/doctor`). A doctor at Emer Flow General can also view the board.
+The role picks the screen: Commander → board (`/board`), Doctor → DeepChart (`/doctor`). A doctor at Johns Hopkins Hospital can also view the board.
 ```
 +---------------------------------------------+
-|  Emer Flow                                  |
-|  Hospital   [ Emer Flow General   v ]        |
+|  EmerFlow                                   |
+|  Hospital   [ Johns Hopkins Hospital v ]     |
 |  Role       ( ) Commander  (•) Doctor       |
 |  PIN        [ ****  ]        [ Enter ]      |
 |  Demo only. A real deployment uses the      |
@@ -79,9 +83,9 @@ The role picks the screen: Commander → board (`/`), Doctor → DeepChart (`/do
 |  Search: [ Lena Cho ]  DOB [ 1972-03-02 ]  Sex [F]  [ Search ]|
 |  Reason for access: [ Treating in the ER        v ]  (needed) |
 +---------------------------------------------------------------+
-|  Hospital B   Lena Cho  1972-03-02 F  phone ..4471  STRONG    |
+|  Fells Point  Lena Cho  1972-03-02 F  phone ..4471  STRONG    |
 |                                         [ Same person ] [ No ]|
-|  Hospital C   Lena Cho  1972-03-02 F  phone ..9020  POSSIBLE  |
+|  Hampden      Lena Cho  1972-03-02 F  phone ..9020  POSSIBLE  |
 |     differs: phone, address                                   |
 |     DEEPCHART: is this the same person? a human must decide   |
 |                                         [ Same person ] [ No ]|
@@ -100,14 +104,14 @@ The role picks the screen: Commander → board (`/`), Doctor → DeepChart (`/do
 |  Lena Cho · 54 F · MC-03 · in ER · HELD for ICU              |
 +---------------------------------------------------------------+
 |  anticoagulant                              ⚠ CONFLICT        |
-|    Hospital B - Cardiology (2026-03-02)  warfarin 5mg  ACTIVE |
+|    Fells Point Heart - Cardiology (2026-03-02)  warfarin 5mg  ACTIVE |
 |    Local intake            (2026-09-19)  none recorded ABSENT |
 |    sources disagree; a human must resolve                     |
 |  penicillin_allergy                         ✓ agree           |
-|    Hospital B - Cardiology (2026-03-02)  Penicillin G PRESENT |
+|    Fells Point Heart - Cardiology (2026-03-02)  Penicillin G PRESENT |
 |    Local intake            (2026-09-19)  Penicillin G PRESENT |
 |  blood_type                                 · gap             |
-|    Local intake (2026-09-19) O+  · Hospital B: not mentioned  |
+|    Local intake (2026-09-19) O+  · Fells Point: not mentioned |
 +---------------------------------------------------------------+
 |  New order: [ start heparin drip                     ]        |
 |  Relies on: [x] anticoagulant  [ ] vitals_stable  ...         |
@@ -116,16 +120,20 @@ The role picks the screen: Commander → board (`/`), Doctor → DeepChart (`/do
 ```
 - Every value can be clicked to show its `resource_id`, so every value's origin can be traced.
 - Conflicts are listed first, then facts where the sources agree, then gaps.
+- **As built:** under the chart, **Add to the record** lets the doctor record what they found for one fact (a value and
+  "Taking it now" / "Has it" / "Stopped" / "Doesn't have it"). It's saved as one more source, `<hospital> - Doctor's entry`,
+  that the gate compares like any other. It never replaces, hides or outranks another source, so if the records still
+  disagree the chart still says so. Route: `POST /api/chart/{pid}/entries`.
 
 ### 4.4 Order warning
 ```
 +---------------------------------------------------------------+
 |  ⚠ VERIFICATION REQUIRED                                      |
 |  This order relies on "anticoagulant". The records disagree:  |
-|    Hospital B - Cardiology (2026-03-02)  warfarin 5mg  ACTIVE |
+|    Fells Point Heart - Cardiology (2026-03-02)  warfarin 5mg  ACTIVE |
 |    Local intake            (2026-09-19)  none recorded        |
 |  sources disagree; a human must resolve                       |
-|  Reason: [ called Hospital B, warfarin stopped in June   ]    |
+|  Reason: [ called Fells Point, warfarin stopped in June  ]    |
 |                                         [ I have reviewed ]   |
 +---------------------------------------------------------------+
 ```
@@ -134,9 +142,9 @@ It doesn't block the order and it isn't a recommendation. The order can only be 
 ### 4.5 Transfer inbox (`/doctor`)
 ```
 +---------------------------------------------------------------+
-|  Incoming transfers to Emer Flow General                      |
-|  TR-01 Lena Cho   from Hospital B   09:14   1 conflict  [Open]|
-|  TR-02 Omar Diaz  from Hospital B   09:20   clear       [Open]|
+|  Incoming transfers to Johns Hopkins Hospital                 |
+|  TR-01 Lena Cho   from Fells Point  09:14   1 conflict  [Open]|
+|  TR-02 Omar Diaz  from Fells Point  09:20   clear       [Open]|
 +---------------------------------------------------------------+
 ```
 
@@ -148,11 +156,15 @@ It doesn't block the order and it isn't a recommendation. The order can only be 
 |  Staff are double-checking your records.    |
 |                                             |
 |  Who looked at your record                  |
-|   09:16  Emer Flow General · doctor         |
+|   09:16  Johns Hopkins Hospital · doctor    |
 |                 reason: Treating in the ER  |
 +---------------------------------------------+
 ```
 It never shows conflict details, clinical values, or anyone else.
+- **As built:** the page first asks for the patient's date of birth and shows nothing before that, not even the first name.
+  The date is sent by `POST /api/p/{token}` (never in a URL) and kept only in page memory. Five wrong tries lock the link;
+  the doctor's **Make a private link** then issues a new one. After the check it also lists which hospitals' records are in
+  use, by name, kind ("when you arrived", "your doctor's notes", "earlier visits", "your primary care") and date.
 
 ## 5. Flows
 
@@ -163,8 +175,8 @@ It never shows conflict details, clinical values, or anyone else.
 4. Confirmed records become extra sources on the patient, and the merged chart opens.
 
 **(b) Push transfer**
-1. A doctor at Hospital B clicks **Transfer to Emer Flow General**.
-2. A's record for that patient is linked as a source on B's patient, and it shows up in B's inbox.
+1. A doctor at Fells Point Heart Institute clicks **Transfer to Johns Hopkins Hospital**.
+2. Johns Hopkins gets a new board patient (`TR-xx`, arriving in 8 minutes) carrying the records Fells Point sent, and it shows up under *Incoming transfers* in DeepChart.
 3. Opening it goes straight to the merged chart, with no match review because the transfer names the patient.
 
 **(c) Order check**
@@ -173,7 +185,8 @@ It never shows conflict details, clinical values, or anyone else.
 3. If the warning list is empty, the order is saved. Otherwise the doctor must acknowledge with a reason.
 
 **(d) Resolving a board hold**
-1. A hold created on the command board also appears on the doctor's merged chart.
+1. A hold created on the command board also appears on the doctor's merged chart. On the board, the hold's card has
+   **Check records in DeepChart**, which opens `/doctor?pid=…&hold=…` with the reason preset to "Treating in the ER".
 2. The doctor picks **Proceed** or **Cancel**, using the same `POST /api/holds/{id}/resolve` as the board.
 3. The board updates live through the existing event stream.
 

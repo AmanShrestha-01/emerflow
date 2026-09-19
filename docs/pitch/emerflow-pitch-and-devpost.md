@@ -1,5 +1,8 @@
 # Emer Flow — pitch, demo script, Devpost text, submission checklist
 
+> **The current spoken script is `two-minute-pitch.md`** (2 minutes, two speakers, map → swarm → map).
+> The 90-second script below is older: it assumes the records check runs inside the Swarm, which is off by default now.
+
 Numbers marked ⟨…⟩ get filled in from the recorded demo run (`GET /api/results`, `GET /api/deepchart/score`).
 DeepChart-specific judge Q&A lives in `docs/pitch/deepchart-pitch.md`; this file covers the whole product.
 

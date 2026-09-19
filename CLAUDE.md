@@ -1,7 +1,7 @@
 # EmerFlow
 
 HopHacks 2026 (Johns Hopkins, Sept 18–20), team of 2. EmerFlow has these interfaces:
-- **Hospital Swarm**: the staff command board. Eight department AI agents and a coordinator decide where patients go during a surge.
+- **Hospital Swarm**: the staff command board. Ten department AI agents and a coordinator decide where patients go during a surge.
 - **EMS map** (the homepage): how full every Baltimore ER is, nearest/fastest care, an ER report and a what-if mass-casualty simulator.
 - **DeepChart**: a separate doctor portal for checking that a patient's records agree. It is **not** part of the Swarm's moves (the records check is off by default).
 
@@ -40,7 +40,7 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 **The records check:** `backend/gate.py` is DeepChart. For now it's a deterministic comparison of the `because` facts across record sources.
 
 **Agents** (`backend/agents/`):
-- `departments.py`: 8 department agents. One class, 8 configs (view, goal, limits, rule-based stub).
+- `departments.py`: 10 department agents (CT is `IMAGING`; `XRAY` and `LAB` run real queues in `clock.py`). One class, 10 configs (view, goal, limits, rule-based stub).
 - `coordinator.py`: one Gemini call per cycle; code writes its contention question.
 - **All agents use `gemini-3.6-flash`** (set in `.env`). Each department has its own persona (role, voice, what it pushes for / back on) and temperature in `departments.py`.
 - `cycle.py`: status (parallel) → optional question → plan → apply at live state → approvals → fallback.
@@ -50,20 +50,21 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 **Engine and API:**
 - `backend/engine.py`: the running loop, cycle triggers, radio intake, metrics, and the headless three-arm `compare()`.
   Speed is sim-minutes per real second: `SPEEDS = (0.25, 0.5, 1, 2, 5)`, default 0.5.
-- `backend/main.py`: FastAPI (REST plus SSE at `/api/events`). Serves `web/out` first (its pages), then falls back to `frontend/dist` (DeepChart `/doctor`, `/p/<token>`). GET and HEAD.
+- `backend/main.py`: FastAPI (REST plus SSE at `/api/events`). Serves `web/out` first (its pages, including DeepChart `/doctor` and every `/p/...` → `web/out/p/index.html`), then falls back to `frontend/dist`. Unknown `/api/...` paths get a 404, never a page. GET and HEAD.
 - When the AI plan asks for no big action, the rules (`ladder.rule_plan(escalate=True)`) may still suggest one; it still needs a person's approval.
 
 **Frontend: `web/`** (Next.js 16 app router, TypeScript, Tailwind v4, shadcn in `components/ui`). Pages:
 - `/`: the EMS map (`app/ems/page.tsx`, also at `/ems`). Built on Robert's capacity-map UI vendored in `components/capacity/` (map, simulator, hooks, recorded Baltimore fixtures). The nearest/fastest list and the ER report are ours. `lib/emer/capacity.ts` overlays our live ER onto Johns Hopkins; every other hospital is simulated. Robert's live server is used only if `NEXT_PUBLIC_SWARM_URL` is set.
 - `/board`: command board (needs login). KPI cards, bed wall (occupied / empty / getting ready / just arrived), big decisions, live AI chat, speed control, Bus crash / Busy night, and the 5-step **guided demo** (`/board?demo=1`, `components/emer/board/demo-story.tsx`).
 - `/workflow`: the AI round on a 3D stage, live. `/overview`: the swarm landing page (hero, 3D agent sphere, meet the agents). `/login`.
+- `/doctor`: DeepChart (`app/doctor/page.tsx`, API client `lib/emer/portal.ts`), doctor login only, **blue** background (`.theme-doctor` in `globals.css`). `/p/<token>`: the patient link (`app/p/page.tsx`, one static page; FastAPI serves it for every `/p/...`), asks for the date of birth first. The board hospital is Johns Hopkins; the two outside hospitals are fictional (`backend/deepchart/records.py`); doctors pick their name at login (`DOCTORS` in `backend/deepchart/access.py`). Board hold cards (`Decisions` in `components/emer/board/parts.tsx`) link to `/doctor?pid=&hold=`.
 - Data: `lib/emer/useEvents.js` + `api.js` + `mock.js` (copied from `frontend/src`), shared through `lib/emer/hospital.tsx` (`useHospital()`).
 - Style: vanilla background (`#fbf6ea`), Inter only, solid dark cards (`.card-dark`) and plain white cards (`.glass`), no gradients or glow. Brand is written **EmerFlow**. Header: `components/ui/header.tsx`, rendered by `Nav`.
 - Read `web/AGENTS.md`: Next 16 differs from older versions; check `web/node_modules/next/dist/docs/`.
 
-**Classic frontend: `frontend/`** (React + Vite): the older board, the DeepChart doctor portal and the patient phone view. `src/useEvents.js` reduces SSE events into state; `src/mock.js` fakes the event stream.
+**Classic frontend: `frontend/`** (React + Vite): the older board and older DeepChart screens (no longer served at `/doctor` or `/p/`; `web/` has them). `src/useEvents.js` reduces SSE events into state; `src/mock.js` fakes the event stream.
 
-**Who owns what** (several Claude sessions work here): DeepChart owns `backend/deepchart/*`, `frontend/src/deepchart/*`, `frontend/src/auth/*`. The EMS session owns `web/components/ems/*` and `web/lib/emer/hospitals.ts`. Tell the owner before editing their files.
+**Who owns what** (several Claude sessions work here): DeepChart owns `backend/deepchart/*`, `frontend/src/deepchart/*`, `frontend/src/auth/*`, `web/app/doctor/*`, `web/app/p/*`, `web/lib/emer/portal.ts`. The EMS session owns `web/components/ems/*` and `web/lib/emer/hospitals.ts`. Tell the owner before editing their files.
 
 ## Rules that must not break
 - **LLMs never do bed arithmetic** and never pick bed numbers. The coordinator picks units; code validates everything.

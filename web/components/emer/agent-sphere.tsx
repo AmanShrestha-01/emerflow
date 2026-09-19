@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import SphereImageGrid, { type ImageData } from "@/components/ui/img-sphere"
 import { AGENTS, agentOrb } from "@/lib/emer/agents"
 
-// The nine agents as a 3D swarm: each appears several times so the sphere reads as many voices at once.
+// The eleven agents as a 3D swarm: each appears several times so the sphere reads as many voices at once.
 export function AgentSphere() {
   const [size, setSize] = useState(520)
   useEffect(() => {

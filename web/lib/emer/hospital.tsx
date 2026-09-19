@@ -10,19 +10,20 @@ export type Unit = { unit: string; beds: number; occupied: number; reserved: num
 export type Patient = {
   pid: string; name?: string; age?: number; complaint: string; severity: number; state: string; unit?: string | null
   waited?: number; eta?: number | null; need?: string; note?: string; note_by?: string; heading_to?: string | null
-  bp?: string; hr?: number; spo2?: number
+  bp?: string; hr?: number; spo2?: number; needs_ct?: boolean; needs_xray?: boolean; needs_labs?: boolean
+  improving?: boolean; ready_for_discharge?: boolean; incident?: string
 }
 export type Approval = { approval_id: string; action: string; sentence?: string; detail?: string; reason?: string }
 export type HState = {
   clock: number; level: number; level_name?: string; paused: boolean; speed: number; mode?: string; clock_start?: number
   units: Unit[]; patients: Patient[]; approvals: Approval[]; holds: any[]; metrics: Record<string, number>
-  busy_until?: number | null; bus_crash_at?: number | null; diversion?: boolean
+  busy_until?: number | null; bus_crash_at?: number | null; diversion?: boolean; incident?: string
 }
 export type FeedEvent = { id?: number; type: string; clock?: number; cycle_id?: string | null; round?: string | null; data?: any }
 export type Message = { id: number; from: string; to?: string[]; kind?: string; persona?: string; text: string; pids?: string[]; cycle_id?: string | null; how?: string }
 export type Ev = {
   state: HState | null; feed: FeedEvent[]; messages: Message[]; typing: Record<string, { cycle_id?: string }>
-  source: "live" | "mock" | null; connected: boolean; error: string | null
+  source: "live" | "mock" | null; connected: boolean; error: string | null; refresh?: () => void
 }
 
 type Toast = { id: number; text: string; bad?: boolean }
@@ -56,7 +57,8 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
       if (ok) toast(typeof ok === "function" ? ok(r) : ok)
       return r
     } catch (e) {
-      toast((e as Error).message, true)
+      const msg = (e as Error).message
+      toast(/no longer pending/.test(msg) ? "That decision was already made or has expired." : msg, true)
       throw e
     }
   }, [toast])

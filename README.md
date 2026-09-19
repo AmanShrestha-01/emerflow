@@ -14,7 +14,8 @@ disagree across the patient's records, and one human approves the big actions.
 | `backend/deepchart/` | DeepChart portal: records per hospital, identity matching, merged chart, sessions |
 | `backend/gate.py`, `engine.py`, `main.py` | The records check, the running loop, and the FastAPI app |
 | `frontend/src/hospital/` | The command board screens |
-| `frontend/src/deepchart/` | The doctor portal (`/doctor`) and patient link (`/p/<token>`) |
+| `web/app/doctor/`, `web/app/p/` | DeepChart in the Next.js site: the doctor portal (`/doctor`) and the patient link (`/p/<token>`) |
+| `frontend/src/deepchart/` | The older Vite DeepChart screens (still build; no longer served at `/doctor` or `/p/`) |
 | `frontend/agent-workflow/` | Vendored agent-workflow UI package (see its `SOURCE.md`) |
 | `tests/` | pytest suite (`EMERFLOW_STUB=1 .venv/bin/pytest`) |
 | `tools/` | One-off scripts, such as recording a 20-patient run |
@@ -25,9 +26,12 @@ disagree across the patient's records, and one human approves the big actions.
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 EMERFLOW_STUB=1 .venv/bin/uvicorn backend.main:app --port 8000 --timeout-graceful-shutdown 5   # backend, stub mode (works offline)
-cd frontend && npm install && npm run dev                           # board at http://localhost:5173
+cd web && npm install && npm run dev                                # the site at http://localhost:3100 (proxies /api to :8000)
 ```
-Press **MASS CASUALTY**. `?mock=1` runs the board with a fake event stream and no backend.
+Or build the site once (`cd web && npm run build`) and open http://localhost:8000: FastAPI serves `web/out`. Rebuild after every `web/` change.
+
+Log in at `/login` (PIN `demo`), open the board and press **Bus crash**. `/board?mock=1` runs the board with a fake event stream and no backend.
+Add `EMERFLOW_RECORDS_CHECK=1` to the backend command to have DeepChart hold moves whose records disagree.
 
 Tests: `EMERFLOW_STUB=1 .venv/bin/pytest`
 
@@ -68,28 +72,39 @@ Escalation levels:
 \* needs human approval
 
 ## Logging in
-One staff login for the whole app (PIN `demo`): pick the hospital, then a role.
-- **Commander** lands on the command board (`/`).
+One staff login for the whole app at `/login` (PIN `demo`): pick the hospital, then a role.
+- **Hospital** (commander) lands on the command board (`/board`).
 - **Doctor** lands in DeepChart (`/doctor`).
-- **Patients** never log in; they get a private link (`/p/<token>`).
+- **Patients** never get a staff login. They get a private link (`/p/<token>`) and confirm their date of birth to open it.
 
-The board shows who's logged in, with **DeepChart** and **Log out**, in the bottom-right corner. `/?mock=1` skips the login for the offline demo.
+`/board?mock=1` skips the login for the offline demo.
 
 ## DeepChart portal
-Log in as a **doctor** at **Emer Flow General**, the board hospital:
+DeepChart checks that a patient's records agree. Moves are only held for it when the records check is on:
+`EMERFLOW_RECORDS_CHECK=1` (it's off by default).
+
+Log in as a **doctor** at **Johns Hopkins Hospital**, the board hospital, and pick your name (e.g. Dr. Amara Whitfield). The hospitals, doctors and patients are all fictional. Your name goes on everything you do:
 - The patient list puts held and conflicting patients first.
-- Pick a reason for access, then use **Look up other hospitals** to pull the same patient's records from Hospital B
-  (cardiology) and Hospital C (primary care). Hospital C also holds lookalikes: same name and birthday, but a different
-  person. Those show as **POSSIBLE**, and nothing links without a click.
+- Pick a reason for access, then use **Look up other hospitals** to pull the same patient's records from Fells Point Heart Institute
+  (cardiology) and Hampden Family Health (primary care). Hampden also holds lookalikes: same name and birthday, but a different
+  person. Those show as **Possible match**, and nothing links without a click.
 - The merged chart shows every value with its source and date: conflicts first, then agreements, then gaps.
+- **Add to the record** saves the doctor's own finding as one more source ("Johns Hopkins Hospital - Doctor's entry"). It sits next to
+  the other versions and never replaces or hides them.
 - An order that relies on a disputed fact gets `VERIFICATION REQUIRED` and needs a written reason. It never blocks and never says which record is right.
+- A move the board is holding shows on the chart with **Records checked: move** and **Don't move**. On the board, the same hold is a
+  card under "Big decisions for you" with **Check records in DeepChart**.
 
-Log in as **Hospital B** to transfer one of its patients. They arrive on the board with both records attached.
+Log in as a doctor at **Fells Point Heart Institute** (e.g. Dr. Samuel Achebe) to transfer one of its patients. They arrive on the board with both records attached.
 
-Each patient can get a private link at **`/p/<token>`**. It shows their status and who viewed their record, never clinical detail.
+Each patient can get a private link at **`/p/<token>`**. The patient confirms their date of birth first; five wrong tries lock the link,
+and the doctor makes a new one. It shows their status, which hospitals' records are in use (names and dates only), and who opened their
+record. It never shows clinical detail.
 
 `GET /api/deepchart/score` checks the results against the answer key. After one 25-patient surge (seed 7) it's 11/11 record
 conflicts and 11/11 lookalikes, with no false alarms. That's plain code checking conflicts we planted, so it isn't a claim about real-world records.
+
+Can this be built for real? See `docs/deepchart/legal.md` (research with sources, not legal advice).
 
 Spec: `docs/deepchart/spec.md` · Build notes: `docs/deepchart/build-plan.md` · Routes: `CONTRACT.md` → "DeepChart portal".
 

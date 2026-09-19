@@ -83,6 +83,11 @@
   font-weight: 600;
 }
 
+.emf-tooltip-title {
+  display: block;
+  font-weight: 700;
+}
+
 .emf-map .leaflet-popup-content-wrapper {
   border-radius: 8px;
   box-shadow: 0 4px 16px rgb(15 23 42 / 0.12);
@@ -153,4 +158,37 @@
 @keyframes emf-halo {
   from { transform: scale(0.7); opacity: 0.9; }
   to { transform: scale(1.9); opacity: 0; }
+}
+
+/* Label beside a hospital receiving casualties in a what-if run: name, people by triage color, ambulances on the way */
+.emf-count {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font: 600 11px/14px Inter, system-ui, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+}
+.emf-count b {
+  margin-right: 2px;
+  font-weight: 700;
+}
+.emf-count i {
+  font-style: normal;
+  font-weight: 700;
+  color: #fff;
+  padding: 0 5px;
+  border-radius: 5px;
+}
+.emf-count em {
+  font-style: normal;
+  margin-left: 3px;
+  color: #555;
 }

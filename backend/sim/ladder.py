@@ -56,8 +56,8 @@ def _make_room(h: Hospital, unit: str, moves: list[PlanMove], depth: int = 0) ->
 
 def _place(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
     opts = OPTIONS[p.severity]
-    if p.severity == 3 and p.needs_ct and not p.ct_done:
-        opts = ["ER", "HALLWAY"]  # must be scanned before a close-watch or ward bed
+    if p.severity == 3 and p.tests_pending():
+        opts = ["ER", "HALLWAY"]  # scans and lab results must be back before a close-watch or ward bed
     for unit in opts:
         if _try(h, p.pid, None, unit, "admit", f"{p.need or 'Needs care'}: {place(unit)} was free", moves):
             return True
@@ -72,7 +72,8 @@ def boarders(h: Hospital) -> list[Patient]:
     """Patients admitted from the ER who are still sitting in an ER bed ("boarding"), sickest first."""
     ps = [p for u in ("ER", "HALLWAY") for p in h.in_unit(u)
           if p.severity <= 3 and p.pid not in h.locked and not p.needs_surgery and p.moved_at is not None
-          and h.clock - p.moved_at >= BOARD_AFTER and not (p.needs_ct and not p.ct_done)]
+          and h.clock - p.moved_at >= BOARD_AFTER and not (p.needs_ct and not p.ct_done)
+          and not (p.severity >= 3 and p.tests_pending())]  # intensive care never waits on an X-ray or labs
     return sorted(ps, key=lambda p: (p.severity, p.moved_at))
 
 

@@ -112,6 +112,11 @@ def check_move(move: Move, hospital: "Hospital", *, level: int | None = None) ->
         return f"{p.pid} is not improving enough to leave ICU"
     if p.needs_ct and not p.ct_done and move.to_unit in ("STEPDOWN", "WARD", "OR", "HOME", "PARTNER"):
         return f"{p.pid} is waiting for a CT scan"
+    if move.to_unit in ("STEPDOWN", "WARD", "LOUNGE", "HOME", "PARTNER"):
+        if p.needs_xray and not p.xray_done:
+            return f"{p.pid} is waiting for an X-ray"
+        if p.needs_labs and not p.labs_done:
+            return f"{p.pid} is waiting for lab results"
     if move.to_unit == "OR" and p.needs_blood and not hospital.blood_available(p.blood_type, 2):
         return f"not enough {p.blood_type} blood for {p.pid}"
 

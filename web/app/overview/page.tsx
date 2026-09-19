@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { motion } from "motion/react"
 import {
-  Ambulance, ArrowRight, BedDouble, BrainCircuit, CheckCircle2, Clock3, Hand, MessagesSquare, Play, ShieldCheck, Sparkles, Zap,
+  Ambulance, ArrowRight, BedDouble, BrainCircuit, CheckCircle2, Clock3, Hand, MessagesSquare, ShieldCheck, Sparkles, Zap,
 } from "lucide-react"
 import { Nav } from "@/components/emer/nav"
 import { AgentSphere } from "@/components/emer/agent-sphere"
@@ -17,7 +17,7 @@ const MAIN = ["RESUS", "ER", "ICU", "STEPDOWN", "WARD"]
 const STEPS = [
   { icon: Ambulance, who: "rules", title: "Patients arrive", body: "Walk-ins, ambulances, or a whole bus crash at once." },
   { icon: Zap, who: "rules", title: "Rules place the obvious", body: "A critical patient gets the critical care room instantly. No AI, no waiting." },
-  { icon: MessagesSquare, who: "ai", title: "Eight department AIs talk", body: "Each reports its beds, asks the others questions, and offers who could move on." },
+  { icon: MessagesSquare, who: "ai", title: "Ten department AIs talk", body: "Each reports its beds, asks the others questions, and offers who could move on." },
   { icon: BrainCircuit, who: "ai", title: "One plan for the hospital", body: "The coordinator chains the moves: ward → home, close-watch → ward, ICU → close-watch." },
   { icon: Hand, who: "human", title: "Rules check, a person decides", body: "Every move is checked. Calling in nurses or postponing surgery waits for a yes." },
 ]
@@ -69,7 +69,7 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-sm font-semibold text-ink ring-1 ring-white">
               <span className="size-2 rounded-full bg-ai animate-pulse-dot" />
-              9 AI agents on shift{st ? ` · ${full} of ${total} beds in use` : ""}
+              11 AI agents on shift{st ? ` · ${full} of ${total} beds in use` : ""}
             </p>
             <TextReveal
               as="h1"
@@ -78,19 +78,13 @@ export default function Home() {
               speedReveal={1.2}
               className="mt-6 max-w-[14ch] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.05] tracking-tight text-ink"
             >
-              When the ER fills up, nine AIs find the beds.
+              When the ER fills up, eleven AIs find the beds.
             </TextReveal>
             <TextReveal as="p" per="word" preset="fade" delay={0.45} speedReveal={3} className="mt-6 max-w-[52ch] text-lg leading-relaxed text-ink-soft">
               Every department gets its own AI. They talk to each other, agree one plan to free beds, and the hospital rules check every move. Big calls wait for a person.
             </TextReveal>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                href="/board?demo=1"
-                className="inline-flex items-center gap-2.5 rounded-xl bg-ink px-6 py-3.5 text-base font-semibold text-white"
-              >
-                <Play className="size-4 fill-current" /> Start the guided demo
-              </Link>
-              <Link href="/board" className="glass inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-ink">
+              <Link href="/board" className="inline-flex items-center gap-2 rounded-xl bg-ink px-6 py-3.5 text-base font-semibold text-white">
                 Open the command board <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
@@ -207,10 +201,10 @@ export default function Home() {
         <div className="card-dark relative overflow-hidden rounded-2xl px-8 py-14 sm:px-14">
           <h2 className="relative max-w-[20ch] font-heading text-4xl font-bold tracking-tight">See a bus crash handled in three minutes.</h2>
           <p className="relative mt-3 max-w-[56ch] text-lg text-white/75">
-            The guided demo walks through five steps on the live hospital. At the end, you make the call.
+            Press Bus crash on the board and watch the agents find beds. At the end, you make the call.
           </p>
-          <Link href="/board?demo=1" className="relative mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-ink">
-            <Play className="size-4 fill-current" /> Start the guided demo
+          <Link href="/board" className="relative mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-ink">
+            Open the command board <ArrowRight className="size-4" />
           </Link>
         </div>
         <p className="mt-8 text-center text-sm text-ink-soft">EmerFlow · HopHacks 2026 · All patient data is synthetic.</p>

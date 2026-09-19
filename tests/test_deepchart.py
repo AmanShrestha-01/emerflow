@@ -34,8 +34,8 @@ def _id(**kw):
 # ---------- the board is untouched ----------
 def test_board_scenario_output_is_unchanged(eng):
     h, key = build_hospital(7)
-    assert [s.source_name for s in h.patients["IN-01"].sources] == ["Local intake", "Hospital B - Cardiology"]
-    assert [s.source_name for s in eng.h.patients["IN-01"].sources] == ["Local intake", "Hospital B - Cardiology"]
+    assert [s.source_name for s in h.patients["IN-01"].sources] == ["Local intake", "Fells Point Heart - Cardiology"]
+    assert [s.source_name for s in eng.h.patients["IN-01"].sources] == ["Local intake", "Fells Point Heart - Cardiology"]
     assert key == eng.key[:len(key)]
 
 
@@ -124,7 +124,7 @@ def test_order_on_conflicting_fact_warns_and_needs_a_reason(eng):
     assert o["status"] == "needs_ack" and o["warnings"][0]["fact"] == "anticoagulant"
     with pytest.raises(ValueError):
         eng.portal.ack(DOC, o["order_id"], "  ")
-    assert eng.portal.ack(DOC, o["order_id"], "called Hospital B")["status"] == "saved"
+    assert eng.portal.ack(DOC, o["order_id"], "called Fells Point Heart Institute")["status"] == "saved"
     assert "anticoagulant" in eng.h.patients[pid].verified
     assert eng.portal.order(DOC, pid, "again", ["anticoagulant"])["warnings"] == []
 
@@ -155,23 +155,98 @@ def test_only_hospital_b_sends_transfers(eng):
         eng.portal.transfer(DOC, "HB-01", HOME)
 
 
+# ---------- demo doctors ----------
+def test_doctors_log_in_by_name_and_the_name_is_logged(eng):
+    from backend.deepchart.access import DOCTORS, Access
+    acc = Access()
+    doc = acc.login(HOME, "doctor", "demo", DOCTORS[HOME][1])
+    assert doc.name == DOCTORS[HOME][1]
+    assert acc.login(HOME, "doctor", "demo").name == DOCTORS[HOME][0]  # no pick: the first doctor
+    assert acc.login(HOME, "commander", "demo").name == ""
+    with pytest.raises(ValueError):
+        acc.login(HOME, "doctor", "demo", DOCTORS[HOSP_B][0])  # not a doctor at this hospital
+    pid = _planted(eng)
+    eng.portal.chart(doc, pid, "er")
+    assert eng.portal.access_log(doc, pid)[-1]["name"] == DOCTORS[HOME][1]
+    link = eng.portal.patient_link(doc, pid)
+    v = eng.portal.patient_view(link["token"], eng.portal.reg.identity(pid).dob)
+    assert v["access_log"][-1]["name"] == DOCTORS[HOME][1]
+
+
+def test_demo_doctors_never_share_a_name_with_a_patient():
+    from backend.deepchart.access import DOCTORS
+    from backend.sim.scenarios import FIRST, LAST
+    for names in DOCTORS.values():
+        for n in names:
+            first, last = n.removeprefix("Dr. ").split()
+            assert first not in FIRST and last not in LAST
+
+
+# ---------- a doctor's own record entry ----------
+def test_doctor_entry_is_one_more_source_and_never_hides_the_others(eng):
+    pid = _planted(eng)
+    before = next(f for f in merged(eng.h.patients[pid]) if f["fact"] == "anticoagulant")
+    r = eng.portal.add_entry(DOC, pid, "anticoagulant", "warfarin 5mg", "active", "er")
+    assert r["source_name"] == f"{HOME} - Doctor's entry"
+    after = next(f for f in merged(eng.h.patients[pid]) if f["fact"] == "anticoagulant")
+    assert len(after["versions"]) == len(before["versions"]) + 1
+    assert after["kind"] == "conflict"  # adding a version never settles a disagreement on its own
+    eng.portal.add_entry(DOC, pid, "blood_type", "O+", "present", "er")
+    assert len([s for s in eng.h.patients[pid].sources if s.source_id == "doctor"]) == 1  # one entry source
+    chart = eng.portal.chart(DOC, pid, "er")
+    assert any(s["hospital"] == HOME and s["source_name"].endswith("Doctor's entry") for s in chart["sources"])
+
+
+def test_doctor_entry_needs_a_reason_and_a_known_fact(eng):
+    pid = _planted(eng)
+    with pytest.raises(Forbidden):
+        eng.portal.add_entry(DOC, pid, "blood_type", "O+", "present", None)
+    with pytest.raises(ValueError):
+        eng.portal.add_entry(DOC, pid, "shoe_size", "9", "present", "er")
+    with pytest.raises(ValueError):
+        eng.portal.add_entry(DOC, pid, "blood_type", "  ", "present", "er")
+    with pytest.raises(Forbidden):
+        eng.portal.add_entry(DOC_B, pid, "blood_type", "O+", "present", "er")
+    assert eng.portal.add_entry(DOC, pid, "penicillin_allergy", "", "absent", "er")["ok"]
+
+
 # ---------- access log and patient link ----------
 def test_patient_view_has_log_but_no_clinical_detail(eng):
     pid = _planted(eng)
     eng.portal.chart(DOC, pid, "er")
     eng.portal.chart(DOC, pid, "er")  # same access twice is logged once
     o = eng.portal.order(DOC, pid, "start heparin drip", ["anticoagulant"])
-    eng.portal.ack(DOC, o["order_id"], "called Hospital B about warfarin")
+    eng.portal.ack(DOC, o["order_id"], "called Fells Point Heart Institute about warfarin")
     link = eng.portal.patient_link(DOC, pid)
-    v = eng.portal.patient_view(link["token"])
-    assert set(v) == {"first_name", "status_line", "access_log"}
+    v = eng.portal.patient_view(link["token"], eng.portal.reg.identity(pid).dob)
+    assert set(v) == {"first_name", "status_line", "records", "access_log"}
+    assert all(set(r) == {"hospital", "kind", "recorded_date"} for r in v["records"])  # where, never what
     assert v["access_log"][0]["reason"] == "Treating in the ER"
     text = json.dumps(v).lower()
     for word in ("warfarin", "disagree", "conflict", "anticoagulant", "heparin"):
         assert word not in text
     assert [e["action"] for e in v["access_log"]].count("opened the merged chart") == 1
     with pytest.raises(NotFound):
-        eng.portal.patient_view("nope")
+        eng.portal.patient_view("nope", "2000-01-01")
+
+
+def test_patient_link_needs_date_of_birth_and_locks_after_wrong_tries(eng):
+    pid = _planted(eng)
+    dob = eng.portal.reg.identity(pid).dob
+    token = eng.portal.patient_link(DOC, pid)["token"]
+    with pytest.raises(Forbidden):
+        eng.portal.patient_view(token, "")  # the link alone shows nothing, not even a first name
+    for _ in range(5):
+        with pytest.raises(Forbidden):
+            eng.portal.patient_view(token, "1900-01-01")
+    with pytest.raises(Forbidden):
+        eng.portal.patient_view(token, dob)  # locked, even with the right date
+    fresh = eng.portal.patient_link(DOC, pid)["token"]
+    assert fresh != token
+    with pytest.raises(NotFound):
+        eng.portal.patient_view(token, dob)  # the locked link is gone
+    assert eng.portal.patient_view(fresh, dob)["first_name"]
+    assert eng.portal.patient_link(DOC, pid)["token"] == fresh  # a working link is reused
 
 
 # ---------- scoring ----------
@@ -188,7 +263,13 @@ def test_http_demo_flow():
     c = TestClient(app)
     assert c.get("/api/portal/patients").status_code == 401
     assert c.post("/api/login", json={"hospital": HOME, "role": "doctor", "pin": "wrong"}).status_code == 403
-    tok = c.post("/api/login", json={"hospital": HOME, "role": "doctor", "pin": "demo"}).json()["token"]
+    hs = c.get("/api/hospitals").json()
+    assert all(len(h["doctors"]) == 3 for h in hs)
+    who = next(h for h in hs if h["name"] == HOME)["doctors"][2]
+    r = c.post("/api/login", json={"hospital": HOME, "role": "doctor", "pin": "demo", "doctor": who}).json()
+    assert r["name"] == who
+    tok = r["token"]
+    assert c.get("/api/me", headers={"X-Session": tok}).json()["name"] == who
     hd = {"X-Session": tok}
     pid = _planted(app_engine)
     assert c.get(f"/api/chart/{pid}", headers=hd).status_code == 403  # no reason for access
@@ -203,7 +284,9 @@ def test_http_demo_flow():
     assert o["status"] == "needs_ack"
     assert c.post(f"/api/orders/{o['order_id']}/ack", headers=hd, json={"reason": "called"}).json()["status"] == "saved"
     link = c.post("/api/patient-link", headers=hd, json={"pid": pid}).json()
-    view = c.get(f"/api/p/{link['token']}").json()
+    assert c.get(f"/api/p/{link['token']}").status_code in (404, 405)  # never by GET: the date of birth stays out of URLs
+    assert c.post(f"/api/p/{link['token']}", json={"dob": ""}).status_code == 403
+    view = c.post(f"/api/p/{link['token']}", json={"dob": app_engine.portal.reg.identity(pid).dob}).json()
     assert len(view["access_log"]) >= 4
     assert c.get("/api/deepchart/score").json()["records"]["recall"] == 1.0
 
@@ -243,7 +326,7 @@ def test_me_reports_the_session_and_401s_when_stale():
     assert c.get("/api/me").status_code == 401
     assert c.get("/api/me", headers={"X-Session": "stale"}).status_code == 401
     tok = c.post("/api/login", json={"hospital": HOME, "role": "commander", "pin": "demo"}).json()["token"]
-    assert c.get("/api/me", headers={"X-Session": tok}).json() == {"hospital": HOME, "role": "commander"}
+    assert c.get("/api/me", headers={"X-Session": tok}).json() == {"hospital": HOME, "role": "commander", "name": ""}
 
 
 def test_commander_only_at_the_board_hospital():

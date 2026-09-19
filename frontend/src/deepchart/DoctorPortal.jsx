@@ -96,9 +96,9 @@ export default function DoctorPortal() {
         </nav>
       </header>
       {session.hospital === HOME && <HomeDesk session={session} onError={onError} />}
-      {session.hospital === 'Hospital B' && <SenderDesk session={session} onError={onError} />}
-      {session.hospital === 'Hospital C' && (
-        <p className="dc-empty">Hospital C only holds records in this demo. Log in to {HOME} or Hospital B.</p>
+      {session.hospital === 'Fells Point Heart Institute' && <SenderDesk session={session} onError={onError} />}
+      {session.hospital === 'Hampden Family Health' && (
+        <p className="dc-empty">Hampden Family Health only holds records in this demo. Log in to {HOME} or Fells Point Heart Institute.</p>
       )}
     </div>
   )
@@ -118,7 +118,7 @@ function usePoll(fn, ms, deps) {
   }, deps)
 }
 
-// ---------------------------------------------------------------- Hospital B: send a transfer
+// ---------------------------------------------------------------- Fells Point Heart Institute: send a transfer
 function SenderDesk({ session, onError }) {
   const [rows, setRows] = useState([])
   const [msg, setMsg] = useState(null)
@@ -144,7 +144,7 @@ function SenderDesk({ session, onError }) {
   if (session.role !== 'doctor') return <p className="dc-empty">The portal is for doctors. Commanders use the board.</p>
   return (
     <main className="dc-single">
-      <h2 className="dc-h2">Your patients at Hospital B</h2>
+      <h2 className="dc-h2">Your patients at Fells Point Heart Institute</h2>
       {msg && <p className="dc-toast">{msg}</p>}
       <ul className="dc-list">
         {rows.map((p) => (
@@ -167,7 +167,7 @@ function SenderDesk({ session, onError }) {
   )
 }
 
-// ---------------------------------------------------------------- Emer Flow General: the desk
+// ---------------------------------------------------------------- Johns Hopkins Hospital: the desk
 function HomeDesk({ session, onError }) {
   const [rows, setRows] = useState([])
   const [inbox, setInbox] = useState([])

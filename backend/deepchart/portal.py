@@ -17,12 +17,18 @@ from backend import gate
 from backend.deepchart import match
 from backend.deepchart.access import REASONS, Session
 from backend.deepchart.chart import check_order, conflicts_json, merged
-from backend.deepchart.records import HOME, HOSP_B, HOSPITALS, Identity, Registry
-from backend.sim.models import FACTS, Patient
-from backend.sim.scenarios import plant
+from backend.deepchart.records import HOME, HOSP_B, HOSP_C, HOSPITALS, Identity, Registry
+from backend.sim.models import FACTS, Claim, Patient, SourceRecord
+from backend.sim.scenarios import TODAY, plant
 from backend.sim.words import place
 
+LINK_TRIES = 5  # wrong dates of birth before a patient link locks (the doctor then makes a new one)
 TRANSFER_ETA = 8  # sim minutes from "send" to arrival at HOME
+ENTRY_SOURCE = "doctor"  # source_id of the records a doctor writes in the portal
+ENTRY_STATUS = ("present", "active", "stopped", "absent")
+# What each source is, in words a patient can read (never what it says)
+PUBLIC_KIND = {"local": "when you arrived", ENTRY_SOURCE: "your doctor's notes", "hospital_b": "earlier visits",
+               "hospital_c": "your primary care"}
 
 UNIT_WORDS = {"RESUS": "the resuscitation room", "ER": "the emergency department", "HALLWAY": "an emergency bed",
               "ICU": "intensive care", "STEPDOWN": "the close-watch beds", "WARD": "a ward", "OR": "surgery",
@@ -47,6 +53,7 @@ class Order:
     status: str  # "saved" | "needs_ack"
     by: str
     reason: str = ""
+    by_name: str = ""
 
 
 @dataclass
@@ -69,6 +76,7 @@ class PortalState:
     orders: dict[str, Order] = field(default_factory=dict)
     transfers: list[Transfer] = field(default_factory=list)
     links: dict[str, str] = field(default_factory=dict)           # patient-link token -> pid
+    link_misses: dict[str, int] = field(default_factory=dict)     # token -> wrong date-of-birth tries
 
 
 class Portal:
@@ -107,16 +115,20 @@ class Portal:
     def _log(self, sess: Session, pid: str, action: str, reason: str | None = None, public: str | None = None) -> None:
         """`action` is for staff; `public` is what the patient sees (never clinical detail)."""
         entry = {"at": _dt.datetime.now().strftime("%H:%M:%S"), "clock": self.h.clock, "pid": pid,
-                 "hospital": sess.hospital, "role": sess.role, "action": action,
+                 "hospital": sess.hospital, "role": sess.role, "name": sess.name, "action": action,
                  "public": public or action, "reason": REASONS.get(reason or "", "")}
         last = next((e for e in reversed(self.s.log) if e["pid"] == pid), None)
-        same = ("hospital", "role", "action", "reason")
+        same = ("hospital", "role", "name", "action", "reason")
         if last and all(last[k] == entry[k] for k in same):
             return  # re-opening the same chart for the same reason is one access, not many
         self.s.log.append(entry)
 
     def _linked(self, p: Patient, source) -> bool:
         return any(s is source for s in p.sources)
+
+    @staticmethod
+    def _source_hospital(s: SourceRecord) -> str:
+        return {"local": HOME, "hospital_b": HOSP_B, ENTRY_SOURCE: HOME}.get(s.source_id, HOSP_C)
 
     def _hold(self, pid: str) -> dict | None:
         return next((x for x in self.h.snapshot()["holds"] if x["pid"] == pid), None)
@@ -211,8 +223,7 @@ class Portal:
         return {
             "patient": self.h.patient_row(p), "hospital": sess.hospital, "identity": self.reg.identity(pid).__dict__,
             "sources": [{"source_name": s.source_name, "recorded_date": s.recorded_date,
-                         "hospital": {"local": HOME, "hospital_b": HOSP_B}.get(s.source_id, "Hospital C")}
-                        for s in p.sources],
+                         "hospital": self._source_hospital(s)} for s in p.sources],
             "facts": facts, "hold": hold,
             "orders": [o.__dict__ for o in self.s.orders.values() if o.pid == pid],
             "notice": gate.NOTICE if hold or any(f["kind"] == "conflict" for f in facts) else "",
@@ -238,6 +249,32 @@ class Portal:
                       public="double-checked your records")
         return {"ok": True, "detail": detail, "outcome": outcome, "to_unit": to_unit}
 
+    # ---------- a doctor's own record entry ----------
+    def add_entry(self, sess: Session, pid: str, fact: str, value: str, status: str, reason: str | None) -> dict:
+        """The doctor writes what they found. It becomes one more source ("<hospital> - Doctor's entry"), compared
+        by the same gate as every other source. It never replaces, hides or outranks another source's version."""
+        self._need_doctor(sess)
+        reason = self._need_reason(reason)
+        p = self._need_home(sess, pid)
+        if fact not in FACTS:
+            raise ValueError(f"unknown fact: {fact}")
+        if status not in ENTRY_STATUS:
+            raise ValueError(f"status must be one of {', '.join(ENTRY_STATUS)}")
+        value = (value or "").strip() or ("none recorded" if status == "absent" else "")
+        if not value:
+            raise ValueError("write what you found")
+        src = next((s for s in p.sources if s.source_id == ENTRY_SOURCE), None)
+        if src is None:
+            src = SourceRecord(ENTRY_SOURCE, f"{sess.hospital} - Doctor's entry", TODAY.isoformat())
+            p.sources.append(src)
+        n = sum(1 for e in self.s.log if e["pid"] == pid and e["action"].startswith("added a record entry")) + 1
+        src.claims[fact] = Claim(fact, value[:120], status, f"Observation/dr-{pid}-{fact}-{n}")
+        self.h.version += 1
+        conflict = next((f for f in merged(p) if f["fact"] == fact and f["kind"] == "conflict"), None)
+        self.e.emit("record.added", {"pid": pid, "fact": fact, "hospital": sess.hospital, "conflict": bool(conflict)})
+        self._log(sess, pid, f"added a record entry ({fact}: {value[:60]})", reason, public="added a note to your record")
+        return {"ok": True, "fact": fact, "source_name": src.source_name, "kind": conflict["kind"] if conflict else "ok"}
+
     # ---------- orders ----------
     def order(self, sess: Session, pid: str, text: str, because: list[str]) -> dict:
         self._need_doctor(sess)
@@ -249,7 +286,7 @@ class Portal:
             raise ValueError(f"unknown facts: {', '.join(bad)}")
         warnings = conflicts_json(check_order(p, because))
         o = Order(self.h.next_id("O"), pid, text.strip(), list(because), warnings,
-                  "needs_ack" if warnings else "saved", sess.hospital)
+                  "needs_ack" if warnings else "saved", sess.hospital, by_name=sess.name)
         self.s.orders[o.order_id] = o
         if warnings:
             self.e.emit("order.warning", {"order_id": o.order_id, "pid": pid, "because": o.because,
@@ -278,7 +315,7 @@ class Portal:
     def transfer(self, sess: Session, pid: str, to_hospital: str) -> dict:
         self._need_doctor(sess)
         if sess.hospital != HOSP_B or pid not in self.reg.roster:
-            raise Forbidden("only Hospital B's own patients can be sent in this demo")
+            raise Forbidden("only Fells Point Heart Institute's own patients can be sent in this demo")
         if to_hospital != HOME:
             raise ValueError(f"transfers go to {HOME}")
         if any(t.from_pid == pid for t in self.s.transfers):
@@ -314,14 +351,30 @@ class Portal:
     def patient_link(self, sess: Session, pid: str) -> dict:
         self._need_doctor(sess)
         self._need_home(sess, pid)
-        token = next((t for t, x in self.s.links.items() if x == pid), None) or secrets.token_urlsafe(9)
-        self.s.links[token] = pid
+        token = next((t for t, x in self.s.links.items()
+                      if x == pid and self.s.link_misses.get(t, 0) < LINK_TRIES), None)
+        if token is None:  # first link, or the old one locked after too many wrong tries: issue a fresh one
+            for old in [t for t, x in self.s.links.items() if x == pid]:
+                del self.s.links[old]
+            token = secrets.token_urlsafe(16)
+            self.s.links[token] = pid
         return {"token": token, "path": f"/p/{token}"}
 
-    def patient_view(self, token: str) -> dict:
+    def patient_view(self, token: str, dob: str | None) -> dict:
+        """The link alone shows nothing: the patient confirms their date of birth first."""
         pid = self.s.links.get(token)
         if pid is None or pid not in self.h.patients:
             raise NotFound("this link is not valid")
+        if self.s.link_misses.get(token, 0) >= LINK_TRIES:
+            raise Forbidden("this link is locked; ask staff for a new one")
+        if not (dob or "").strip():
+            raise Forbidden("enter your date of birth")
+        if dob.strip() != self.reg.identity(pid).dob:
+            self.s.link_misses[token] = self.s.link_misses.get(token, 0) + 1
+            left = LINK_TRIES - self.s.link_misses[token]
+            raise Forbidden("that date of birth doesn't match" + (f" ({left} tries left)" if left else
+                                                                  "; this link is now locked"))
+        self.s.link_misses.pop(token, None)
         p = self.h.patients[pid]
         line = {
             "incoming": f"You're on your way to {HOME}. The team knows you're coming.",
@@ -332,7 +385,10 @@ class Portal:
             "transferred": "You've been moved to another hospital.",
         }.get(p.state, "You're in our care.")
         return {"first_name": p.name.split()[0], "status_line": line,
-                "access_log": [{"at": e["at"], "hospital": e["hospital"], "role": e["role"],
+                # which hospitals' records the team is using: names and dates only, never what they say
+                "records": [{"hospital": self._source_hospital(s), "kind": PUBLIC_KIND.get(s.source_id, "earlier visits"),
+                             "recorded_date": s.recorded_date} for s in p.sources],
+                "access_log": [{"at": e["at"], "hospital": e["hospital"], "role": e["role"], "name": e.get("name", ""),
                                 "action": e["public"], "reason": e["reason"]}
                                for e in self.s.log if e["pid"] == pid]}
 

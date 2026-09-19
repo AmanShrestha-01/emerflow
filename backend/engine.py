@@ -6,6 +6,7 @@ import os
 import random
 import re
 import statistics
+import uuid
 
 from backend.agents.cycle import Swarm
 from backend.agents.llm import LLM
@@ -100,6 +101,7 @@ def _radio_stub(text: str) -> RadioParse:
     return RadioParse(patients=pts)
 
 
+DEFAULT_INCIDENT = "bus crash"  # what the board calls a surge nobody named
 SPEEDS = (0.25, 0.5, 1, 2, 5)  # sim-minutes per real second; 0.5 is the default demo pace
 
 
@@ -118,6 +120,7 @@ class Engine:
     # ---------- lifecycle ----------
     def reset(self, seed: int = 7) -> None:
         self.seed = seed
+        self.run_id = uuid.uuid4().hex[:8]  # changes on every restart and reset, so boards know to resync
         self.h, self.key = build_hospital(seed)
         self.portal = Portal(self)
         self.rng = random.Random(seed)
@@ -126,6 +129,7 @@ class Engine:
         self.last_cycle = -99
         self.surges = 0
         self.bus_crash_at: int | None = None
+        self.incident = DEFAULT_INCIDENT
         self.bus.reset()
         self.audit: list[dict] = []
         self.caught: set[tuple[str, str]] = set()   # (pid, fact) the records check caught before a move
@@ -182,11 +186,14 @@ class Engine:
             self.emit("notice", {"text": f"swarm cycle failed ({exc}); code fallback continues"})
 
     # ---------- inputs ----------
-    def surge(self, n: int = 25) -> int:
+    def surge(self, n: int = 25, incident: str = "") -> int:
         self.surges += 1
         self.bus_crash_at = self.h.clock
-        pts = mass_casualty(self.h, self.key, seed=self.seed + self.surges * 13, n=n, start=self.h.clock)
-        self.emit("notice", {"text": f"MASS CASUALTY: bus crash, {len(pts)} patients inbound"})
+        self.incident = incident or DEFAULT_INCIDENT
+        self.last_cycle = -99  # no gap: the next tick starts a round as soon as a crash patient arrives
+        pts = mass_casualty(self.h, self.key, seed=self.seed + self.surges * 13, n=n, start=self.h.clock,
+                            incident=self.incident)
+        self.emit("notice", {"text": f"MASS CASUALTY: {self.incident}, {len(pts)} patients inbound"})
         return len(pts)
 
     def busy_night(self, minutes: int = BUSY_MINUTES) -> int:
@@ -209,12 +216,13 @@ Use at most 30 patients. Do not add anyone not described.""",
         return {"draft_id": did, "patients": [p.model_dump() for p in out.patients]}
 
     def confirm_radio(self, draft_id: str) -> int:
-        from backend.sim.scenarios import _patient
+        from backend.sim.scenarios import UNIDENTIFIED, _patient
         pts = self.drafts.pop(draft_id)
         for rp in pts:
             p = _patient(self.h, self.rng, "RD", rp.severity, rp.complaint,
                          arrived_at=self.h.clock + max(1, rp.eta), state="incoming",
                          needs_ct=rp.severity <= 2)
+            p.name = UNIDENTIFIED
             give_records(p, self.rng)
             self.h.add_patient(p)
         self.emit("notice", {"text": f"Radio: {len(pts)} patients inbound"})
@@ -247,7 +255,7 @@ Use at most 30 patients. Do not add anyone not described.""",
         s = self.h.snapshot()
         s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused, "speed": self.speed,
                   "mode": self.llm.mode if not self.llm.breaker_open else "fallback",
-                  "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at,
+                  "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at, "run": self.run_id, "incident": self.incident,
                   "census": self.census})
         if include_feed:
             # Ticks are noise on reload; keep the conversation and decisions.

@@ -22,6 +22,8 @@ export interface SimulationState {
   place(point: LatLon): void;
   /** Place an incident and run it in one step (e.g. a "run the demo" button). */
   start(point: LatLon, casualties: number): void;
+  /** Put the incident somewhere with a size, ready to run (a quick example). */
+  choose(point: LatLon, casualties: number): void;
   setCasualties(n: number): void;
   run(): void;
   play(): void;
@@ -98,6 +100,15 @@ export function useSimulation(source: RegionSource, { frameMs = 650 }: { frameMs
     },
     place: (p) => {
       setPoint(p);
+      setPhase("ready");
+    },
+    choose: (p, n) => {
+      runId.current++;
+      setResult(null);
+      setFrame(0);
+      setError(null);
+      setPoint(p);
+      setCasualties(n);
       setPhase("ready");
     },
     setCasualties,

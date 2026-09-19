@@ -7,10 +7,14 @@ patient's records from other hospitals. The doctor sees them merged with every v
 shown, and gets a non-blocking DeepChart warning when an order relies on a fact the records
 disagree about.
 
-> **Status (2026-09-19): built.** All tasks are done except the offline `mock.js` routes for the portal (Task 7). `mock.js`
+> **Status (2026-09-19): built.** Each hospital has three demo doctors, picked at login. All tasks are done except the offline `mock.js` routes for the portal (Task 7). `mock.js`
 > belongs to the board, so the portal needs the backend. Where the build differs from the plan below:
-> - **Source names and scenarios are unchanged.** The board's `Local intake` / `Hospital B - Cardiology` sources stay as they are.
->   The demo hospitals are **Emer Flow General** (the board), **Hospital B** (cardiology, sends transfers), and **Hospital C** (primary care, lookalikes).
+> - **Scenarios are unchanged.** The board's `Local intake` / `Fells Point Heart - Cardiology` sources stay as they are.
+>   The demo hospitals are **Johns Hopkins Hospital** (the board), **Fells Point Heart Institute** (cardiology, sends transfers), and
+>   **Hampden Family Health** (primary care, lookalikes). They were first called Emer Flow General, Hospital B and Hospital C, then
+>   Johns Hopkins / Sinai / MedStar Union Memorial; the two outside ones are fictional now. The task text below still uses the plan's original names.
+> - **Screens moved** to the Next.js site (`web/app/doctor/`, `web/app/p/`). Added after the plan: the doctor's own record entry
+>   (`POST /api/chart/{pid}/entries`), a date-of-birth check on the patient link (`POST /api/p/{token}`), and hold cards on the web board.
 >   Identity details live in `backend/deepchart/records.py`, not on `Patient`, so `models.py` and `scenarios.py` are untouched.
 > - **Modules:** `backend/deepchart/{records,match,chart,access,portal}.py`, with no `backend/sim/records.py`.
 > - **The board routes stay open.** There's no `EMERFLOW_AUTH` flag. Sessions guard only the portal routes.

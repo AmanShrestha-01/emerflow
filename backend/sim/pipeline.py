@@ -69,7 +69,7 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
     reason = plain(m.reason, h)
     p.note = (reason[:1].upper() + reason[1:]) if reason else f"Moved to {place(m.to_unit)}"
     p.note_by = "A person (after checking the records)" if verified else BY.get(m.source, m.source)
-    emit("move.applied", {"move_id": m.move_id, "pid": p.pid, "from_unit": from_unit, "to_unit": m.to_unit,
+    emit("move.applied", {"move_id": m.move_id, "pid": p.pid, "name": p.name, "from_unit": from_unit, "to_unit": m.to_unit,
                           "source": m.source, "because": m.because, "reason": m.reason}, **ev)
     return "applied"
 

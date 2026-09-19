@@ -42,6 +42,8 @@ WALKIN_COMPLAINTS = [  # (severity, complaint): an everyday emergency-department
 ]
 BUSY_COMPLAINTS = [(3, "flu, short of breath"), (4, "flu, fever and aches"), (4, "flu, dehydrated"),
                    (3, "flu, elderly and confused"), (5, "flu, cough")]
+UNIDENTIFIED = "X"  # what the board shows for a casualty nobody has identified yet
+XRAY_WORDS = ("fracture", "broken", "fall", "sprain", "chest injury", "hip pain", "wrist", "ankle")
 CT_COMPLAINTS = ("stroke symptoms", "chest pain, sweaty", "fall, hip pain", "abdominal pain")
 BLOOD_TYPES = ["O+", "O+", "A+", "A+", "B+", "O-", "A-", "AB+"]
 
@@ -84,7 +86,7 @@ def give_records(p: Patient, rng: random.Random) -> None:
         if fact != "blood_type" and rng.random() < 0.12:
             del outside_claims[fact]  # "not mentioned" -> a gap, never a conflict
     days = rng.randint(14, 400)
-    outside = SourceRecord("hospital_b", "Hospital B - Cardiology",
+    outside = SourceRecord("hospital_b", "Fells Point Heart - Cardiology",
                            (TODAY - _dt.timedelta(days=days)).isoformat(), outside_claims)
     p.sources = [local, outside]
 
@@ -146,6 +148,9 @@ def _patient(h: Hospital, rng: random.Random, prefix: str, severity: int, compla
     p.needs_surgery = p.needs_surgery or surgery
     if p.needs_surgery and severity <= 2:
         p.needs_blood = True
+    if p.state in ("incoming", "waiting"):  # new ER arrivals get worked up; inpatients already were
+        p.needs_xray = any(w in complaint.lower() for w in XRAY_WORDS)
+        p.needs_labs = severity <= 3
     return p
 
 
@@ -191,8 +196,9 @@ def build_hospital(seed: int = 7) -> tuple[Hospital, list[dict]]:
     return h, key
 
 
-def mass_casualty(h: Hospital, key: list[dict], seed: int = 7, n: int = 25, start: int | None = None) -> list[Patient]:
-    """A bus crash: n patients arriving over the next ~12 minutes. Plants conflicts in some of them."""
+def mass_casualty(h: Hospital, key: list[dict], seed: int = 7, n: int = 25, start: int | None = None,
+                  incident: str = "") -> list[Patient]:
+    """A bus crash: n patients arriving over the next ~4 minutes. Plants conflicts in some of them."""
     rng = random.Random(seed * 1000 + 1)
     start = h.clock if start is None else start
     mix = [1] * 3 + [2] * 6 + [3] * 9 + [4] * 5 + [5] * 2
@@ -200,8 +206,10 @@ def mass_casualty(h: Hospital, key: list[dict], seed: int = 7, n: int = 25, star
     out: list[Patient] = []
     for sev in mix[:n]:
         complaint, ct, blood = rng.choice(MCI_COMPLAINTS[sev])
-        p = _patient(h, rng, "MC", sev, complaint, arrived_at=start + rng.randint(1, 12),
+        p = _patient(h, rng, "MC", sev, complaint, arrived_at=start + 1 + (rng.randint(1, 12) - 1) // 3,
                      state="incoming", needs_ct=ct, needs_blood=blood)
+        p.name = UNIDENTIFIED  # nobody at a crash arrives with a name
+        p.incident = incident
         give_records(p, rng)
         h.add_patient(p)
         out.append(p)

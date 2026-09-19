@@ -35,6 +35,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allo
 class SurgeIn(BaseModel):
     kind: str = "bus"  # "bus" (mass casualty) or "busy" (a busy night of everyday patients)
     n: int = 25
+    incident: str = ""  # what to call it on the board, e.g. "Orleans St bus crash" (EMS map hands this over)
 
 
 class RadioIn(BaseModel):
@@ -97,7 +98,7 @@ def surge(body: SurgeIn | None = None):
         return {"busy_until": engine.busy_night()}
     if body.kind != "bus":
         raise HTTPException(400, "kind must be bus or busy")
-    return {"incoming": engine.surge(max(1, min(body.n, 60)))}
+    return {"incoming": engine.surge(max(1, min(body.n, 60)), body.incident or "")}
 
 
 @app.post("/api/radio")
@@ -156,6 +157,26 @@ def results():
     return engine.results()
 
 
+@app.get("/api/edas")
+async def edas_status():
+    """Live ER crowding and ambulance counts for Maryland (MIEMSS EDAS), for the EMS map."""
+    from backend import edas
+    return await edas.status()
+
+
+from backend.agents.ems_dispatch import DispatchIn  # noqa: E402
+
+
+@app.post("/api/ems/dispatch")
+async def ems_dispatch(body: DispatchIn):
+    """The EMS map's crash simulator: Gemini ranks hospitals per triage group; code checks the picks."""
+    from backend.agents import ems_dispatch as d
+    if not body.hospitals:
+        raise HTTPException(400, "no hospitals")
+    plan, how = await d.dispatch(engine.llm, body)
+    return {"how": how, **plan.model_dump()}
+
+
 @app.get("/api/audit")
 def audit():
     return engine.audit
@@ -177,6 +198,7 @@ def audit_csv():
 # ---------- DeepChart portal (see CONTRACT.md, "DeepChart portal") ----------
 from backend.deepchart.access import Session  # noqa: E402
 from backend.deepchart.portal import Forbidden, NotFound  # noqa: E402
+from backend.deepchart.access import DOCTORS  # noqa: E402
 from backend.deepchart.records import HOSPITALS  # noqa: E402
 
 
@@ -184,6 +206,7 @@ class LoginIn(BaseModel):
     hospital: str
     role: str
     pin: str
+    doctor: str | None = None  # one of the hospital's demo doctors (GET /api/hospitals)
 
 
 class ConfirmIn(BaseModel):
@@ -233,20 +256,20 @@ def _portal(fn):
 
 @app.post("/api/login")
 def login(body: LoginIn):
-    s = _portal(lambda: engine.access.login(body.hospital, body.role, body.pin))
-    return {"token": s.token, "hospital": s.hospital, "role": s.role}
+    s = _portal(lambda: engine.access.login(body.hospital, body.role, body.pin, body.doctor))
+    return {"token": s.token, "hospital": s.hospital, "role": s.role, "name": s.name}
 
 
 @app.get("/api/me")
 def me(x_session: str | None = Header(None)):
     """Who is logged in. 401 when the session is missing or stale (e.g. after a server restart)."""
     s = _session(x_session)
-    return {"hospital": s.hospital, "role": s.role}
+    return {"hospital": s.hospital, "role": s.role, "name": s.name}
 
 
 @app.get("/api/hospitals")
 def hospitals():
-    return [{"name": n} for n in HOSPITALS]
+    return [{"name": n, "doctors": list(DOCTORS[n])} for n in HOSPITALS]
 
 
 @app.get("/api/portal/patients")
@@ -287,6 +310,19 @@ def chart_resolve(pid: str, body: HoldResolveIn, x_session: str | None = Header(
     return _portal(lambda: engine.portal.resolve_hold(s, pid, body.hold_id, body.outcome, body.reason))
 
 
+class EntryIn(BaseModel):
+    fact: str
+    value: str = ""
+    status: str
+    reason: str | None = None
+
+
+@app.post("/api/chart/{pid}/entries")
+def chart_entry(pid: str, body: EntryIn, x_session: str | None = Header(None)):
+    s = _session(x_session)
+    return _portal(lambda: engine.portal.add_entry(s, pid, body.fact, body.value, body.status, body.reason))
+
+
 @app.post("/api/orders")
 def orders(body: OrderIn, x_session: str | None = Header(None)):
     s = _session(x_session)
@@ -323,9 +359,14 @@ def patient_link(body: LinkIn, x_session: str | None = Header(None)):
     return _portal(lambda: engine.portal.patient_link(s, body.pid))
 
 
-@app.get("/api/p/{token}")
-def patient_view(token: str):
-    return _portal(lambda: engine.portal.patient_view(token))
+class PatientCheckIn(BaseModel):
+    dob: str = ""
+
+
+@app.post("/api/p/{token}")
+def patient_view(token: str, body: PatientCheckIn):
+    # POST, so the date of birth never sits in a URL or a server log
+    return _portal(lambda: engine.portal.patient_view(token, body.dob))
 
 
 @app.get("/api/deepchart/score")
@@ -334,8 +375,9 @@ def deepchart_score():
 
 
 # Serve the built frontends (Cloud Run: one service for all).
-# The Next.js site (web/out) owns its pages: /, /board, /workflow, /ems, /login.
-# Everything else falls through to the classic app (frontend/dist): DeepChart /doctor and patient links /p/<token>.
+# The Next.js site (web/out) owns its pages: /, /board, /workflow, /ems, /login, DeepChart /doctor and patient links
+# /p/<token> (one static page that reads the token from the URL). Anything else falls through to the classic app
+# (frontend/dist), which still has the older DeepChart screens.
 def _inside(root: Path, path: str) -> Path | None:
     f = (root / path).resolve()
     return f if f.is_relative_to(root.resolve()) else None
@@ -347,7 +389,11 @@ if DIST.exists() or WEB.exists():
 
     @app.api_route("/{path:path}", methods=["GET", "HEAD"])  # Next's router prefetches pages with HEAD
     def spa(path: str):
+        if path == "api" or path.startswith("api/"):
+            raise HTTPException(404, "no such API route")  # never answer an API call with a web page
         if WEB.exists():
+            if path.startswith("p/") and (WEB / "p" / "index.html").is_file():
+                return FileResponse(WEB / "p" / "index.html")
             f = _inside(WEB, path)
             if f and f.is_file():
                 return FileResponse(f)

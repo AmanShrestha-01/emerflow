@@ -107,15 +107,8 @@ class Swarm:
             say("COORDINATOR", [dept], "plan", "; ".join(lines[:6]) + ("; …" if len(lines) > 6 else ""), "plan",
                 [ln.split(" ")[0] for ln in lines], how)
 
-        # 4. ACK: affected departments confirm or object, in parallel. Code still decides.
-        async def ack(dept: str, lines: list[str]) -> None:
-            thinking(dept, ["COORDINATOR"], "plan")
-            a, ahow = await self.depts[dept].ack(h, lines)
-            say(dept, ["COORDINATOR"], "ack" if a.ok else "object", a.text, "plan", (), ahow)
-
-        await asyncio.gather(*(ack(d, ls) for d, ls in orders.items() if d in self.depts))
-
-        # 5. APPLY at live state. Rule-keepers speak up when they reject or hold.
+        # 4. APPLY at live state, right away (beds change as soon as the plan exists).
+        # Rule-keepers speak up when they reject or hold.
         counts = {"applied": 0, "flagged": 0, "held": 0, "dropped": 0}
         held_from: dict[str, str] = {}
         rejected: list[tuple[str, str]] = []
@@ -187,6 +180,14 @@ class Swarm:
         if extra:
             say("FASTLANE", ["ER"], "system", f"The hospital rules also placed {len(extra)} more waiting patient(s): "
                 f"{', '.join(extra[:5])}.", "apply", extra[:5])
+
+        # 5. ACK: affected departments confirm or object, in parallel. Chat only: the moves are already applied.
+        async def ack(dept: str, lines: list[str]) -> None:
+            thinking(dept, ["COORDINATOR"], "plan")
+            a, ahow = await self.depts[dept].ack(h, lines)
+            say(dept, ["COORDINATOR"], "ack" if a.ok else "object", a.text, "plan", (), ahow)
+
+        await asyncio.gather(*(ack(d, ls) for d, ls in orders.items() if d in self.depts))
 
         ms = round(1000 * (time.monotonic() - started))
         ev("cycle.end", {"cycle_id": cid, **counts, "ms": ms, "how": how})
