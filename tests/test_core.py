@@ -210,3 +210,22 @@ def test_severity_one_is_never_held_and_never_left_waiting():
     assert fastlane.place_one(h, p) == "flagged"   # placed despite the records conflict
     assert p.unit == "HALLWAY" and p.records_flag and p.state == "placed"
     assert h.occupancy("HALLWAY") > 100           # shown as over capacity, not hidden
+
+
+def test_gunshot_patient_goes_resus_then_surgery_with_plain_reasons():
+    from backend.engine import _ladder_flow
+    from backend.sim.scenarios import _patient
+    h, _ = build_hospital(7)
+    rng = random.Random(3)
+    p = _patient(h, rng, "WI", 1, "gunshot wound to the abdomen", arrived_at=0, state="waiting")
+    give_records(p, rng)
+    h.add_patient(p)
+    assert p.need == "Emergency surgery" and p.needs_surgery
+    tick(h, rng, walkins=False)
+    fastlane.run(h)
+    assert p.unit == "RESUS" and "Life-threatening" in p.note
+    for t in range(6):
+        tick(h, rng, walkins=False)
+        fastlane.run(h)
+        _ladder_flow(h)
+    assert p.unit == "OR" and "surgery" in p.note.lower() and p.note_by

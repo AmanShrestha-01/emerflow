@@ -103,3 +103,42 @@ def test_circuit_breaker_recovers_after_cooldown(monkeypatch):
     assert x.breaker_open
     monkeypatch.setattr(L.time, "monotonic", lambda: 1000.0 + L.BREAKER_COOLDOWN + 1)
     assert not x.breaker_open  # half-open: Gemini gets another chance
+
+
+def test_replay_plays_back_recorded_answers_and_falls_back_when_missing(tmp_path, monkeypatch):
+    import json
+    from backend.agents import llm as L
+    from backend.agents.schemas import DeptStatus
+    tape = tmp_path / "demo.jsonl"
+    tape.write_text(json.dumps({"key": "dept:ICU#0", "role": "dept:ICU", "secs": 0.1,
+                                "output": {"line": "Veil: holding one bed back for the next crash.", "free_now": 1}}) + "\n")
+    monkeypatch.setattr(L, "DEMO_TAPE", tape)
+    x = LLM(mode="replay", fake_latency=False)
+    stub = lambda: DeptStatus(line="rule-based")  # noqa: E731
+    out, how = asyncio.run(x.call("dept:ICU", "lite", "p", DeptStatus, stub, 1.0))
+    assert how == "replay" and out.line.startswith("Veil")
+    out, how = asyncio.run(x.call("dept:ICU", "lite", "p", DeptStatus, stub, 1.0))  # tape has no #1
+    assert how == "fallback" and out.line == "rule-based"
+    x.reset()  # a new run replays from the top again
+    assert asyncio.run(x.call("dept:ICU", "lite", "p", DeptStatus, stub, 1.0))[1] == "replay"
+
+
+def test_results_and_audit_trail_record_every_decision():
+    from backend.main import app
+    with TestClient(app) as client:
+        client.post("/api/control", json={"action": "reset", "key": "demo"})
+        from backend.main import engine
+        engine.surge(25)
+        emit = lambda t, d, **k: engine.emit(t, d)  # noqa: E731
+        for _ in range(20):  # the clock and fast lane, as the server runs them (no agent cycles here)
+            tick(engine.h, engine.rng, emit)
+            fastlane.run(engine.h, emit)
+        r = client.get("/api/results").json()
+        assert r["records"]["planted"] >= 8 and r["time_to_bed"]["1"]["patients"] >= 1
+        assert r["time_to_bed"]["1"]["max_min"] <= 1          # critical patients get a bed at once
+        rows = client.get("/api/audit").json()
+        kinds = {x["event"] for x in rows}
+        assert {"patient.arrived", "move.applied"} <= kinds
+        assert all(x["decided_by"] for x in rows if x["event"].startswith("move."))
+        csv_text = client.get("/api/audit.csv").text
+        assert csv_text.splitlines()[0].startswith("time,round,event,patient")

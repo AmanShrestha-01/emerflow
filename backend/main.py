@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -148,6 +148,29 @@ def patient(pid: str):
 @app.get("/api/compare")
 def compare_endpoint():
     return compare()
+
+
+@app.get("/api/results")
+def results():
+    return engine.results()
+
+
+@app.get("/api/audit")
+def audit():
+    return engine.audit
+
+
+@app.get("/api/audit.csv")
+def audit_csv():
+    import csv
+    import io
+    buf = io.StringIO()
+    cols = ["time", "round", "event", "patient", "from", "to", "decided_by", "relied_on", "records_disagree", "detail"]
+    w = csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
+    w.writeheader()
+    w.writerows(engine.audit)
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=emerflow-audit.csv"})
 
 
 # ---------- DeepChart portal (see CONTRACT.md, "DeepChart portal") ----------

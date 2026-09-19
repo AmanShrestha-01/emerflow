@@ -65,6 +65,11 @@ class Patient:
     moved_at: int | None = None     # last time this patient changed unit
     records_flag: bool = False       # placed under emergency override despite a records conflict
     verified: set[str] = field(default_factory=set)  # facts a human already checked across sources
+    need: str = ""                   # triage note: the kind of care needed, in plain words
+    needs_surgery: bool = False
+    note: str = ""                   # why the patient is where they are (last decision, plain words)
+    note_by: str = ""                # who made that decision (agent, rule, or human)
+    heading_to: str | None = None    # unit a paused (held) move would take them to
 
 
 @dataclass

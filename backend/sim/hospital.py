@@ -167,6 +167,8 @@ class Hospital:
             "needs_ct": p.needs_ct and not p.ct_done, "needs_blood": p.needs_blood,
             "retriage": p.retriage_flag, "records_flag": p.records_flag,
             "locked": p.pid in self.locked,
+            "need": p.need, "needs_surgery": p.needs_surgery,
+            "note": p.note, "note_by": p.note_by, "heading_to": p.heading_to,
         }
 
     def snapshot(self) -> dict:

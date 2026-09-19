@@ -69,7 +69,7 @@ def _place(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
 def boarders(h: Hospital) -> list[Patient]:
     """Patients admitted from the ER who are still sitting in an ER bed ("boarding"), sickest first."""
     ps = [p for u in ("ER", "HALLWAY") for p in h.in_unit(u)
-          if p.severity <= 3 and p.pid not in h.locked and p.moved_at is not None
+          if p.severity <= 3 and p.pid not in h.locked and not p.needs_surgery and p.moved_at is not None
           and h.clock - p.moved_at >= BOARD_AFTER and not (p.needs_ct and not p.ct_done)]
     return sorted(ps, key=lambda p: (p.severity, p.moved_at))
 
@@ -84,6 +84,13 @@ def _admit_up(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
     return False
 
 
+def surgical(h: Hospital) -> list[Patient]:
+    """Patients who need surgery and are stabilised in resus/ER/hallway (or waiting), sickest first."""
+    ps = [p for p in h.patients.values() if p.needs_surgery and p.pid not in h.locked
+          and p.state in ("placed", "waiting") and p.unit in (None, "RESUS", "ER", "HALLWAY")]
+    return sorted(ps, key=lambda p: (p.severity, p.arrived_at))
+
+
 def _pending(h: Hospital, action: str) -> bool:
     return any(a.escalation.action == action for a in h.approvals.values())
 
@@ -92,6 +99,9 @@ def rule_plan(live: Hospital, *, escalate: bool = True) -> Plan:
     h = live.clone()  # plan on a scratch copy; the real apply re-validates against live state
     moves: list[PlanMove] = []
     unplaced = [p for p in h.waiting() if not _place(h, p, moves)]
+    for p in surgical(h)[:2]:  # emergency surgery first, when a room is free
+        _try(h, p.pid, p.unit, "OR", "admit" if p.unit is None else "transfer",
+             f"{p.need}: operating room free", moves)
     for p in boarders(h)[:4]:  # move admitted ER patients upstairs, freeing emergency beds
         _admit_up(h, p, moves)
     # Routine flow: recovered patients move down a level when a bed is free there.

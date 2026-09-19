@@ -29,6 +29,47 @@ CLOCK_START = 21 * 60
 BUSY_MINUTES = 60
 
 
+# ---------- audit trail: every decision, who made it, and why ----------
+AUDITED = ("move.applied", "move.held", "move.flagged", "move.dropped", "hold.resolved",
+           "approval.requested", "approval.resolved", "coordinator.plan", "level.changed", "patient.arrived")
+WHO = {"fastlane": "Fast lane (code)", "swarm": "Agent plan (Gemini)", "fallback": "Fallback (code)",
+       "baseline": "Rules (code)"}
+
+
+def audit_row(type_: str, d: dict, clock: int, cycle_id: str | None) -> dict:
+    facts = ", ".join(d.get("because") or [])
+    conflicts = "; ".join(f"{c['fact']}: " + " vs ".join(f"{v['source_name']}={v['value']}" for v in c["versions"])
+                          for c in d.get("conflicts") or [])
+    row = {"time": f"{(CLOCK_START + clock) // 60 % 24:02d}:{(CLOCK_START + clock) % 60:02d}", "clock": clock,
+           "round": cycle_id or "", "event": type_, "patient": d.get("pid") or "",
+           "from": d.get("from_unit") or "", "to": d.get("to_unit") or "", "decided_by": "",
+           "relied_on": facts, "records_disagree": conflicts, "detail": ""}
+    if type_ == "move.applied":
+        row["decided_by"] = WHO.get(d.get("source"), d.get("source", ""))
+        row["detail"] = d.get("reason", "")
+    elif type_ == "move.held":
+        row.update(decided_by="Records check (code)", detail="paused: sources disagree; a human must resolve")
+    elif type_ == "move.flagged":
+        row.update(decided_by="Records check (code)", detail="life-saving move went ahead; flagged for review")
+    elif type_ == "move.dropped":
+        row.update(decided_by="Validator (code)", detail=d.get("reason", ""))
+    elif type_ == "hold.resolved":
+        row.update(decided_by="Human", detail=f"{d.get('outcome')}: {d.get('detail', '')}")
+    elif type_ == "approval.requested":
+        row.update(decided_by="Escalation (code)", detail=f"{d.get('action')}: {d.get('detail', '')}")
+    elif type_ == "approval.resolved":
+        row.update(decided_by="Human", detail=f"{d.get('action', '')} {'approved' if d.get('approved') else 'rejected'}"
+                                               f"{' (expired)' if d.get('expired') else ''}: {d.get('detail', '')}")
+    elif type_ == "coordinator.plan":
+        row.update(decided_by="Coordinator (Gemini)" if d.get("how") == "live" else f"Coordinator ({d.get('how')})",
+                   detail=d.get("summary", ""))
+    elif type_ == "level.changed":
+        row.update(decided_by="Escalation (code)", detail=f"level {d.get('old')} -> {d.get('new')} {d.get('name')}")
+    elif type_ == "patient.arrived":
+        row.update(detail=f"severity {d.get('severity')}: {d.get('complaint')}")
+    return row
+
+
 def metrics(h: Hospital) -> dict:
     now_waiting = [h.clock - p.arrived_at for p in h.waiting()]
     waits = [w for _, _, w in h.waits] + now_waiting
@@ -76,16 +117,27 @@ class Engine:
         self.portal = Portal(self)
         self.rng = random.Random(seed)
         self.swarm = Swarm(self.llm)
+        self.llm.reset()  # a new run: new tape in live mode, replay restarts from the top
         self.last_cycle = -99
         self.surges = 0
         self.bus.reset()
+        self.audit: list[dict] = []
+        self.caught: set[tuple[str, str]] = set()   # (pid, fact) the records check caught before a move
+        self.cycle_ms: list[int] = []
         self.emit("notice", {"text": "Hospital reset. Normal evening, nearly full."})
         self.emit("snapshot", self.state(include_feed=False))
 
     def emit(self, type_: str, data: dict, *, cycle_id: str | None = None, round_: str | None = None,
              clock: int | None = None) -> None:
-        self.bus.emit(type_, data, clock=self.h.clock if clock is None else clock,
-                      cycle_id=cycle_id, round_=round_)
+        t = self.h.clock if clock is None else clock
+        self.bus.emit(type_, data, clock=t, cycle_id=cycle_id, round_=round_)
+        if type_ in AUDITED:
+            self.audit.append(audit_row(type_, data, t, cycle_id))
+        if type_ in ("move.held", "move.flagged"):
+            for c in data.get("conflicts", []):
+                self.caught.add((data["pid"], c["fact"]))
+        elif type_ == "cycle.end":
+            self.cycle_ms.append(data.get("ms", 0))
 
     async def run_forever(self) -> None:
         while True:
@@ -189,6 +241,31 @@ Use at most 30 patients. Do not add anyone not described.""",
             s["feed"] = [e for e in self.bus.history if e["type"] not in ("tick", "agent.thinking")][-300:]
         return s
 
+    def results(self) -> dict:
+        """Headline numbers for the board and the pitch, all measured on this run."""
+        h = self.h
+        by_sev: dict[str, list[int]] = {"1": [], "2": [], "3": [], "4-5": []}
+        for _, sev, w in h.waits:
+            by_sev["4-5" if sev >= 4 else str(sev)].append(w)
+        planted = {(k["pid"], k["fact"]) for k in self.key if "fact" in k and k["pid"] in h.patients}
+        arrived = {pid for pid, p in h.patients.items() if p.state != "incoming"}
+        exposed = {x for x in planted if x[0] in arrived}  # mistakes on patients who are actually here
+        caught = self.caught & planted
+        verified = sum(len(p.verified) for p in h.patients.values())
+        return {
+            "time_to_bed": {k: {"patients": len(v), "avg_min": round(statistics.mean(v), 1) if v else None,
+                                "max_min": max(v) if v else None} for k, v in by_sev.items()},
+            "records": {"planted": len(planted), "on_arrived_patients": len(exposed),
+                        "caught_before_moving": len(caught), "waiting_for_a_human": len(h.holds),
+                        "resolved_by_a_human": verified,
+                        "extra_flags": len(self.caught - planted)},
+            "agents": {"mode": self.llm.mode, "cycles": len(self.cycle_ms),
+                       "avg_cycle_seconds": round(statistics.mean(self.cycle_ms) / 1000, 1) if self.cycle_ms else None,
+                       "answers": dict(self.llm.hows), "agents": 10},
+            "note": "Measured on this run. Record conflicts are planted by us, so 'caught' is checked "
+                    "against a known answer key.",
+        }
+
     def patient_detail(self, pid: str) -> dict:
         h = self.h
         p = h.patients[pid]
@@ -231,7 +308,7 @@ def _ladder_flow(h: Hospital) -> None:
     plan = rule_plan(h)
     for pm in plan.moves:
         p = h.patients[pm.pid]
-        commit(h, Move(h.next_id("M"), pm.pid, p.unit, pm.to_unit, pm.kind, source="baseline"))
+        commit(h, Move(h.next_id("M"), pm.pid, p.unit, pm.to_unit, pm.kind, source="baseline", reason=pm.reason))
     for e in plan.escalations:
         a = approvals.request(h, e)
         if a:

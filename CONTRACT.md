@@ -57,6 +57,15 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 }
 ```
 
+**Patient rows also carry** (added for the patient-first board):
+- `need`: the triage note, in plain words, e.g. "Emergency surgery", "Heart and lung monitoring (ICU)", "Treat in the ER, then home".
+- `needs_surgery`: a bool.
+- `note`: why the patient is where they are, e.g. "Life-threatening: straight to resuscitation".
+- `note_by`: who decided. One of `Fast lane (code)`, `Agent plan`, `Fallback (code)`, `Rules (code)`, `Records check (code)`, `A human`, `A human (records checked)`.
+- `heading_to`: the target unit of a paused (held) move, otherwise `null`.
+
+Trauma cases (gunshot, stab wound, internal bleeding) go Resus → OR → Recovery/ICU → Ward.
+
 ### Event (SSE `data:` line, JSON)
 ```json
 {"id": 57, "type": "agent.status", "clock": 41, "cycle_id": "cy7", "round": "status",
@@ -138,6 +147,50 @@ The `round` field is `status`, `question`, `plan`, `apply`, or `null` for events
 - **Rule-keeper lines** (`FASTLANE`, `VALIDATOR`, `DEEPCHART`, `ESCALATION`) must look different from AI agent lines.
 
 ---
+
+# Results, audit and replay (Hospital Swarm)
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/api/results` | `Results` (below): headline numbers measured on this run |
+| GET | `/api/audit` | `[AuditRow]`: every decision, oldest first |
+| GET | `/api/audit.csv` | the same rows as a CSV download (`emerflow-audit.csv`) |
+
+### Results
+```json
+{"time_to_bed": {"1": {"patients": 3, "avg_min": 0.0, "max_min": 0}, "2": {...}, "3": {...}, "4-5": {...}},
+ "records": {"planted": 11, "on_arrived_patients": 9, "caught_before_moving": 8, "waiting_for_a_human": 3,
+             "resolved_by_a_human": 2, "extra_flags": 0},
+ "agents": {"mode": "live", "cycles": 6, "avg_cycle_seconds": 14.2, "answers": {"live": 88, "fallback": 2}, "agents": 10},
+ "note": "Measured on this run. Record conflicts are planted by us, so 'caught' is checked against a known answer key."}
+```
+`caught_before_moving` counts planted mistakes that the records check held or flagged before a patient moved.
+
+### AuditRow
+`{"time": "21:42", "clock": 42, "round": "cy7", "event": "move.held", "patient": "MC-06", "from": "", "to": "ICU",
+  "decided_by": "Records check (code)", "relied_on": "icu_need, anticoagulant",
+  "records_disagree": "anticoagulant: Local intake=none recorded vs Hospital B - Cardiology=warfarin 5mg",
+  "detail": "paused: sources disagree; a human must resolve"}`
+
+`decided_by` is one of:
+- `Fast lane (code)`
+- `Agent plan (Gemini)`
+- `Fallback (code)`
+- `Validator (code)`
+- `Records check (code)`
+- `Escalation (code)`
+- `Coordinator (Gemini | replay | stub | fallback)`
+- `Human`
+
+### Modes
+`state.mode` is one of:
+- `live`: Gemini answering now.
+- `replay`: a recorded live Gemini run played back, with no network needed. Each answer's `how` is `replay`.
+- `stub`: rule-based answers only.
+- `fallback`: Gemini unavailable; rule-based answers.
+
+### Board → DeepChart handoff
+"Compare records" on a held patient links to `/doctor?pid=<pid>&hold=<hold_id>`, the DeepChart chart for that patient. A doctor resolves the hold there (`POST /api/holds/{id}/resolve`) and returns to the board.
 
 # DeepChart portal (built; spec in `09-deepchart-portal-spec.md`)
 

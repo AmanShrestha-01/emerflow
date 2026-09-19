@@ -12,6 +12,12 @@ HOLD_UNTIL = 10**9  # a held patient's target bed stays reserved until a human d
 
 Emit = Callable[..., object]
 
+BY = {"fastlane": "Fast lane (code)", "swarm": "Agent plan", "fallback": "Fallback (code)",
+      "baseline": "Rules (code)", "human": "A human"}
+PLACE = {"RESUS": "a resuscitation bay", "ER": "an emergency bed", "HALLWAY": "a hallway bed", "ICU": "an ICU bed",
+         "STEPDOWN": "a step-down bed", "WARD": "a ward bed", "OR": "surgery", "PACU": "recovery (PACU)",
+         "LOUNGE": "the discharge lounge", "HOME": "home", "PARTNER": "a partner hospital"}
+
 
 def _noop(*_a, **_k) -> None:
     return None
@@ -38,16 +44,25 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
             h.reserve(p.pid, m.to_unit, HOLD_UNTIL)
             h.locked.add(p.pid)
             p.state = "held"
+            p.heading_to = m.to_unit
+            facts = " and ".join(c.fact.replace("_", " ") for c in verdict.conflicts)
+            p.note, p.note_by = (f"Move to {PLACE.get(m.to_unit, m.to_unit)} paused: two records disagree about "
+                                 f"{facts}. A human must check.", "Records check (code)")
             emit("move.held", {"hold_id": hold.hold_id, "pid": p.pid, "to_unit": m.to_unit,
                                "because": m.because, "conflicts": conflicts_json(verdict)}, **ev)
             return "held"
         p.records_flag = True
         h.apply_move(m)
+        p.note, p.note_by = (f"Life-saving move to {PLACE.get(m.to_unit, m.to_unit)}; records disagree, "
+                             f"flagged for review", BY.get(m.source, m.source))
         emit("move.flagged", {"pid": p.pid, "to_unit": m.to_unit, "because": m.because,
                               "conflicts": conflicts_json(verdict)}, **ev)
         return "flagged"
     from_unit = p.unit
     h.apply_move(m)
+    p.heading_to = None
+    p.note = (m.reason[:1].upper() + m.reason[1:]) if m.reason else f"Moved to {PLACE.get(m.to_unit, m.to_unit)}"
+    p.note_by = "A human (records checked)" if verified else BY.get(m.source, m.source)
     emit("move.applied", {"move_id": m.move_id, "pid": p.pid, "from_unit": from_unit, "to_unit": m.to_unit,
                           "source": m.source, "because": m.because, "reason": m.reason}, **ev)
     return "applied"
@@ -61,6 +76,9 @@ def resolve_hold(h: Hospital, hold_id: str, outcome: str, emit: Emit = _noop) ->
     p.state = "placed" if p.unit else "waiting"
     reserved = any(p.pid in u.reserved for u in h.units.values())
     detail = "hold cancelled; patient stays where they are"
+    p.heading_to = None
+    if outcome != "proceed":
+        p.note, p.note_by = "Move cancelled after a records check; staying put for now", "A human"
     if outcome == "proceed":
         p.verified.update(c.fact for c in hold.verdict.conflicts)
         m = hold.move

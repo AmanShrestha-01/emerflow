@@ -7,3 +7,4 @@ frontend/dist/
 .pytest_cache/
 .playwright-mcp/
 backend/agents/replays/*.jsonl
+!backend/agents/replays/demo.jsonl

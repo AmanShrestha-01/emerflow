@@ -13,6 +13,8 @@ CT_EVERY = 6          # minutes per CT scan
 WALKIN_RATE = 0.10    # chance per minute of an everyday patient (~6 an hour)
 BUSY_FACTOR = 3       # a busy night triples everyday arrivals
 ER_VISIT_MIN = 90     # minor ER patients (severity 4-5) are treated and ready to go home after this
+SURGERY_MIN = 60      # an emergency operation
+RECOVERY_MIN = 45     # time in recovery (PACU) before the ward
 HOME_AFTER_READY = 45 # ward patients ready to go home leave on their own after this (the swarm can speed it up)
 LOUNGE_STAY = 20      # minutes in the discharge lounge before going home
 RETRIAGE_AFTER = {1: 5, 2: 15, 3: 45, 4: 90, 5: 120}
@@ -77,6 +79,19 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
         if cands:
             q = rng.choice(cands)
             q.ready_for_discharge, q.ready_at = True, t
+    # After surgery: operating room -> recovery (or ICU if recovery is full) -> ward.
+    for p in h.in_unit("OR"):
+        if p.moved_at is not None and t - p.moved_at >= SURGERY_MIN and p.pid not in h.locked:
+            p.needs_surgery, p.need = False, "Recovery after surgery"
+            for dest in ("PACU", "ICU"):
+                if commit(h, Move(h.next_id("M"), p.pid, "OR", dest, "transfer", source="fastlane",
+                                  reason="Surgery finished; recovering"), emit, clock=t) in ("applied", "flagged", "held"):
+                    break
+    for p in h.in_unit("PACU"):
+        if p.moved_at is not None and t - p.moved_at >= RECOVERY_MIN and p.pid not in h.locked:
+            p.severity, p.need = max(p.severity, 3), "Ward care after surgery"
+            commit(h, Move(h.next_id("M"), p.pid, "PACU", "WARD", "transfer", source="fastlane",
+                           reason="Recovered from surgery; to the ward"), emit, clock=t)
     # Everyday flow out of the hospital, so it doesn't just fill up.
     for p in h.in_unit("ER"):
         if p.severity >= 4 and not p.ready_for_discharge and p.moved_at is not None and t - p.moved_at >= ER_VISIT_MIN:

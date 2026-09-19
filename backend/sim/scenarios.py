@@ -11,6 +11,7 @@ import random
 
 from backend.sim.hospital import Hospital
 from backend.sim.models import Claim, ORCase, Patient, SourceRecord
+from backend.sim.triage import care_need
 
 TODAY = _dt.date(2026, 9, 19)
 FIRST = ["Maya", "Omar", "Lena", "Jon", "Priya", "Luis", "Grace", "Tariq", "Ivy", "Sam", "Nia",
@@ -29,6 +30,7 @@ MCI_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {  # (complaint, needs
     5: [("minor scrapes", False, False), ("panic, no injury", False, False)],
 }
 WALKIN_COMPLAINTS = [  # (severity, complaint): an everyday emergency-department mix
+    (1, "gunshot wound to the abdomen"), (1, "stab wound to the chest"), (2, "car crash, internal bleeding"),
     (2, "stroke symptoms"), (2, "chest pain, sweaty"), (2, "severe asthma attack"), (2, "sepsis, confused"),
     (3, "chest pain"), (3, "shortness of breath"), (3, "kidney stone"), (3, "abdominal pain"),
     (3, "fall, hip pain"), (3, "diabetic, blood sugar high"), (3, "child with high fever"),
@@ -117,6 +119,10 @@ def _patient(h: Hospital, rng: random.Random, prefix: str, severity: int, compla
     pid = f"{prefix}-{len([x for x in h.patients if x.startswith(prefix)]) + 1:02d}"
     p = Patient(pid=pid, name=_name(rng), age=rng.randint(19, 88), complaint=complaint,
                 severity=severity, arrived_at=arrived_at, blood_type=rng.choice(BLOOD_TYPES), **kw)
+    p.need, surgery = care_need(complaint, severity)
+    p.needs_surgery = p.needs_surgery or surgery
+    if p.needs_surgery and severity <= 2:
+        p.needs_blood = True
     return p
 
 

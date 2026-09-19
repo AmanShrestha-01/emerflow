@@ -42,7 +42,7 @@ def options_for(h: Hospital, pid: str) -> list[str]:
 def plan_prompt(h: Hospital, statuses: dict[str, DeptStatus], answers: dict[str, DeptAnswer]) -> str:
     allowed = [a for a, lvl in ESCALATION_ACTIONS.items() if h.level >= lvl]
     units = {n: {"beds": u.beds, "free": u.free} for n, u in h.units.items()}
-    waiting = [{"pid": p.pid, "severity": p.severity, "complaint": p.complaint,
+    waiting = [{"pid": p.pid, "severity": p.severity, "complaint": p.complaint, "needs": p.need,
                 "waited_min": h.clock - p.arrived_at, "may_go_to": options_for(h, p.pid)}
                for p in h.waiting()]
     movable = [{"pid": p.pid, "in": p.unit, "severity": p.severity,
@@ -50,7 +50,11 @@ def plan_prompt(h: Hospital, statuses: dict[str, DeptStatus], answers: dict[str,
                 "may_go_to": [d for d in options_for(h, p.pid) if d in ("STEPDOWN", "WARD", "LOUNGE", "HOME")]}
                for u in ("ICU", "STEPDOWN", "WARD") for p in h.in_unit(u)
                if p.pid not in h.locked and (p.improving or p.ready_for_discharge)]
-    from backend.sim.ladder import ADMIT_TO, boarders
+    from backend.sim.ladder import ADMIT_TO, boarders, surgical
+    movable += [{"pid": p.pid, "in": p.unit or "waiting room", "severity": p.severity,
+                 "why": f"needs surgery ({p.complaint})",
+                 "may_go_to": [d for d in options_for(h, p.pid) if d == "OR"]}
+                for p in surgical(h)]
     movable += [{"pid": p.pid, "in": p.unit, "severity": p.severity, "why": "admitted, waiting in an ER bed",
                  "may_go_to": [d for d in options_for(h, p.pid) if d in ADMIT_TO.get(p.severity, [])]}
                 for p in boarders(h)]
