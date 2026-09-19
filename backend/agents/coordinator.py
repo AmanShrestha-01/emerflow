@@ -104,7 +104,14 @@ def question_for(h: Hospital) -> tuple[str, str] | None:
                        f"Who could move to the close-watch beds in the next 15 minutes?")
     if len(h.waiting()) >= 5 and h.units["STEPDOWN"].free == 0:
         return "STEPDOWN", "The close-watch beds are full and more people are waiting. Who can move to the ward or go home?"
-    return None
+    # Every round: check in with the busiest department, so the agents plan ahead together, not only in a crisis.
+    names = {"ICU": "intensive care", "STEPDOWN": "the close-watch beds", "ER": "the emergency department",
+             "WARD": "the ward"}
+    owner = {"ICU": "ICU", "STEPDOWN": "STEPDOWN", "ER": "ER", "WARD": "STEPDOWN"}
+    unit = max(names, key=lambda u: h.occupancy(u))
+    u = h.units[unit]
+    return owner[unit], (f"{names[unit].capitalize()} is at {len(u.occupants)} of {u.beds} beds. "
+                         f"If more patients arrive in the next 30 minutes, who could move on to make room?")
 
 
 class Coordinator:
