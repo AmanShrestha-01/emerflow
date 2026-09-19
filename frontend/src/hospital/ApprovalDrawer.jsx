@@ -96,7 +96,10 @@ export function ApprovalCard({ a, run }) {
   )
 }
 
-export function HoldActions({ h, run, onCompare }) {
+// The records comparison for a held patient lives in DeepChart; the board links there.
+export const deepchartHref = (h) => `/doctor?pid=${encodeURIComponent(h.pid)}&hold=${encodeURIComponent(h.hold_id)}`
+
+export function HoldActions({ h, run, showLink = true }) {
   const [busy, setBusy] = useState(null)
   const act = async (outcome) => {
     setBusy(outcome)
@@ -114,10 +117,10 @@ export function HoldActions({ h, run, onCompare }) {
       <button className="btn btn-quiet" onClick={() => act('cancel')} disabled={!!busy}>
         {busy === 'cancel' ? 'Cancelling…' : "Don't move"}
       </button>
-      {onCompare && (
-        <button className="linkbtn card-compare" onClick={onCompare}>
-          Compare records
-        </button>
+      {showLink && (
+        <a className="linkbtn card-compare" href={deepchartHref(h)}>
+          Check records in DeepChart
+        </a>
       )}
     </div>
   )
@@ -131,10 +134,17 @@ export function HoldCard({ h, p, onSelect, run }) {
         <strong>{HOLD_TITLE}</strong>: {HOLD_NOTICE}
       </p>
       <p className="card-q">
-        {p && <Sev n={p.severity} />} {s.q}
+        {p && <Sev n={p.severity} />}
+        <span>
+          Move{' '}
+          <button className="pidlink" onClick={() => onSelect(h.pid)} title="Open this patient on the board">
+            {h.pid}
+          </button>{' '}
+          to {unitLabel(h.to_unit)}?
+        </span>
       </p>
       <p className="card-why">{s.why}</p>
-      <HoldActions h={h} run={run} onCompare={() => onSelect(h.pid)} />
+      <HoldActions h={h} run={run} />
     </article>
   )
 }

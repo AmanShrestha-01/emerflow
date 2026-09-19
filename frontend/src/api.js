@@ -42,6 +42,7 @@ export const api = {
   control: (action, extra = {}) => request('POST', '/api/control', { action, ...extra }),
   patient: (pid) => request('GET', `/api/patient/${encodeURIComponent(pid)}`),
   compare: () => request('GET', '/api/compare'),
+  results: () => request('GET', '/api/results'),
 }
 
 // Demo key for protected controls (reset). Override with ?key=... in the URL.

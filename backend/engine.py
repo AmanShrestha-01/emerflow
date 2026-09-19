@@ -120,6 +120,7 @@ class Engine:
         self.llm.reset()  # a new run: new tape in live mode, replay restarts from the top
         self.last_cycle = -99
         self.surges = 0
+        self.bus_crash_at: int | None = None
         self.bus.reset()
         self.audit: list[dict] = []
         self.caught: set[tuple[str, str]] = set()   # (pid, fact) the records check caught before a move
@@ -174,6 +175,7 @@ class Engine:
     # ---------- inputs ----------
     def surge(self, n: int = 25) -> int:
         self.surges += 1
+        self.bus_crash_at = self.h.clock
         pts = mass_casualty(self.h, self.key, seed=self.seed + self.surges * 13, n=n, start=self.h.clock)
         self.emit("notice", {"text": f"MASS CASUALTY: bus crash, {len(pts)} patients inbound"})
         return len(pts)
@@ -235,7 +237,7 @@ Use at most 30 patients. Do not add anyone not described.""",
         s = self.h.snapshot()
         s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused, "speed": self.speed,
                   "mode": self.llm.mode if not self.llm.breaker_open else "fallback",
-                  "clock_start": CLOCK_START, "metrics": metrics(self.h)})
+                  "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at})
         if include_feed:
             # Ticks are noise on reload; keep the conversation and decisions.
             s["feed"] = [e for e in self.bus.history if e["type"] not in ("tick", "agent.thinking")][-300:]

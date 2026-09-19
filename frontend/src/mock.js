@@ -52,11 +52,11 @@ const INPATIENT_COMPLAINTS = {
 }
 
 const MC_COMPLAINTS = [
-  [1, 'open femur fracture, hemorrhage', { blood: true }],
+  [1, 'open femur fracture, hemorrhage', { blood: true, surgery: true }],
   [1, 'blunt chest trauma, hypotensive', { blood: true, ct: true }],
   [1, 'head injury, unresponsive', { ct: true }],
   [2, 'head injury, confused', { ct: true }],
-  [2, 'abdominal trauma, guarding', { ct: true, blood: true }],
+  [2, 'abdominal trauma, guarding', { ct: true, blood: true, surgery: true }],
   [2, 'pelvic pain after impact', { ct: true }],
   [2, 'chest wall injury, short of breath', {}],
   [2, 'neck pain, tingling hands', { ct: true }],
@@ -107,7 +107,50 @@ const CONFLICT_REASON = {
 
 const FACT_WORDS = { anticoagulant: 'blood thinners', penicillin_allergy: 'a penicillin allergy', vitals_stable: 'vital signs', icu_need: 'ICU need', on_pressors: 'a blood-pressure drip', blood_type: 'blood type' }
 const factWords = (f) => FACT_WORDS[f] || f
+const APPROVAL_SENTENCE = {
+  cancel_elective: "Cancel tonight's planned operations so the recovery room can take intensive care patients?",
+  call_in_staff: "Call in 2 off-duty nurses? They'd arrive in about 45 minutes.",
+}
 const RETRIAGE_AFTER = { 1: 5, 2: 15, 3: 45, 4: 90, 5: 120 }
+
+// Everyday arrivals: [severity, complaint, extras]
+const EVERYDAY = [
+  [1, 'gunshot wound to the abdomen', { surgery: true, blood: true }],
+  [1, 'stab wound to the chest', { surgery: true }],
+  [1, 'car crash, internal bleeding', { surgery: true, blood: true }],
+  [2, 'severe chest pain, sweaty', {}],
+  [2, 'short of breath, lips blue', {}],
+  [3, 'abdominal pain', {}],
+  [3, 'fall, hip pain', {}],
+  [3, 'high fever, confused', {}],
+  [4, 'broken wrist', {}],
+  [4, 'cut hand, needs stitches', {}],
+  [4, 'ankle injury', {}],
+  [5, 'flu, fever and aches', {}],
+  [5, 'sore throat', {}],
+]
+const NOTE_BY = { fastlane: 'Hospital rules', swarm: 'AI agents', fallback: 'Hospital rules' }
+const TO_WORDS = { RESUS: 'the resuscitation room', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'an intensive care (ICU) bed', STEPDOWN: 'a step-down bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'the recovery room', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'another hospital' }
+const FACT_ABOUT = { anticoagulant: 'whether they take blood thinners', penicillin_allergy: 'whether they are allergic to penicillin', vitals_stable: 'whether their heart rate and breathing are stable', icu_need: 'whether they need intensive care', on_pressors: 'whether they are on a blood-pressure drip', blood_type: 'their blood type' }
+const UNIT_NEED = {
+  ICU: 'Intensive care',
+  STEPDOWN: 'Close monitoring (step-down)',
+  WARD: 'A ward bed to recover',
+  OR: 'Surgery',
+  PACU: 'Waking up after surgery',
+  LOUNGE: 'Waiting for a ride home',
+  ER: 'Tests and treatment in the ER',
+  RESUS: 'Resuscitation',
+}
+function needFor(p) {
+  if (p.needs_surgery) return 'Emergency surgery'
+  if (p.pid.startsWith('IN')) return UNIT_NEED[p.unit] || 'Ongoing care'
+  if (p.severity === 1) return 'Resuscitation now, then intensive care'
+  if (p.severity === 2) return /chest|breath|heart|blue/.test(p.complaint) ? 'Heart and lung monitoring (ICU)' : 'Close monitoring (step-down)'
+  if (p.severity === 3) return 'Tests and treatment in the ER'
+  if (p.severity === 4) return 'Treat in the ER, then home'
+  return 'Quick check, then home'
+}
 
 let rngSeed = 7
 function rnd() {
@@ -120,6 +163,10 @@ const chance = (p) => rnd() < p
 const pad2 = (n) => String(n).padStart(2, '0')
 
 export function createMock() {
+  const MODE = new URLSearchParams(window.location.search).get('mode') || 'mock'
+  const answers = { live: 0, replay: 0, fallback: 0, stub: 0 }
+  const cycleMs = []
+  let resolvedHolds = 0
   let S
   let seq = 0
   let feed = []
@@ -189,7 +236,7 @@ export function createMock() {
 
     // waiting room
     mkPatient('W', { severity: 2, complaint: 'chest pain, sweaty', state: 'waiting', waited: 6, target: 'STEPDOWN', conflicts: ['anticoagulant'] })
-    mkPatient('W', { severity: 2, complaint: 'shortness of breath, low O2', state: 'waiting', waited: 8, target: 'ICU', needs_ct: false })
+    mkPatient('W', { severity: 2, complaint: 'short of breath, low oxygen', state: 'waiting', waited: 8, target: 'ICU', needs_ct: false })
     mkPatient('W', { severity: 3, complaint: 'fall, hip pain', state: 'waiting', waited: 22, needs_ct: true })
     mkPatient('W', { severity: 3, complaint: 'abdominal pain', state: 'waiting', waited: 14 })
     mkPatient('W', { severity: 4, complaint: 'hand laceration', state: 'waiting', waited: 84 })
@@ -198,6 +245,12 @@ export function createMock() {
     mkPatient('A', { severity: 3, complaint: 'dizzy, fall at home', state: 'incoming', eta: 9 })
     S.ct_queue = allPatients().filter((p) => p.needs_ct && p.state !== 'incoming').map((p) => p.pid)
     S.level = computeLevel()
+    // start with one move waiting on a person (records disagree) and one big action to approve
+    tryMove({ pid: 'W-01', to_unit: 'STEPDOWN', reason: 'Chest pain needs close monitoring' }, 'swarm', {})
+    S.approvals.push({
+      approval_id: `A${++S.counters.APR}`, action: 'call_in_staff', level: S.level, reason: 'ICU and step-down above nurse ratio',
+      params: { count: 2 }, detail: '2 off-duty nurses', created_at: 0, sentence: APPROVAL_SENTENCE.call_in_staff,
+    })
   }
 
   function markReady(pid, flag, conflicts) {
@@ -227,6 +280,7 @@ export function createMock() {
       eta: opts.eta ?? null,
       needs_ct: !!opts.needs_ct,
       needs_blood: !!opts.needs_blood,
+      needs_surgery: !!opts.needs_surgery,
       retriage: false,
       records_flag: false,
       locked: false,
@@ -297,8 +351,8 @@ export function createMock() {
 
   // ---------- public state ----------
   function publicPatient(p) {
-    const { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked } = p
-    return { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked }
+    const { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked, needs_surgery, note, note_by, heading_to } = p
+    return { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked, need: needFor(p), needs_surgery: !!needs_surgery, note: note || null, note_by: note_by || null, heading_to: heading_to || null }
   }
   function metrics() {
     const w = allPatients().filter((p) => p.state === 'waiting' || (p.state === 'held' && !p.unit))
@@ -324,7 +378,7 @@ export function createMock() {
       diversion: S.diversion,
       paused: S.paused,
       speed: S.speed,
-      mode: 'mock',
+      mode: MODE,
       busy_until: S.busy_until ?? null,
       units: Object.values(S.units).map((u) => ({
         unit: u.unit,
@@ -403,6 +457,17 @@ export function createMock() {
   // ---------- moves ----------
   function place(p, to, source, because, ctx) {
     const from = p.unit
+    p.note = p.nextNote || defaultNote(p, to, source)
+    p.note_by = NOTE_BY[source] || 'Rules (code)'
+    p.nextNote = null
+    p.heading_to = null
+    if (to === 'OR') p.orMin = 0
+    if (to === 'PACU' && from === 'OR') {
+      p.fromSurgery = true
+      p.pacuMin = 0
+      p.needs_surgery = false
+    }
+    if (p.bedWait == null && from == null && p.state !== 'placed') p.bedWait = p.waited || 0
     for (const u of Object.values(S.units)) {
       u.occupants = u.occupants.filter((x) => x !== p.pid)
       u.reserved_for = u.reserved_for.filter((x) => x !== p.pid)
@@ -434,10 +499,11 @@ export function createMock() {
     if (!p || (p.state !== 'placed' && p.state !== 'waiting')) return drop(`${m.pid} is no longer eligible to move`)
     if (p.locked) return drop(`${m.pid} is locked while held for verification`)
     if (p.unit === to) return drop(`${m.pid} is already in ${to}`)
-    if (to === 'PACU' && !S.pacuOverflow) return drop('recovery beds are kept for planned surgery until staff approve cancelling it')
+    if (to === 'PACU' && !S.pacuOverflow && p.unit !== 'OR') return drop('recovery beds are kept for planned surgery until staff approve cancelling it')
     if (to === 'HALLWAY' && S.level < 2) return drop('hallway beds are only allowed from level 2')
     if (to !== 'HOME' && to !== 'PARTNER' && free(to) <= 0) return drop(`${UNIT_NAME[to] || to} has no free bed any more`)
     const because = [...new Set([...(REQUIRED[to] || []), ...(m.extra_because || [])])]
+    if (m.reason) p.nextNote = m.reason.charAt(0).toUpperCase() + m.reason.slice(1)
     const hits = because.filter((f) => p.conflicts.includes(f))
     if (hits.length) {
       const lifeSaving = to === 'RESUS' || p.severity === 1
@@ -462,6 +528,11 @@ export function createMock() {
       p.state = 'held'
       p.locked = true
       p.records_flag = true
+      p.heading_to = to
+      p.note = `Can't move ${p.name.split(' ')[0]} to ${TO_WORDS[to] || to} yet: two hospitals' records disagree about ${hits.map((f) => FACT_ABOUT[f] || f).join(' and ')}. A person needs to check.`
+      p.note_by = 'Records check'
+      hold.name = p.name
+      hold.sentence = `${p.name} can't be moved to ${TO_WORDS[to] || to} yet: two hospitals' records disagree about ${hits.map((f) => FACT_ABOUT[f] || f).join(' and ')}.`
       p.last_move = { to_unit: to, because, source }
       emit('move.held', { hold_id: hold.hold_id, pid: p.pid, to_unit: to, because, conflicts: hold.conflicts }, ctx)
       say('DEEPCHART', ['COORDINATOR', agentFor(to)], 'system', `Paused the move of ${p.pid} to ${UNIT_NAME[to] || to}. VERIFICATION REQUIRED: sources disagree; a human must resolve (${hits.map(factWords).join(' and ')}). The bed is held back.`, [p.pid], 'code', ctx)
@@ -474,7 +545,7 @@ export function createMock() {
   function targetFor(p) {
     if (p.target) return p.target
     if (p.severity === 1) return 'RESUS'
-    if (p.severity === 2) return p.complaint.match(/head|chest|trauma|O2|hypotens/) ? 'ICU' : 'STEPDOWN'
+    if (p.severity === 2) return p.complaint.match(/head|chest|trauma|O2|hypotens|breath|blue/) ? 'ICU' : 'STEPDOWN'
     return 'ER'
   }
 
@@ -515,6 +586,7 @@ export function createMock() {
         eta: 3 + Math.floor(i / 3) + Math.floor(rnd() * 3),
         needs_ct: !!f.ct,
         needs_blood: !!f.blood,
+        needs_surgery: !!f.surgery,
       })
       list.push(p)
     }
@@ -530,6 +602,14 @@ export function createMock() {
     emit('notice', { text: `EMS: mass casualty, bus crash. ${n} patients inbound, first ETA ${Math.min(...list.map((p) => p.eta))} min` })
     scheduleCycleSoon('mass casualty: incoming surge')
     return { incoming: n }
+  }
+
+  function defaultNote(p, to, source) {
+    if (to === 'RESUS') return 'Life-threatening: straight to the resuscitation room'
+    if (to === 'HALLWAY' && p.severity === 1) return 'Life-threatening, but the resuscitation room was full: a hallway bed for now'
+    if (source === 'fastlane') return 'A matching bed was free on arrival'
+    if (to === 'HOME') return 'Treated and well enough to go home'
+    return `A bed was free in ${UNIT_NAME[to] || to}`
   }
 
   function busyNight() {
@@ -555,19 +635,25 @@ export function createMock() {
     // walk-ins and ambulances keep coming
     const busy = S.busy_until != null && S.clock < S.busy_until
     if (S.clock % 4 === 2 || (busy && S.clock % 4 !== 0)) {
-      const sev = pick([2, 3, 3, 3, 4, 4, 5])
-      const p = mkPatient('W', {
-        severity: sev,
-        complaint: pick(['chest pain', 'fever, weak', 'abdominal pain', 'ankle injury', 'headache', 'short of breath', 'vomiting', 'cut hand', 'dizzy']),
-        state: 'waiting',
-      })
-      emit('patient.arrived', { pid: p.pid, severity: p.severity, complaint: p.complaint })
+      const [sev, complaint, extra] = pick(EVERYDAY)
+      const p = mkPatient('W', { severity: sev, complaint, state: 'waiting', needs_surgery: !!extra?.surgery, needs_blood: !!extra?.blood })
+      if (sev === 1) arrive(p)
+      else emit('patient.arrived', { pid: p.pid, severity: p.severity, complaint: p.complaint })
     }
     if (S.clock % 11 === 5) {
       mkPatient('A', { severity: pick([2, 3, 3, 4]), complaint: pick(['fall, elderly', 'MVC, restrained driver', 'seizure', 'chest pain']), state: 'incoming', eta: 6 + Math.floor(rnd() * 6) })
     }
     // people get better
-    for (const [u, flag, prob] of [['ICU', 'improving', 0.03], ['STEPDOWN', 'ready', 0.04], ['WARD', 'ready', 0.03], ['ER', 'ready', 0.05]]) {
+    // the surgical journey: operating room, then recovery, then the ward
+    for (const pid of S.units.OR.occupants) {
+      const p = S.patients[pid]
+      if (p.needs_surgery && ++p.orMin >= 6) p.orDone = true
+    }
+    for (const pid of S.units.PACU.occupants) {
+      const p = S.patients[pid]
+      if (p.fromSurgery && ++p.pacuMin >= 6) p.ready = true
+    }
+    for (const [u, flag, prob] of [['ICU', 'improving', 0.03], ['STEPDOWN', 'ready', 0.04], ['WARD', 'ready', 0.03], ['ER', 'ready', 0.05], ['RESUS', 'improving', 0.06]]) {
       for (const pid of S.units[u].occupants) {
         const p = S.patients[pid]
         if (!p.locked && !p[flag] && chance(prob)) p[flag] = true
@@ -702,21 +788,26 @@ export function createMock() {
       moves.push({ pid: p.pid, to_unit: to, kind, reason })
     }
     const inUnit = (u, flag) => S.units[u].occupants.map((pid) => S.patients[pid]).filter((p) => p[flag] && !p.locked)
+    // the surgical journey first: resuscitation -> operating room -> recovery -> ward
+    S.units.PACU.occupants.map((pid) => S.patients[pid]).filter((p) => p.fromSurgery && p.ready && !p.locked).slice(0, 1).forEach((p) => avail('WARD') > 0 && push(p, 'WARD', 'transfer', 'Awake after surgery: to a ward bed'))
+    S.units.OR.occupants.map((pid) => S.patients[pid]).filter((p) => p.orDone && !p.locked).forEach((p) => avail('PACU') > 0 && push(p, 'PACU', 'recovery', 'Surgery done: to recovery'))
+    S.units.RESUS.occupants.map((pid) => S.patients[pid]).filter((p) => p.needs_surgery && !p.locked).forEach((p) => avail('OR') > 0 && push(p, 'OR', 'surgery', 'Emergency surgery: operating room free'))
+    S.units.RESUS.occupants.map((pid) => S.patients[pid]).filter((p) => !p.needs_surgery && p.improving && !p.locked).slice(0, 1).forEach((p) => avail('ICU') > 0 && push(p, 'ICU', 'step_down', 'Stable enough to leave resuscitation: to an ICU bed'))
     // free beds upstream first (the dependency order)
-    inUnit('WARD', 'ready').slice(0, 2).forEach((p, i) => push(p, i === 0 && free('LOUNGE') > 0 ? 'LOUNGE' : 'HOME', 'discharge', 'ready for discharge'))
-    inUnit('STEPDOWN', 'ready').slice(0, 2).forEach((p) => avail('WARD') > 0 && push(p, 'WARD', 'transfer', 'ready for ward'))
-    inUnit('ICU', 'improving').slice(0, 2).forEach((p) => avail('STEPDOWN') > 0 && push(p, 'STEPDOWN', 'step_down', 'improving, frees an ICU bed'))
-    inUnit('ER', 'ready').slice(0, 2).forEach((p) => push(p, p.severity <= 3 && avail('WARD') > 0 ? 'WARD' : 'HOME', p.severity <= 3 ? 'admit' : 'discharge', 'ER workup done'))
+    inUnit('WARD', 'ready').slice(0, 2).forEach((p, i) => push(p, i === 0 && free('LOUNGE') > 0 ? 'LOUNGE' : 'HOME', 'discharge', 'Well enough to go home'))
+    inUnit('STEPDOWN', 'ready').slice(0, 2).forEach((p) => avail('WARD') > 0 && push(p, 'WARD', 'transfer', 'Ready to leave step-down for a ward bed'))
+    inUnit('ICU', 'improving').slice(0, 2).forEach((p) => avail('STEPDOWN') > 0 && push(p, 'STEPDOWN', 'step_down', 'Getting better, which frees an intensive care bed'))
+    inUnit('ER', 'ready').slice(0, 2).forEach((p) => push(p, p.severity <= 3 && avail('WARD') > 0 ? 'WARD' : 'HOME', p.severity <= 3 ? 'admit' : 'discharge', 'Finished treatment in the ER'))
     // then place the waiting, sickest first
     let optimistic = false
     for (const p of waitingList().slice(0, 6)) {
       let to = targetFor(p)
       if (to === 'RESUS' && avail('RESUS') <= 0) to = 'ICU'
-      if (avail(to) > 0) push(p, to, 'admit', `severity ${p.severity}, waited ${p.waited} min`)
+      if (avail(to) > 0) push(p, to, 'admit', `Waited ${p.waited} min; a bed that fits what they need was free`)
       else if (to === 'ICU' && !optimistic) {
         optimistic = true
-        push(p, 'PACU', 'overflow', 'ICU full; PACU as ICU overflow')
-      } else if (S.level >= 2 && avail('HALLWAY') > 0 && p.severity >= 3) push(p, 'HALLWAY', 'hallway', 'ER full; hallway bed at level 2')
+        push(p, 'PACU', 'overflow', 'Intensive care is full, so the recovery room is used instead')
+      } else if (S.level >= 2 && avail('HALLWAY') > 0 && p.severity >= 3) push(p, 'HALLWAY', 'hallway', 'The ER is full, so a hallway bed is used')
     }
     const escalations = []
     const pending = (a) => S.approvals.some((x) => x.action === a)
@@ -750,8 +841,11 @@ export function createMock() {
   const agentFor = (u) => UNIT_AGENT[u] || 'ER'
   const think = (from, to, ctx) => emit('agent.thinking', { from, to }, ctx)
   const PERSONA = { ER: 'Apex', ICU: 'Veil', STEPDOWN: 'Forge', OR: 'Crux', STAFFING: 'Root', IMAGING: 'Trace', BLOODBANK: 'Void', EMS: 'Orbit', COORDINATOR: 'Prism' }
-  const say = (from, to, kind, text, pids = [], how = 'live', ctx = {}) =>
-    emit('agent.message', { msg_id: `m${++S.counters.MSG}`, from, to, kind, text, pids, how, persona: PERSONA[from] || null }, ctx)
+  const say = (from, to, kind, text, pids = [], how = 'live', ctx = {}) => {
+    if (how === 'live' && MODE === 'replay') how = 'replay'
+    if (how in answers && from in PERSONA) answers[how]++
+    return emit('agent.message', { msg_id: `m${++S.counters.MSG}`, from, to, kind, text, pids, how, persona: PERSONA[from] || null }, ctx)
+  }
 
   function statusText(d, st) {
     const bits = [st.line]
@@ -899,9 +993,9 @@ export function createMock() {
       const escSteps = plan.escalations.map((e) =>
         step(380, () => {
           const extra = APPROVAL_DETAIL[e.action]?.() || { params: {}, detail: '' }
-          const a = { approval_id: `A${++S.counters.APR}`, action: e.action, level: S.level, reason: e.reason, params: extra.params, detail: extra.detail, created_at: S.clock }
+          const a = { approval_id: `A${++S.counters.APR}`, action: e.action, level: S.level, reason: e.reason, params: extra.params, detail: extra.detail, created_at: S.clock, sentence: APPROVAL_SENTENCE[e.action] || null }
           S.approvals.push(a)
-          emit('approval.requested', { approval_id: a.approval_id, action: a.action, reason: a.reason, detail: a.detail }, A)
+          emit('approval.requested', { approval_id: a.approval_id, action: a.action, reason: a.reason, detail: a.detail, sentence: a.sentence }, A)
           say('ESCALATION', ['COORDINATOR'], 'system', `Asked staff to approve: ${e.action === 'cancel_elective' ? 'cancel planned surgery' : e.action === 'call_in_staff' ? 'call in 2 nurses' : e.action.replace(/_/g, ' ')}. ${e.reason}.`, [], 'code', A)
         }),
       )
@@ -912,6 +1006,7 @@ export function createMock() {
         }
       })
       const end = step(300, () => {
+        cycleMs.push(performance.now() - t0)
         emit('cycle.end', { cycle_id, ...tally, ms: Math.round(performance.now() - t0) }, { cycle_id, round: null })
         cycleRunning = false
         updateLevel()
@@ -956,6 +1051,7 @@ export function createMock() {
     if (method === 'POST' && path === '/api/control') return control(body || {})
     if (method === 'GET' && (mm = m(/^\/api\/patient\/([^/]+)$/))) return patientDetail(decodeURIComponent(mm[1]))
     if (method === 'GET' && path === '/api/compare') return COMPARE
+    if (method === 'GET' && path === '/api/results') return results()
     throw new Error(`mock: no route for ${method} ${path}`)
   }
 
@@ -1028,14 +1124,20 @@ export function createMock() {
     if (outcome !== 'proceed' && outcome !== 'cancel') throw new Error('outcome must be proceed or cancel')
     const p = S.patients[h.pid]
     S.holds = S.holds.filter((x) => x !== h)
+    resolvedHolds++
     emit('hold.resolved', { hold_id: id, pid: h.pid, outcome })
     if (outcome === 'proceed') {
       place(p, h.to_unit, 'swarm', h.because, {})
+      p.note = 'A person checked both records and approved the move'
+      p.note_by = 'A person (after checking the records)'
       return { ok: true, detail: `${h.pid} moved to ${h.to_unit} after staff review` }
     }
     S.units[h.to_unit].reserved_for = S.units[h.to_unit].reserved_for.filter((x) => x !== h.pid)
     p.locked = false
     p.state = p.unit ? 'placed' : 'waiting'
+    p.heading_to = null
+    p.note = 'A person decided to keep them where they are'
+    p.note_by = 'A person'
     return { ok: true, detail: `Reserved ${h.to_unit} bed released. ${h.pid} ${p.unit ? `stays in ${p.unit}` : 'is back in the queue'}` }
   }
 
@@ -1050,9 +1152,41 @@ export function createMock() {
       if (b.key !== 'demo') throw new Error('Reset needs the demo key')
       resetWorld()
       minuteAcc = 0
+      for (const k in answers) answers[k] = 0
+      cycleMs.length = 0
+      resolvedHolds = 0
     } else throw new Error(`unknown control action ${b.action}`)
     emitSnapshot()
     return { ok: true }
+  }
+
+  function results() {
+    const all = allPatients()
+    const planted = all.filter((p) => p.conflicts.length && !p.pid.startsWith('IN'))
+    const arrived = planted.filter((p) => p.state !== 'incoming')
+    const bucket = (sevs) => {
+      const xs = all.filter((p) => sevs.includes(p.severity) && p.bedWait != null).map((p) => p.bedWait)
+      return { patients: xs.length, avg_min: xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : 0, max_min: xs.length ? Math.max(...xs) : 0 }
+    }
+    return {
+      time_to_bed: { 1: bucket([1]), 2: bucket([2]), 3: bucket([3]), '4-5': bucket([4, 5]) },
+      records: {
+        planted: planted.length,
+        on_arrived_patients: arrived.length,
+        caught_before_moving: arrived.filter((p) => p.records_flag).length,
+        waiting_for_a_human: S.holds.length,
+        resolved_by_a_human: resolvedHolds,
+        extra_flags: 0,
+      },
+      agents: {
+        mode: MODE,
+        cycles: S.counters.CY,
+        avg_cycle_seconds: cycleMs.length ? Math.round(cycleMs.reduce((a, b) => a + b, 0) / cycleMs.length / 100) / 10 : 0,
+        answers: Object.fromEntries(Object.entries(answers).filter(([, v]) => v > 0)),
+        agents: 9,
+      },
+      note: 'Practice data from the in-browser mock.',
+    }
   }
 
   function patientDetail(pid) {

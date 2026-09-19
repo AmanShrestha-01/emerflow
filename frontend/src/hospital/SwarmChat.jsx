@@ -1,4 +1,4 @@
-import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createContext, Fragment, memo, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { agentKind, agentLabel, simTime } from './format.js'
 
 const RENDER_CAP = 220 // messages drawn at once (the store keeps ~400)
@@ -57,7 +57,49 @@ function buildGroups(messages, cycles) {
 }
 
 // Link patient ids mentioned in the text; list any others after it.
-function Text({ text = '', pids = [], onSelect }) {
+// When provided (pid -> name), patient codes are shown as names everywhere in the chat.
+export const NamesContext = createContext(null)
+const CODE_RE = /\b([A-Z]{1,3}-\d{1,4})\b/g
+
+function NamedText({ text, pids, names, onSelect }) {
+  const parts = text.split(CODE_RE)
+  const seen = new Set()
+  const out = parts.map((part, i) => {
+    if (i % 2 === 0) return <Fragment key={i}>{part}</Fragment>
+    seen.add(part)
+    const nm = names[part]
+    return nm ? (
+      <button key={i} className="pidlink pidname" onClick={() => onSelect(part)}>
+        {nm}
+      </button>
+    ) : (
+      <Fragment key={i}>a patient</Fragment>
+    )
+  })
+  const extra = [...new Set(pids.filter((p) => p && !seen.has(p) && names[p] && !text.includes(names[p])))]
+  return (
+    <>
+      {out}
+      {extra.length > 0 && (
+        <span className="pidchips">
+          {extra.map((p) => (
+            <button key={p} className="pidlink pidname" onClick={() => onSelect(p)}>
+              {names[p]}
+            </button>
+          ))}
+        </span>
+      )}
+    </>
+  )
+}
+
+// everyday unit words in agent text
+const tidy = (t) => String(t || '').replace(/\bstep ?down\b/gi, (m) => (m[0] === 'S' ? 'Step-down' : 'step-down')).replace(/\bPACU\b/g, 'Recovery')
+
+function Text({ text: raw = '', pids = [], onSelect }) {
+  const names = useContext(NamesContext)
+  const text = tidy(raw)
+  if (names) return <NamedText text={text} pids={pids || []} names={names} onSelect={onSelect} />
   const ids = [...new Set(pids.filter(Boolean))]
   if (!ids.length) return <>{text}</>
   const re = new RegExp(`(${ids.map((p) => p.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|')})`, 'g')
@@ -89,6 +131,7 @@ function Text({ text = '', pids = [], onSelect }) {
 
 function How({ how }) {
   if (how === 'live') return <span className="how how-live" title="Written by Gemini">Gemini</span>
+  if (how === 'replay') return <span className="how how-live" title="Replayed from a recorded live Gemini run">Gemini (replay)</span>
   if (how === 'stub' || how === 'fallback') return <span className="how how-rules" title={`Written by rules (${how})`}>rules</span>
   return null
 }

@@ -240,7 +240,9 @@ Personality and voice: {d.persona}
 You push for: {d.pushes_for}. You push back {d.pushes_back}.
 Your goal: {d.goal}
 Hard limits you must respect: {d.limits}
-Speak in your own voice, in first person ("we"), like a real colleague on a hospital radio call."""
+Speak in your own voice, in first person ("we"), like a real colleague on a hospital radio call.
+Use everyday words a non-medical listener understands (no jargon like "decant", "census" or "acuity"),
+and short sentences."""
 
 
 def status_prompt(d: DeptConfig, view: dict) -> str:

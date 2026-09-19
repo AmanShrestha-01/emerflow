@@ -5,16 +5,18 @@ import KpiBar from './KpiBar.jsx'
 import Queue from './Queue.jsx'
 import UnitMap from './UnitMap.jsx'
 import SwarmFeed from './SwarmFeed.jsx'
-import SwarmChat from './SwarmChat.jsx'
+import SwarmChat, { NamesContext } from './SwarmChat.jsx'
 import AgentNetwork from './AgentNetwork.jsx'
 import ApprovalDrawer from './ApprovalDrawer.jsx'
 import PatientDetail from './PatientDetail.jsx'
 import StoryStrip from './StoryStrip.jsx'
 import { Hint, HintProvider, useHints } from './Hints.jsx'
-import SimpleView from './SimpleView.jsx'
+import PlainView from './PlainView.jsx'
 import { BusCrashButton, BusyNightButton, useScenario, useView } from './scenario.jsx'
+import { ModeBadge, ResultsButton } from './results.jsx'
 import './Board.css'
 import './Simple.css'
+import './Plain.css'
 
 export default function Board() {
   return (
@@ -77,7 +79,7 @@ function BoardInner() {
   if (view === 'simple') {
     return (
       <>
-        <SimpleView st={st} ev={ev} run={run} patientsById={patientsById} onSelect={setSelected} onFull={() => setView('full')} />
+        <PlainView st={st} ev={ev} run={run} onFull={() => setView('full')} />
         {detail}
         {toastEl}
       </>
@@ -110,6 +112,9 @@ function BoardInner() {
 
 function RightPanel({ ev, onSelect }) {
   const [raw, setRaw] = useState(false)
+  // show patient names, never codes, in the conversation
+  const patients = ev.state?.patients
+  const names = useMemo(() => Object.fromEntries((patients || []).filter((p) => p.name).map((p) => [p.pid, p.name])), [patients])
   // cycle_id -> {trigger, done}, from the event log
   const cycles = useMemo(() => {
     const m = {}
@@ -137,7 +142,9 @@ function RightPanel({ ev, onSelect }) {
       {raw ? (
         <SwarmFeed feed={ev.feed} onSelect={onSelect} embedded />
       ) : (
-        <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={onSelect} />
+        <NamesContext.Provider value={names}>
+          <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={onSelect} />
+        </NamesContext.Provider>
       )}
     </section>
   )
@@ -194,6 +201,8 @@ function Header({ st, ev, run, onSimple }) {
         </span>
       </div>
 
+      <ModeBadge mode={st.mode} />
+
       <div className="clock" aria-label="Simulated time">
         <span className="clock-t">{simTime(st.clock)}</span>
         <span className="clock-s">{st.paused ? 'Paused' : `Running at ${st.speed || 1}×`}</span>
@@ -226,6 +235,7 @@ function Header({ st, ev, run, onSimple }) {
         <button className="ctl ctl-help" onClick={showAll}>
           How to read this
         </button>
+        <ResultsButton className="ctl ctl-help" />
         <button className="ctl ctl-help" onClick={onSimple}>
           Simple view
         </button>

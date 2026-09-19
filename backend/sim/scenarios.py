@@ -16,9 +16,12 @@ from backend.sim.triage import care_need
 TODAY = _dt.date(2026, 9, 19)
 FIRST = ["Maya", "Omar", "Lena", "Jon", "Priya", "Luis", "Grace", "Tariq", "Ivy", "Sam", "Nia",
          "Ben", "Rosa", "Kai", "Elena", "Dev", "Hana", "Marco", "Zoe", "Amir", "Tess", "Noah",
-         "Ada", "Felix", "June", "Ravi", "Iris", "Theo", "Mei", "Cole"]
+         "Ada", "Felix", "June", "Ravi", "Iris", "Theo", "Mei", "Cole", "Aisha", "Diego", "Fatima",
+         "Hugo", "Keiko", "Lucas", "Nadia", "Oscar", "Paula", "Quinn", "Sofia", "Tomas", "Uma", "Victor",
+         "Wen", "Yara", "Zain", "Bella", "Chidi", "Emma"]
 LAST = ["Park", "Diaz", "Okafor", "Reyes", "Cho", "Singh", "Novak", "Haddad", "Brooks", "Ito",
-        "Kowalski", "Mensah", "Silva", "Grant", "Lopez", "Ahmed", "Moreau", "Kim"]
+        "Kowalski", "Mensah", "Silva", "Grant", "Lopez", "Ahmed", "Moreau", "Kim", "Nguyen", "Garcia",
+        "Rossi", "Bauer", "Ferreira", "Adeyemi", "Larsen", "Petrov", "Tanaka", "Hughes", "Costa", "Walsh"]
 
 MCI_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {  # (complaint, needs_ct, needs_blood)
     1: [("multiple trauma, unresponsive", True, True), ("internal bleeding, low pressure", True, True)],
@@ -43,8 +46,13 @@ CT_COMPLAINTS = ("stroke symptoms", "chest pain, sweaty", "fall, hip pain", "abd
 BLOOD_TYPES = ["O+", "O+", "A+", "A+", "B+", "O-", "A-", "AB+"]
 
 
-def _name(rng: random.Random) -> str:
-    return f"{rng.choice(FIRST)} {rng.choice(LAST)}"
+def _name(rng: random.Random, taken: set[str] | None = None) -> str:
+    """A name nobody else in the hospital has, since the screen shows names instead of codes."""
+    for _ in range(200):
+        name = f"{rng.choice(FIRST)} {rng.choice(LAST)}"
+        if not taken or name not in taken:
+            return name
+    return f"{rng.choice(FIRST)} {rng.choice(LAST)}-{rng.choice(LAST)}"
 
 
 def _claims(p: Patient, rng: random.Random, sid: str) -> dict[str, Claim]:
@@ -117,7 +125,8 @@ def plant(p: Patient, fact: str, kind: str, key: list[dict]) -> None:
 def _patient(h: Hospital, rng: random.Random, prefix: str, severity: int, complaint: str,
              arrived_at: int, **kw) -> Patient:
     pid = f"{prefix}-{len([x for x in h.patients if x.startswith(prefix)]) + 1:02d}"
-    p = Patient(pid=pid, name=_name(rng), age=rng.randint(19, 88), complaint=complaint,
+    taken = {q.name for q in h.patients.values()}
+    p = Patient(pid=pid, name=_name(rng, taken), age=rng.randint(19, 88), complaint=complaint,
                 severity=severity, arrived_at=arrived_at, blood_type=rng.choice(BLOOD_TYPES), **kw)
     p.need, surgery = care_need(complaint, severity)
     p.needs_surgery = p.needs_surgery or surgery

@@ -86,7 +86,9 @@ Write ONE plan:
    Freeing a proper bed is better than a HALLWAY bed; use HALLWAY/PACU only when nothing can be freed.
 3. Never move a patient to a unit outside their "may_go_to". Never exceed free beds (count freed beds).
 4. Escalations: only from the allowed list, only when clearly needed; a human approves them.
-5. summary: one or two plain sentences for the incident commander.
+5. summary: one or two short sentences a person with no medical background understands. Everyday words only
+   (say "moving patients out", not "decanting"; "step-down", not "Stepdown"; "intensive care", not "ICU capacity").
+   Refer to patients by name if at all, never by id.
 Use only patient ids listed above. Choose units, never bed numbers. Code re-checks every move, and a records
 check compares each patient's records on the facts the move relies on. Never state which record is correct
 and never give clinical instructions."""

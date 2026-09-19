@@ -104,7 +104,7 @@ export default function PatientDetail({ pid, st, lastMove, onClose, run }) {
               <dd>{p.state === 'incoming' ? `${p.eta ?? '?'} min` : mins(p.waited || 0)}</dd>
             </div>
             <div>
-              <dt>Needs</dt>
+              <dt>Tests and supplies</dt>
               <dd className="pd-needs">
                 {p.needs_ct && 'CT scan'}
                 {p.needs_ct && p.needs_blood && ', '}
@@ -115,12 +115,29 @@ export default function PatientDetail({ pid, st, lastMove, onClose, run }) {
             </div>
           </dl>
 
+          {(p.need || p.note) && (
+            <div className="pd-story">
+              {p.need && (
+                <p>
+                  <span className="pd-story-k">Needs</span> {p.need}
+                  {p.needs_surgery ? ' (surgery)' : ''}
+                </p>
+              )}
+              {p.note && (
+                <p>
+                  <span className="pd-story-k">Why here</span> <q>{p.note}</q>
+                  {p.note_by && <span className="pd-story-by"> decided by {p.note_by}</span>}
+                </p>
+              )}
+            </div>
+          )}
+
           {hold && (
             <div className="pd-hold" role="alert">
               <div className="pd-hold-t">{HOLD_TITLE}</div>
               <div className="pd-hold-n">{HOLD_NOTICE}</div>
               <div className="pd-hold-m">
-                {holdSentence(hold).q} The move is paused and the bed is held back until you decide. Compare the records below.
+                {holdSentence(hold).q} The move is paused and the bed is held back until you decide. A doctor can check both records in DeepChart.
               </div>
               <HoldActions h={hold} run={run} />
             </div>
