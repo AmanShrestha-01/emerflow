@@ -75,12 +75,35 @@ export const REASONS = [
   ['consult', 'Consult'],
 ]
 
+// Everyday words first; the clinical term is kept for tooltips.
 export const FACT_LABEL = {
-  anticoagulant: 'Blood thinner (anticoagulant)',
+  anticoagulant: 'Blood thinners',
   penicillin_allergy: 'Penicillin allergy',
-  vitals_stable: 'Vital signs stable',
-  icu_need: 'Needs ICU',
-  on_pressors: 'On pressors',
+  vitals_stable: 'Stable heart rate and breathing',
+  icu_need: 'Needs intensive care',
+  on_pressors: 'On blood-pressure support',
   blood_type: 'Blood type',
 }
+export const FACT_TECH = {
+  anticoagulant: 'anticoagulant',
+  penicillin_allergy: 'penicillin allergy',
+  vitals_stable: 'vital signs stable',
+  icu_need: 'ICU need',
+  on_pressors: 'vasopressors',
+  blood_type: 'ABO/Rh blood type',
+}
+export const UNIT_WORD = {
+  RESUS: 'Resuscitation room',
+  ER: 'Emergency bed',
+  HALLWAY: 'Hallway bed',
+  ICU: 'Intensive care (ICU)',
+  STEPDOWN: 'Close-watch bed',
+  WARD: 'Ward bed',
+  OR: 'Surgery',
+  PACU: 'Recovery room',
+  LOUNGE: 'Discharge lounge',
+  HOME: 'Home',
+  PARTNER: 'Another hospital',
+}
+export const unitWord = (u) => UNIT_WORD[u] || u
 export const FACTS = Object.keys(FACT_LABEL)

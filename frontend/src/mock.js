@@ -134,7 +134,7 @@ const TO_WORDS = { RESUS: 'the resuscitation room', ER: 'an emergency bed', HALL
 const FACT_ABOUT = { anticoagulant: 'whether they take blood thinners', penicillin_allergy: 'whether they are allergic to penicillin', vitals_stable: 'whether their heart rate and breathing are stable', icu_need: 'whether they need intensive care', on_pressors: 'whether they are on a blood-pressure drip', blood_type: 'their blood type' }
 const UNIT_NEED = {
   ICU: 'Intensive care',
-  STEPDOWN: 'Close monitoring (step-down)',
+  STEPDOWN: 'Close-watch bed',
   WARD: 'A ward bed to recover',
   OR: 'Surgery',
   PACU: 'Waking up after surgery',
@@ -248,7 +248,7 @@ export function createMock() {
     // start with one move waiting on a person (records disagree) and one big action to approve
     tryMove({ pid: 'W-01', to_unit: 'STEPDOWN', reason: 'Chest pain needs close monitoring' }, 'swarm', {})
     S.approvals.push({
-      approval_id: `A${++S.counters.APR}`, action: 'call_in_staff', level: S.level, reason: 'ICU and step-down above nurse ratio',
+      approval_id: `A${++S.counters.APR}`, action: 'call_in_staff', level: S.level, reason: 'ICU and close-watch beds above nurse ratio',
       params: { count: 2 }, detail: '2 off-duty nurses', created_at: 0, sentence: APPROVAL_SENTENCE.call_in_staff,
     })
   }
@@ -672,7 +672,7 @@ export function createMock() {
         S.units.ICU.nurses += 1
         S.units.STEPDOWN.nurses += 1
         S.nurseArrivals = S.nurseArrivals.filter((x) => x !== a)
-        emit('notice', { text: '2 called-in nurses arrived: +1 ICU, +1 step-down' })
+        emit('notice', { text: '2 called-in nurses arrived: +1 ICU, +1 close-watch' })
       }
     }
     if (S.clock % 17 === 0) {
@@ -815,7 +815,7 @@ export function createMock() {
       if (!S.pacuOverflow && !pending('cancel_elective') && S.or_cases.some((c) => c.kind === 'elective' && c.status === 'scheduled'))
         escalations.push({ action: 'cancel_elective', reason: 'PACU needed as ICU overflow' })
       if (!S.calledIn && !pending('call_in_staff') && S.off_duty_nurses >= 2)
-        escalations.push({ action: 'call_in_staff', reason: 'ICU and step-down above nurse ratio' })
+        escalations.push({ action: 'call_in_staff', reason: 'ICU and close-watch beds above nurse ratio' })
     }
     const nFree = moves.filter((m) => m.kind !== 'admit' && m.kind !== 'overflow' && m.kind !== 'hallway').length
     const nAdmit = moves.length - nFree

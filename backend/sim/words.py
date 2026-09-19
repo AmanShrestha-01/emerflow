@@ -19,14 +19,14 @@ FACT_WORDS: dict[str, str] = {
 
 PLACE_WORDS: dict[str, str] = {
     "RESUS": "the resuscitation room", "ER": "an emergency bed", "HALLWAY": "a hallway bed",
-    "ICU": "an intensive care (ICU) bed", "STEPDOWN": "a step-down bed", "WARD": "a ward bed",
+    "ICU": "an intensive care (ICU) bed", "STEPDOWN": "a close-watch bed", "WARD": "a ward bed",
     "OR": "surgery", "PACU": "the recovery room", "LOUNGE": "the discharge lounge", "HOME": "home",
     "PARTNER": "another hospital",
 }
 
 _PID = re.compile(r"\b(?:IN|MC|WI|RD|TR|HB)-\d+\b")
 _UNIT = re.compile(r"\b(STEPDOWN|PACU|RESUS|HALLWAY|LOUNGE)\b")
-_UNIT_PLAIN = {"STEPDOWN": "step-down", "PACU": "recovery", "RESUS": "resuscitation", "HALLWAY": "hallway",
+_UNIT_PLAIN = {"STEPDOWN": "close-watch beds", "PACU": "recovery", "RESUS": "resuscitation", "HALLWAY": "hallway",
                "LOUNGE": "discharge lounge"}
 
 
@@ -45,4 +45,17 @@ def plain(text: str, h: "Hospital") -> str:
         p = h.patients.get(m.group(0))
         return p.name if p else "a patient"
     text = _PID.sub(name, text or "")
-    return _UNIT.sub(lambda m: _UNIT_PLAIN[m.group(0)], text)
+    text = _UNIT.sub(lambda m: _UNIT_PLAIN[m.group(0)], text)
+    return close_watch(text)
+
+
+_STEP_VERB = re.compile(r"\bstep down\b", re.I)
+_STEP_ING = re.compile(r"\bstepp(ing|ed) down\b", re.I)
+_STEP_NOUN = re.compile(r"\bstep-?downs?\b", re.I)
+
+
+def close_watch(text: str) -> str:
+    """'step-down' is hospital jargon; say 'close-watch' (beds for patients who still need watching)."""
+    text = _STEP_ING.sub(lambda m: ("moving" if m.group(1).lower() == "ing" else "moved"), text)
+    text = _STEP_VERB.sub(lambda m: "move to close-watch beds" if m.group(0)[0].islower() else "Move to close-watch beds", text)
+    return _STEP_NOUN.sub(lambda m: "close-watch" if m.group(0)[0].islower() else "Close-watch", text)

@@ -285,6 +285,13 @@
   margin-top: 4px;
 }
 
+.dc-code {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 4px;
+}
 .dc-hold-conflict {
   margin-top: 8px;
 }

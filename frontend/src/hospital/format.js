@@ -21,7 +21,7 @@ export const UNIT_LABEL = {
   ER: 'Emergency',
   HALLWAY: 'Hallway overflow',
   ICU: 'ICU',
-  STEPDOWN: 'Step-down',
+  STEPDOWN: 'Close-watch',
   WARD: 'Ward',
   OR: 'Surgery',
   PACU: 'Recovery (PACU)',
@@ -79,7 +79,7 @@ export const actionLabel = (a) => ACTION_LABEL[a] || String(a || '').replace(/_/
 export const AGENTS = {
   ER: { label: 'ER', short: 'ER', kind: 'ai' },
   ICU: { label: 'ICU', short: 'ICU', kind: 'ai' },
-  STEPDOWN: { label: 'Step-down', short: 'SD', kind: 'ai' },
+  STEPDOWN: { label: 'Close-watch', short: 'CW', kind: 'ai' },
   OR: { label: 'Surgery', short: 'OR', kind: 'ai' },
   STAFFING: { label: 'Staffing', short: 'ST', kind: 'ai' },
   IMAGING: { label: 'Imaging', short: 'IM', kind: 'ai' },

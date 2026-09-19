@@ -44,8 +44,8 @@ def _make_room(h: Hospital, unit: str, moves: list[PlanMove], depth: int = 0) ->
              (p.improving if unit in ("ICU", "STEPDOWN") else p.ready_for_discharge)]
     for p in sorted(cands, key=lambda p: -p.severity):
         for dest in MAKE_ROOM[unit]:
-            why = {"STEPDOWN": "Getting better, so moving out of intensive care to free a bed for someone sicker",
-                   "WARD": "Stable now, so moving to the ward to free a step-down bed",
+            why = {"STEPDOWN": "Getting better, so moving from intensive care to a close-watch bed, freeing intensive care for someone sicker",
+                   "WARD": "Stable now, so moving to the ward to free a close-watch bed",
                    "LOUNGE": "Ready to go home; waiting in the discharge lounge to free a ward bed"}[dest]
             if _try(h, p.pid, unit, dest, "transfer", why, moves):
                 return True
@@ -108,7 +108,7 @@ def rule_plan(live: Hospital, *, escalate: bool = True) -> Plan:
         _admit_up(h, p, moves)
     # Routine flow: recovered patients move down a level when a bed is free there.
     for unit, dest, why in (("STEPDOWN", "WARD", "Recovered enough to move to the ward"),
-                            ("ICU", "STEPDOWN", "Getting better, so stepping down from intensive care")):
+                            ("ICU", "STEPDOWN", "Getting better, so moving from intensive care to a close-watch bed")):
         for p in [p for p in h.in_unit(unit) if p.improving and p.pid not in h.locked][:2]:
             _try(h, p.pid, unit, dest, "transfer", why, moves)
 

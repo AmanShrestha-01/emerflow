@@ -15,7 +15,7 @@ const WHERE = {
   ER: 'Emergency bed',
   HALLWAY: 'Hallway bed',
   ICU: 'Intensive care (ICU)',
-  STEPDOWN: 'Step-down bed',
+  STEPDOWN: 'Close-watch bed',
   WARD: 'Ward bed',
   OR: 'In surgery',
   PACU: 'Recovery room',
@@ -28,7 +28,7 @@ const TO_WORDS = {
   ER: 'an emergency bed',
   HALLWAY: 'a hallway bed',
   ICU: 'an intensive care (ICU) bed',
-  STEPDOWN: 'a step-down bed',
+  STEPDOWN: 'a close-watch bed',
   WARD: 'a ward bed',
   OR: 'surgery',
   PACU: 'the recovery room',
@@ -39,7 +39,7 @@ const TO_WORDS = {
 const FREE_UNITS = [
   ['ER', 'Emergency'],
   ['ICU', 'Intensive care'],
-  ['STEPDOWN', 'Step-down'],
+  ['STEPDOWN', 'Close-watch'],
   ['WARD', 'Ward'],
   ['OR', 'Surgery'],
 ]

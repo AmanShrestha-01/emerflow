@@ -20,11 +20,12 @@ from backend.deepchart.chart import check_order, conflicts_json, merged
 from backend.deepchart.records import HOME, HOSP_B, HOSPITALS, Identity, Registry
 from backend.sim.models import FACTS, Patient
 from backend.sim.scenarios import plant
+from backend.sim.words import place
 
 TRANSFER_ETA = 8  # sim minutes from "send" to arrival at HOME
 
 UNIT_WORDS = {"RESUS": "the resuscitation room", "ER": "the emergency department", "HALLWAY": "an emergency bed",
-              "ICU": "intensive care", "STEPDOWN": "the step-down unit", "WARD": "a ward", "OR": "surgery",
+              "ICU": "intensive care", "STEPDOWN": "the close-watch beds", "WARD": "a ward", "OR": "surgery",
               "PACU": "recovery", "LOUNGE": "the discharge lounge"}
 
 
@@ -230,10 +231,10 @@ class Portal:
         to_unit = hold.move.to_unit
         detail = self.e.resolve_hold(hold_id, outcome)
         if outcome == "proceed":
-            self._log(sess, pid, f"checked the records and let the move to {to_unit} go ahead", reason,
+            self._log(sess, pid, f"checked the records and let the move to {place(to_unit)} go ahead", reason,
                       public="double-checked your records")
         else:
-            self._log(sess, pid, f"checked the records and stopped the move to {to_unit}", reason,
+            self._log(sess, pid, f"checked the records and stopped the move to {place(to_unit)}", reason,
                       public="double-checked your records")
         return {"ok": True, "detail": detail, "outcome": outcome, "to_unit": to_unit}
 
@@ -297,7 +298,7 @@ class Portal:
         self._log(sess, new_pid, f"sent the record with a transfer to {HOME}", "transfer")
         self.e.emit("transfer.received", {"transfer_id": t.transfer_id, "pid": new_pid,
                                           "from_hospital": HOSP_B, "to_hospital": HOME})
-        self.e.emit("notice", {"text": f"Transfer from {HOSP_B}: {p.name} ({new_pid}) arrives in "
+        self.e.emit("notice", {"text": f"Transfer from {HOSP_B}: {p.name} arrives in "
                                        f"{TRANSFER_ETA} min, records attached"})
         return {"transfer_id": t.transfer_id, "pid": new_pid}
 

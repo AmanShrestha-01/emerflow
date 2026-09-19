@@ -84,10 +84,10 @@ def _er_stub(h: Hospital) -> DeptStatus:
 
 def _icu_stub(h: Hospital) -> DeptStatus:
     u = h.units["ICU"]
-    offers = [Offer(pid=p.pid, to_unit="STEPDOWN", ready_in_min=0, why="improving, can step down")
+    offers = [Offer(pid=p.pid, to_unit="STEPDOWN", ready_in_min=0, why="getting better, can move to a close-watch bed")
               for p in h.in_unit("ICU") if p.improving and p.pid not in h.locked]
     line = (f"{u.free} bed left, holding it for critical patients" if u.free == 1 else
-            f"ICU full; {len(offers)} improving patient(s) could step down" if u.free == 0 else
+            f"ICU full; {len(offers)} patient(s) getting better could move to close-watch beds" if u.free == 0 else
             f"{u.free} ICU beds open")
     return DeptStatus(line=line, free_now=u.free, can_free=offers)
 
@@ -98,7 +98,7 @@ def _floors_stub(h: Hospital) -> DeptStatus:
     offers += [Offer(pid=p.pid, to_unit="LOUNGE", ready_in_min=0, why="ready to go home")
                for p in h.in_unit("WARD") if p.ready_for_discharge and p.pid not in h.locked]
     sd, wd = h.units["STEPDOWN"].free, h.units["WARD"].free
-    return DeptStatus(line=f"Step-down {sd} free, ward {wd} free; {len(offers)} patients could move on",
+    return DeptStatus(line=f"Close-watch beds {sd} free, ward {wd} free; {len(offers)} patients could move on",
                       free_now=sd, can_free=offers)
 
 
@@ -167,18 +167,18 @@ DEPARTMENTS: list[DeptConfig] = [
         archetype="Apex", lens="You cut to the core: who is sickest and has waited longest, and what single bed would change that?"),
     DeptConfig(
         "ICU", "Keep capacity for the sickest patients.",
-        "1 nurse per 2 patients. Only improving patients may step down.", _icu_view, _icu_stub,
+        "1 nurse per 2 patients. Only patients who are getting better may move out to close-watch beds.", _icu_view, _icu_stub,
         role="the ICU attending",
         persona="Cautious and protective. Measured, precise wording. Thinks one step ahead about the next crash.",
         pushes_for="keeping one bed in reserve and only admitting truly critical patients",
-        pushes_back="when asked to take patients who could go elsewhere, or to step down patients too early",
+        pushes_back="when asked to take patients who could go elsewhere, or to move patients out too early",
         temperature=0.2,
         archetype="Veil", lens="You look beneath the surface: what hidden risk does saying yes create, and who could crash next?"),
     DeptConfig(
-        "STEPDOWN", "Take ICU step-downs; move stable patients to the ward and ready ones home.",
-        "Step-down 1 nurse per 4 patients. Only discharge-ready patients go to the lounge.",
+        "STEPDOWN", "Take patients leaving intensive care; move stable patients to the ward and ready ones home.",
+        "Close-watch beds: 1 nurse per 4 patients. Only discharge-ready patients go to the lounge.",
         _floors_view, _floors_stub,
-        role="the step-down and ward bed manager",
+        role="the bed manager for the close-watch beds and the ward",
         persona="Practical and cooperative. Thinks in chains: who moves out so someone else can move in.",
         pushes_for="moving discharge-ready patients out first so beds open up down the chain",
         pushes_back="when handed more patients than it has nurses for",
@@ -241,7 +241,8 @@ You push for: {d.pushes_for}. You push back {d.pushes_back}.
 Your goal: {d.goal}
 Hard limits you must respect: {d.limits}
 Speak in your own voice, in first person ("we"), like a real colleague on a hospital radio call.
-Use everyday words a non-medical listener understands (no jargon like "decant", "census" or "acuity"),
+Use everyday words a non-medical listener understands (no jargon like "decant", "census", "acuity" or "step-down";
+call the STEPDOWN unit "the close-watch beds"),
 and short sentences."""
 
 

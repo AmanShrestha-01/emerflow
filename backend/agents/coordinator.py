@@ -87,7 +87,8 @@ Write ONE plan:
 3. Never move a patient to a unit outside their "may_go_to". Never exceed free beds (count freed beds).
 4. Escalations: only from the allowed list, only when clearly needed; a human approves them.
 5. summary: one or two short sentences a person with no medical background understands. Everyday words only
-   (say "moving patients out", not "decanting"; "step-down", not "Stepdown"; "intensive care", not "ICU capacity").
+   (say "moving patients out", not "decanting"; "close-watch beds", never "step-down"; "intensive care", not "ICU capacity").
+   The unit called STEPDOWN in the data is the "close-watch beds": patients who no longer need intensive care but still need watching.
    Refer to patients by name if at all, never by id.
 Use only patient ids listed above. Choose units, never bed numbers. Code re-checks every move, and a records
 check compares each patient's records on the facts the move relies on. Never state which record is correct
@@ -100,9 +101,9 @@ def question_for(h: Hospital) -> tuple[str, str] | None:
     icu_free = h.units["ICU"].free
     if len(crit) > icu_free:
         return "ICU", (f"{len(crit)} critical patients need ICU-level beds and you have {icu_free} free. "
-                       f"Who could you step down in the next 15 minutes?")
+                       f"Who could move to the close-watch beds in the next 15 minutes?")
     if len(h.waiting()) >= 5 and h.units["STEPDOWN"].free == 0:
-        return "STEPDOWN", "Step-down is full and the ER queue is growing. Who can move to the ward or go home?"
+        return "STEPDOWN", "The close-watch beds are full and more people are waiting. Who can move to the ward or go home?"
     return None
 
 

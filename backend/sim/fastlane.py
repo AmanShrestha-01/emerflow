@@ -26,7 +26,7 @@ def place_one(h: Hospital, p: Patient, emit: Emit = _noop, source: str = "fastla
     options = ["RESUS", "ICU", "HALLWAY"] if p.severity == 1 else [preferred_unit(p)]
     for unit in options:
         where = {"RESUS": "resuscitation", "ICU": "an ICU bed", "HALLWAY": "a hallway bed (overflow)",
-                 "ER": "an emergency bed", "STEPDOWN": "a step-down bed"}.get(unit, unit)
+                 "ER": "an emergency bed", "STEPDOWN": "a close-watch bed"}.get(unit, unit)
         reason = (f"Life-threatening: straight to {where}" if p.severity == 1
                   else f"{p.need or 'Care needed'}: {where} was free")
         m = Move(h.next_id("M"), p.pid, p.unit, unit, "admit", source=source, reason=reason)

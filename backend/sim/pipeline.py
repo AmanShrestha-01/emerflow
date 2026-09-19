@@ -16,7 +16,7 @@ Emit = Callable[..., object]
 BY = {"fastlane": "Hospital rules", "swarm": "AI agents", "fallback": "Hospital rules",
       "baseline": "Hospital rules", "human": "A person"}
 PLACE = {"RESUS": "a resuscitation bay", "ER": "an emergency bed", "HALLWAY": "a hallway bed", "ICU": "an ICU bed",
-         "STEPDOWN": "a step-down bed", "WARD": "a ward bed", "OR": "surgery", "PACU": "recovery (PACU)",
+         "STEPDOWN": "a close-watch bed", "WARD": "a ward bed", "OR": "surgery", "PACU": "recovery (PACU)",
          "LOUNGE": "the discharge lounge", "HOME": "home", "PARTNER": "a partner hospital"}
 
 

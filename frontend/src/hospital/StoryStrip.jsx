@@ -38,7 +38,7 @@ function compose(st, feed) {
     .map((u) => unitLabel(u.unit))
   const kinds = new Set((plan?.moves || []).map((m) => m.kind))
   let doing = null
-  if (kinds.has('step_down')) doing = 'the agents are moving recovering patients to step-down'
+  if (kinds.has('step_down')) doing = 'the agents are moving recovering patients to close-watch beds'
   else if (kinds.has('discharge')) doing = 'the agents are discharging patients who are ready to leave'
   else if (kinds.has('transfer')) doing = 'the agents are moving patients to the ward'
   else if (kinds.has('admit')) doing = 'the agents are placing waiting patients'

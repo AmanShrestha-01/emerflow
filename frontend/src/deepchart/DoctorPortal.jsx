@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Sev } from '../hospital/bits.jsx'
-import { FACT_LABEL, FACTS, REASONS, loadSession, portal, saveSession } from './portalApi.js'
+import { FACT_LABEL, FACT_TECH, FACTS, REASONS, loadSession, portal, saveSession, unitWord } from './portalApi.js'
 import './deepchart.css'
 
 const HOME = 'Emer Flow General'
@@ -10,12 +10,40 @@ const DEEP = (() => {
   const q = new URLSearchParams(window.location.search)
   return { pid: q.get('pid'), hold: q.get('hold'), pin: q.get('pin') }
 })()
-const UNIT_WORD = { HOME: 'home', PARTNER: 'a partner hospital' }
+const STATE_WORD = {
+  incoming: 'on the way',
+  waiting: 'waiting for a bed',
+  held: 'waiting: records being checked',
+  placed: 'in a bed',
+}
 const STATUS_WORD = { active: 'ACTIVE', present: 'PRESENT', stopped: 'STOPPED', absent: 'NONE RECORDED' }
 
 // ---------------------------------------------------------------- shell
 export default function DoctorPortal() {
-  const [session, setSession] = useState(loadSession)
+  const [session, setSession] = useState(null)
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const stored = loadSession()
+    const done = (s) => {
+      saveSession(s)
+      setSession(s)
+      setReady(true)
+    }
+    if (DEEP.pin) {
+      // demo deep link: always start from a fresh login, never a token from before a restart
+      portal
+        .login(HOME, 'doctor', DEEP.pin)
+        .then(done)
+        .catch(() => done(null))
+    } else if (stored) {
+      portal
+        .patients(stored)
+        .then(() => done(stored))
+        .catch(() => done(null))
+    } else {
+      done(null)
+    }
+  }, [])
   const logout = () => {
     saveSession(null)
     setSession(null)
@@ -27,6 +55,7 @@ export default function DoctorPortal() {
     }
   }, [])
 
+  if (!ready) return <p className="dc-empty">Loading…</p>
   if (!session) return <Login onIn={(s) => (saveSession(s), setSession(s))} />
   return (
     <div className="dc">
@@ -67,13 +96,13 @@ function Login({ onIn }) {
       .then((hs) => setHospitals(hs.map((h) => h.name)))
       .catch(() => {})
   }, [])
+  const [who, setWho] = useState(null)
   useEffect(() => {
-    if (!DEEP.pin) return
-    portal
-      .login(HOME, 'doctor', DEEP.pin)
-      .then(onIn)
-      .catch((err) => setError(err.message))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!DEEP.pid) return
+    fetch('/api/state')
+      .then((r) => r.json())
+      .then((st) => setWho((st.patients || []).find((p) => p.pid === DEEP.pid)?.name || null))
+      .catch(() => {})
   }, [])
   const submit = async (e) => {
     e.preventDefault()
@@ -90,7 +119,7 @@ function Login({ onIn }) {
         <p className="muted">Doctor portal · Emer Flow</p>
         {DEEP.pid && (
           <p className="dc-toast">
-            The board is asking you to check <span className="pid">{DEEP.pid}</span>. Log in to open their chart.
+            The board is asking you to check {who || 'a patient'}&apos;s records. Log in to open their chart.
           </p>
         )}
         <label className="dc-field">
@@ -152,8 +181,8 @@ function SenderDesk({ session, onError }) {
   )
   const send = async (pid) => {
     try {
-      const t = await portal.transfer(session, pid, HOME)
-      setMsg(`Sent. Arrives at ${HOME} as ${t.pid}, with this hospital's record attached.`)
+      await portal.transfer(session, pid, HOME)
+      setMsg(`Sent ${rows.find((r) => r.pid === pid)?.name || 'the patient'} to ${HOME}, with this hospital's record attached.`)
       setRows(await portal.patients(session))
     } catch (e) {
       setMsg(e.message)
@@ -169,9 +198,8 @@ function SenderDesk({ session, onError }) {
         {rows.map((p) => (
           <li key={p.pid} className="dc-row">
             <Sev n={p.severity} />
-            <span className="pid">{p.pid}</span>
             <span className="dc-row-main">
-              <strong>{p.name}</strong>, {p.age} · {p.complaint}
+              <strong>{p.name}</strong>, {p.age} · {p.complaint} <Code id={p.pid} />
             </span>
             {p.state === 'transferred' ? (
               <span className="muted">sent</span>
@@ -228,9 +256,8 @@ function HomeDesk({ session, onError }) {
               {inbox.map((t) => (
                 <li key={t.transfer_id}>
                   <button className={`dc-row dc-pick${pid === t.pid ? ' is-on' : ''}`} onClick={() => setPid(t.pid)}>
-                    <span className="pid">{t.pid}</span>
                     <span className="dc-row-main">
-                      <strong>{t.name}</strong> from {t.from_hospital}
+                      <strong>{t.name}</strong> from {t.from_hospital} <Code id={t.pid} />
                     </span>
                     {t.conflicts > 0 ? <span className="dc-chip-held">{t.conflicts} conflict</span> : <span>clear</span>}
                   </button>
@@ -242,7 +269,7 @@ function HomeDesk({ session, onError }) {
         <section>
           <h2 className="dc-h2">Patients</h2>
           <div className="dc-filter">
-            <input placeholder="Search name or ID" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <input placeholder="Search by name" value={filter} onChange={(e) => setFilter(e.target.value)} />
             <label className="dc-radio">
               <input type="checkbox" checked={onlyFlags} onChange={(e) => setOnlyFlags(e.target.checked)} /> Only
               held or conflicting
@@ -253,9 +280,8 @@ function HomeDesk({ session, onError }) {
               <li key={p.pid}>
                 <button className={`dc-row dc-pick${pid === p.pid ? ' is-on' : ''}`} onClick={() => setPid(p.pid)}>
                   <Sev n={p.severity} />
-                  <span className="pid">{p.pid}</span>
                   <span className="dc-row-main">
-                    <strong>{p.name}</strong> · {p.complaint}
+                    <strong>{p.name}</strong> · {p.complaint} <Code id={p.pid} />
                   </span>
                   {p.held ? (
                     <span className="dc-chip-held">HELD</span>
@@ -365,11 +391,12 @@ function Workspace({ pid, session, onError, initialReason = '' }) {
         <h2 className="dc-ws-title">
           {p ? (
             <>
-              {p.name} · {p.age} · <span className="pid">{pid}</span>
-              <span className="muted"> · {p.unit ? `in ${p.unit}` : p.state}</span>
+              {p.name}, {p.age}
+              <span className="muted"> · {p.unit ? unitWord(p.unit) : STATE_WORD[p.state] || p.state}</span>{' '}
+              <Code id={pid} />
             </>
           ) : (
-            <span className="pid">{pid}</span>
+            <span className="muted">Loading…</span>
           )}
         </h2>
         <label className="dc-reason">
@@ -408,12 +435,12 @@ function Workspace({ pid, session, onError, initialReason = '' }) {
               <p className="dc-verify">VERIFICATION REQUIRED</p>
               <p>
                 The board is holding a move to <strong>{unitWord(chart.hold.to_unit)}</strong>. It relies on:{' '}
-                {chart.hold.because.map((f) => FACT_LABEL[f] || f).join(', ')}.
+                {chart.hold.because.map((f) => (FACT_LABEL[f] || f).toLowerCase()).join(', ')}.
               </p>
               {chart.hold.conflicts.map((c) => (
                 <div key={c.fact} className="dc-hold-conflict">
                   <p>
-                    <strong>{FACT_LABEL[c.fact] || c.fact}</strong>: {c.reason}
+                    <Fact f={c.fact} />: {c.reason}
                   </p>
                   <Versions versions={c.versions} />
                 </div>
@@ -533,7 +560,7 @@ function Chart({ facts }) {
       {facts.map((f) => (
         <li key={f.fact} className={`dc-fact is-${f.kind}`}>
           <div className="dc-fact-head">
-            <strong>{FACT_LABEL[f.fact] || f.fact}</strong>
+            <Fact f={f.fact} />
             <span className={`dc-kind is-${f.kind}`}>
               {f.kind === 'conflict' ? 'CONFLICT' : f.kind === 'gap' ? 'gap' : f.verified_by_human ? 'checked by a human' : 'agree'}
             </span>
@@ -610,7 +637,8 @@ function OrderBox({ session, pid, onDone, onError }) {
           <span className="muted">This order relies on:</span>
           {FACTS.map((f) => (
             <label key={f} className="dc-radio">
-              <input type="checkbox" checked={because.includes(f)} onChange={() => toggle(f)} /> {FACT_LABEL[f]}
+              <input type="checkbox" checked={because.includes(f)} onChange={() => toggle(f)} />{' '}
+              <span title={FACT_TECH[f]}>{FACT_LABEL[f]}</span>
             </label>
           ))}
         </div>
@@ -625,7 +653,7 @@ function OrderBox({ session, pid, onDone, onError }) {
           {result.warnings.map((w) => (
             <div key={w.fact}>
               <p>
-                This order relies on <strong>{FACT_LABEL[w.fact] || w.fact}</strong>. The records disagree:
+                This order relies on <Fact f={w.fact} />. The records disagree:
               </p>
               <Versions versions={w.versions} />
             </div>
@@ -643,10 +671,6 @@ function OrderBox({ session, pid, onDone, onError }) {
   )
 }
 
-function unitWord(u) {
-  return UNIT_WORD[u] || u
-}
-
 function Versions({ versions }) {
   return (
     <table className="dc-versions">
@@ -661,5 +685,19 @@ function Versions({ versions }) {
         ))}
       </tbody>
     </table>
+  )
+}
+
+function Code({ id }) {
+  return (
+    <span className="dc-code" title="Record number">
+      {id}
+    </span>
+  )
+}
+
+function Fact({ f }) {
+  return (
+    <strong title={FACT_TECH[f] ? `Clinical term: ${FACT_TECH[f]}` : undefined}>{FACT_LABEL[f] || f}</strong>
   )
 }

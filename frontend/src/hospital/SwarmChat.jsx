@@ -94,7 +94,11 @@ function NamedText({ text, pids, names, onSelect }) {
 }
 
 // everyday unit words in agent text
-const tidy = (t) => String(t || '').replace(/\bstep ?down\b/gi, (m) => (m[0] === 'S' ? 'Step-down' : 'step-down')).replace(/\bPACU\b/g, 'Recovery')
+const tidy = (t) => String(t || '')
+  .replace(/\bstepp(ing|ed) down\b/gi, (m, g) => (g.toLowerCase() === 'ing' ? 'moving' : 'moved'))
+  .replace(/\bstep down\b/gi, (m) => (m[0] === 'S' ? 'Move to close-watch beds' : 'move to close-watch beds'))
+  .replace(/\bstep-?downs?\b/gi, (m) => (m[0] === 'S' ? 'Close-watch' : 'close-watch'))
+  .replace(/\bPACU\b/g, 'Recovery')
 
 function Text({ text: raw = '', pids = [], onSelect }) {
   const names = useContext(NamesContext)
