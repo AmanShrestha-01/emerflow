@@ -93,15 +93,15 @@ export const FACT_TECH = {
   blood_type: 'ABO/Rh blood type',
 }
 export const UNIT_WORD = {
-  RESUS: 'Resuscitation room',
+  RESUS: 'Critical care room',
   ER: 'Emergency bed',
   HALLWAY: 'Hallway bed',
-  ICU: 'Intensive care (ICU)',
+  ICU: 'Intensive care',
   STEPDOWN: 'Close-watch bed',
   WARD: 'Ward bed',
   OR: 'Surgery',
   PACU: 'Recovery room',
-  LOUNGE: 'Discharge lounge',
+  LOUNGE: 'Going-home lounge',
   HOME: 'Home',
   PARTNER: 'Another hospital',
 }

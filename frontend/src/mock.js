@@ -130,7 +130,7 @@ const EVERYDAY = [
   [5, 'sore throat', {}],
 ]
 const NOTE_BY = { fastlane: 'Hospital rules', swarm: 'AI agents', fallback: 'Hospital rules' }
-const TO_WORDS = { RESUS: 'the resuscitation room', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'an intensive care (ICU) bed', STEPDOWN: 'a close-watch bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'the recovery room', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'another hospital' }
+const TO_WORDS = { RESUS: 'the critical care room', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'an intensive care bed', STEPDOWN: 'a close-watch bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'the recovery room', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'another hospital' }
 const FACT_ABOUT = { anticoagulant: 'whether they take blood thinners', penicillin_allergy: 'whether they are allergic to penicillin', vitals_stable: 'whether their heart rate and breathing are stable', icu_need: 'whether they need intensive care', on_pressors: 'whether they are on a blood-pressure drip', blood_type: 'their blood type' }
 const UNIT_NEED = {
   ICU: 'Intensive care',
@@ -140,7 +140,7 @@ const UNIT_NEED = {
   PACU: 'Waking up after surgery',
   LOUNGE: 'Waiting for a ride home',
   ER: 'Tests and treatment in the ER',
-  RESUS: 'Resuscitation',
+  RESUS: 'Critical care room',
 }
 // simulated vital signs, steady per patient, worse for more urgent patients
 function vitalsFor(p) {
@@ -157,7 +157,7 @@ function vitalsFor(p) {
 function needFor(p) {
   if (p.needs_surgery) return 'Emergency surgery'
   if (p.pid.startsWith('IN')) return UNIT_NEED[p.unit] || 'Ongoing care'
-  if (p.severity === 1) return 'Resuscitation now, then intensive care'
+  if (p.severity === 1) return 'Critical care room now, then intensive care'
   if (p.severity === 2) return /chest|breath|heart|blue/.test(p.complaint) ? 'Heart and lung monitoring (ICU)' : 'Close watching (close-watch bed)'
   if (p.severity === 3) return 'Tests and treatment in the ER'
   if (p.severity === 4) return 'Treat in the ER, then home'
@@ -621,8 +621,8 @@ export function createMock() {
   }
 
   function defaultNote(p, to, source) {
-    if (to === 'RESUS') return 'Life-threatening: straight to the resuscitation room'
-    if (to === 'HALLWAY' && p.severity === 1) return 'Life-threatening, but the resuscitation room was full: a hallway bed for now'
+    if (to === 'RESUS') return 'Life-threatening: straight to the critical care room'
+    if (to === 'HALLWAY' && p.severity === 1) return 'Life-threatening, but the critical care room was full: an extra hallway bed for now'
     if (source === 'fastlane') return 'A matching bed was free on arrival'
     if (to === 'HOME') return 'Treated and well enough to go home'
     return `A bed was free in ${UNIT_NAME[to] || to}`

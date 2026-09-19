@@ -15,9 +15,9 @@ Emit = Callable[..., object]
 
 BY = {"fastlane": "Hospital rules", "swarm": "AI agents", "fallback": "Hospital rules",
       "baseline": "Hospital rules", "human": "A person"}
-PLACE = {"RESUS": "a resuscitation bay", "ER": "an emergency bed", "HALLWAY": "a hallway bed", "ICU": "an ICU bed",
-         "STEPDOWN": "a close-watch bed", "WARD": "a ward bed", "OR": "surgery", "PACU": "recovery (PACU)",
-         "LOUNGE": "the discharge lounge", "HOME": "home", "PARTNER": "a partner hospital"}
+PLACE = {"RESUS": "the critical care room", "ER": "an emergency bed", "HALLWAY": "an extra hallway bed", "ICU": "an intensive care bed",
+         "STEPDOWN": "a close-watch bed", "WARD": "a ward bed", "OR": "surgery", "PACU": "the recovery room",
+         "LOUNGE": "the going-home lounge", "HOME": "home", "PARTNER": "a partner hospital"}
 
 
 def _noop(*_a, **_k) -> None:

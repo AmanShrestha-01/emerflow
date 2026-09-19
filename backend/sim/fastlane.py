@@ -25,7 +25,7 @@ def preferred_unit(p: Patient) -> str:
 def place_one(h: Hospital, p: Patient, emit: Emit = _noop, source: str = "fastlane") -> str | None:
     options = ["RESUS", "ICU", "HALLWAY"] if p.severity == 1 else [preferred_unit(p)]
     for unit in options:
-        where = {"RESUS": "resuscitation", "ICU": "an ICU bed", "HALLWAY": "a hallway bed (overflow)",
+        where = {"RESUS": "the critical care room", "ICU": "an intensive care bed", "HALLWAY": "an extra hallway bed",
                  "ER": "an emergency bed", "STEPDOWN": "a close-watch bed"}.get(unit, unit)
         reason = (f"Life-threatening: straight to {where}" if p.severity == 1
                   else f"{p.need or 'Care needed'}: {where} was free")

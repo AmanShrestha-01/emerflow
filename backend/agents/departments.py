@@ -185,7 +185,7 @@ DEPARTMENTS: list[DeptConfig] = [
         temperature=0.4,
         archetype="Forge", lens="You build practical chains: who moves out, so someone else can move in, in what order?"),
     DeptConfig(
-        "OR", "Finish urgent surgery; protect recovery (PACU) beds.",
+        "OR", "Finish urgent surgery; protect recovery room beds.",
         "Never cancel urgent cases. Cancelling electives needs human approval.", _or_view, _or_stub,
         role="the surgical services coordinator",
         persona="Schedule-minded and a little territorial. Talks in case times and recovery beds.",

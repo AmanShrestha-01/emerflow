@@ -66,7 +66,7 @@ export default function UnitMap({ st, patientsById, flashes, onSelect, only }) {
         </div>
         <div className="map-more">
           <button className="linkbtn" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
-            {showAll ? 'Show fewer units' : 'Show resuscitation, hallway overflow and discharge lounge'}
+            {showAll ? 'Show fewer units' : 'Show the critical care room, extra hallway beds and going-home lounge'}
           </button>
         </div>
         <details className="res-drawer">

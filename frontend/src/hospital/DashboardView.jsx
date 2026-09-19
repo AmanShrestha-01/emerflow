@@ -38,17 +38,17 @@ const TITLES = { dashboard: 'Dashboard', workflow: 'AI workflow', beds: 'Beds', 
 const GROUPS = ['RESUS', 'ER', 'ICU', 'STEPDOWN', 'WARD', 'OR', 'PACU']
 const ONLY_IF_USED = ['HALLWAY', 'LOUNGE']
 const GROUP_NAME = {
-  RESUS: 'Resuscitation',
+  RESUS: 'Critical care room',
   ER: 'Emergency',
   ICU: 'Intensive care',
   STEPDOWN: 'Close-watch beds',
   WARD: 'Ward',
   OR: 'Surgery',
   PACU: 'Recovery',
-  HALLWAY: 'Hallway overflow',
-  LOUNGE: 'Discharge lounge',
+  HALLWAY: 'Extra hallway beds',
+  LOUNGE: 'Going-home lounge',
 }
-const BED_PREFIX = { RESUS: 'Resus', ER: 'ER', ICU: 'ICU', STEPDOWN: 'Close-watch', WARD: 'Ward', OR: 'Surgery', PACU: 'Recovery', HALLWAY: 'Hallway', LOUNGE: 'Lounge' }
+const BED_PREFIX = { RESUS: 'Critical', ER: 'ER', ICU: 'ICU', STEPDOWN: 'Close-watch', WARD: 'Ward', OR: 'Surgery', PACU: 'Recovery', HALLWAY: 'Hallway', LOUNGE: 'Lounge' }
 const FREE_UNITS = ['ER', 'ICU', 'STEPDOWN', 'WARD', 'OR']
 const RECENT = 10
 
@@ -148,7 +148,7 @@ export default function DashboardView({ st, ev, run, onFull }) {
                       </button>
                     )}
                   </div>
-                  <OkCards items={decisions.slice(0, 3)} byPid={byPid} run={run} empty="Nothing needs you right now. Risky moves and big decisions will wait here." />
+                  <OkCards items={decisions.slice(0, 3)} byPid={byPid} run={run} empty="Nothing to decide right now." />
                 </section>
                 <section className="d-panel d-arr" aria-labelledby="d-arr-h">
                   <div className="d-panel-h">
@@ -428,27 +428,23 @@ function ArrivalsTable({ st, moved, onOpen }) {
   const rows = (st.patients || [])
     .filter((p) => p.state === 'incoming' || p.state === 'waiting' || (p.state === 'held' && !p.unit) || (p.state === 'placed' && moved[p.pid] && clock - moved[p.pid].clock <= RECENT))
     .map((p) => {
-      let pill = 'In a bed'
+      let pill = WHERE[p.unit] || 'In a bed'
       let tone = 'bed'
-      let going = WHERE[p.unit] || 'A bed'
       if (p.state === 'incoming') {
-        pill = 'Arriving'
+        pill = `Arriving in ${p.eta ?? '?'} min`
         tone = 'arriving'
-        going = `Here in ${p.eta ?? '?'} min`
       } else if (p.state === 'waiting') {
-        pill = 'Waiting'
+        pill = 'Waiting for a bed'
         tone = 'waiting'
-        going = 'Not decided yet'
       } else if (p.state === 'held') {
         pill = 'Needs your OK'
         tone = 'ok'
-        going = WHERE[p.heading_to] || 'A new bed'
       } else if (p.unit === 'OR') {
         pill = 'In surgery'
         tone = 'surgery'
       }
       const rank = { ok: 0, arriving: 1, waiting: 2, surgery: 3, bed: 3 }[tone]
-      return { p, pill, tone, going, rank }
+      return { p, pill, tone, rank }
     })
     .sort((a, b) => a.rank - b.rank || (a.p.severity || 9) - (b.p.severity || 9))
     .slice(0, 8)
@@ -458,12 +454,11 @@ function ArrivalsTable({ st, moved, onOpen }) {
       <thead>
         <tr>
           <th scope="col">Patient</th>
-          <th scope="col">Going to</th>
-          <th scope="col">Status</th>
+          <th scope="col">Now</th>
         </tr>
       </thead>
       <tbody>
-        {rows.map(({ p, pill, tone, going }) => (
+        {rows.map(({ p, pill, tone }) => (
           <tr key={p.pid} onClick={() => onOpen(p.pid)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(p.pid)}>
             <td className="d-td-name" title={`${nameOf(p)}: ${sentence(p.complaint)}`}>
               <span className="d-td-who">
@@ -472,7 +467,6 @@ function ArrivalsTable({ st, moved, onOpen }) {
               </span>
               <span className="d-td-what">{sentence(p.complaint)}</span>
             </td>
-            <td className="d-td-going">{going}</td>
             <td>
               <span className={`d-pill pill-${tone}`}>{pill}</span>
             </td>

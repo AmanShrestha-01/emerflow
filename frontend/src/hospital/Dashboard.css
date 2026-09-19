@@ -1227,3 +1227,14 @@ button.d-tile:hover {
     transform: none;
   }
 }
+
+/* simpler right column: the decisions box only takes the room it needs */
+.d-right { grid-template-rows: auto minmax(0, 1fr); }
+.d-ok { max-height: 52vh; }
+.d-ok .d-empty { margin: 0; padding: 4px 0 2px; }
+/* arriving now: two columns, patient text can wrap instead of being cut off */
+.d-table th:first-child, .d-table td:first-child { width: 58%; }
+.d-table th:last-child, .d-table td:last-child { width: 42%; }
+.d-td-name .d-td-what { white-space: normal; overflow: visible; }
+.d-table .d-pill { white-space: normal; text-align: center; }
+.d-ok .d-empty { padding: 4px 16px 2px; }

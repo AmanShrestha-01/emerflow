@@ -46,7 +46,7 @@ def _make_room(h: Hospital, unit: str, moves: list[PlanMove], depth: int = 0) ->
         for dest in MAKE_ROOM[unit]:
             why = {"STEPDOWN": "Getting better, so moving from intensive care to a close-watch bed, freeing intensive care for someone sicker",
                    "WARD": "Stable now, so moving to the ward to free a close-watch bed",
-                   "LOUNGE": "Ready to go home; waiting in the discharge lounge to free a ward bed"}[dest]
+                   "LOUNGE": "Ready to go home; waiting in the going-home lounge to free a ward bed"}[dest]
             if _try(h, p.pid, unit, dest, "transfer", why, moves):
                 return True
             if _make_room(h, dest, moves, depth + 1) and _try(h, p.pid, unit, dest, "transfer", why, moves):

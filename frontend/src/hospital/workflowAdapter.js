@@ -6,20 +6,20 @@ const DEPTS = [
   ['ICU', 'Intensive care', 'Keeps beds for the sickest'],
   ['STEPDOWN', 'Close-watch beds', 'Takes patients leaving intensive care'],
   ['OR', 'Surgery', 'Protects urgent operations'],
-  ['STAFFING', 'Staffing', 'Keeps nurse numbers safe'],
-  ['IMAGING', 'Imaging', 'Scans the most urgent first'],
+  ['STAFFING', 'Nurses', 'Keeps nurse numbers safe'],
+  ['IMAGING', 'Scans (X-ray & CT)', 'Scans the most urgent first'],
   ['BLOODBANK', 'Blood bank', 'Watches the blood supply'],
   ['EMS', 'Ambulances', 'Tracks who is on the way'],
 ]
 const PERSONA = { ER: 'Apex', ICU: 'Veil', STEPDOWN: 'Forge', OR: 'Crux', STAFFING: 'Root', IMAGING: 'Trace', BLOODBANK: 'Void', EMS: 'Orbit' }
 const PLACE = {
-  RESUS: 'resuscitation', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'intensive care',
-  STEPDOWN: 'a close-watch bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'recovery', LOUNGE: 'the discharge lounge',
+  RESUS: 'the critical care room', ER: 'an emergency bed', HALLWAY: 'a hallway bed', ICU: 'intensive care',
+  STEPDOWN: 'a close-watch bed', WARD: 'a ward bed', OR: 'surgery', PACU: 'recovery', LOUNGE: 'the going-home lounge',
   HOME: 'home', PARTNER: 'another hospital',
 }
 const UNIT_NAMES = [
-  ['RESUS', 'Resuscitation'], ['ER', 'Emergency'], ['ICU', 'Intensive care'], ['STEPDOWN', 'Close-watch'],
-  ['WARD', 'Ward'], ['OR', 'Surgery'], ['PACU', 'Recovery'],
+  ['RESUS', 'Critical care room'], ['ER', 'Emergency'], ['ICU', 'Intensive care'], ['STEPDOWN', 'Close-watch'],
+  ['WARD', 'Ward'], ['OR', 'Surgery'], ['PACU', 'Recovery room'],
 ]
 
 export const EMERFLOW_WORKFLOW = {

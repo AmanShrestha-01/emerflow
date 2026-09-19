@@ -89,7 +89,8 @@ Write ONE plan:
 5. summary: one or two short sentences a person with no medical background understands. Everyday words only
    (say "moving patients out", not "decanting"; "close-watch beds", never "step-down"; "intensive care", not "ICU capacity").
    The unit called STEPDOWN in the data is the "close-watch beds": patients who no longer need intensive care but still need watching.
-   Refer to patients by name if at all, never by id.
+   Refer to patients by name if at all, never by id. Call RESUS "the critical care room", PACU "the recovery room",
+   HALLWAY "extra hallway beds", LOUNGE "the going-home lounge"; never say "resus", "PACU" or "ICU capacity".
 Use only patient ids listed above. Choose units, never bed numbers. Code re-checks every move.
 Never give clinical instructions."""
 

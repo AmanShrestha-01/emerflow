@@ -27,8 +27,8 @@ from backend.sim.words import plain
 MAX_HOPS = 2
 PERSONA = {d.name: d.archetype for d in DEPARTMENTS} | {"COORDINATOR": "Prism"}
 ESC_OWNER = {"cancel_elective": "OR", "call_in_staff": "STAFFING", "divert_ambulances": "EMS", "transfer_out": "EMS"}
-UNIT_WORDS = {"STEPDOWN": "the close-watch beds", "LOUNGE": "discharge lounge", "HOME": "home", "PARTNER": "a partner hospital",
-              "HALLWAY": "a hallway bed", "PACU": "recovery (PACU)", "RESUS": "resus"}
+UNIT_WORDS = {"STEPDOWN": "the close-watch beds", "LOUNGE": "the going-home lounge", "HOME": "home", "PARTNER": "a partner hospital",
+              "HALLWAY": "an extra hallway bed", "PACU": "the recovery room", "RESUS": "the critical care room"}
 
 
 def _where(unit: str) -> str:

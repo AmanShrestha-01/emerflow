@@ -18,16 +18,16 @@ FACT_WORDS: dict[str, str] = {
 }
 
 PLACE_WORDS: dict[str, str] = {
-    "RESUS": "the resuscitation room", "ER": "an emergency bed", "HALLWAY": "a hallway bed",
-    "ICU": "an intensive care (ICU) bed", "STEPDOWN": "a close-watch bed", "WARD": "a ward bed",
-    "OR": "surgery", "PACU": "the recovery room", "LOUNGE": "the discharge lounge", "HOME": "home",
+    "RESUS": "the critical care room", "ER": "an emergency bed", "HALLWAY": "an extra hallway bed",
+    "ICU": "an intensive care bed", "STEPDOWN": "a close-watch bed", "WARD": "a ward bed",
+    "OR": "surgery", "PACU": "the recovery room", "LOUNGE": "the going-home lounge", "HOME": "home",
     "PARTNER": "another hospital",
 }
 
 _PID = re.compile(r"\b(?:IN|MC|WI|RD|TR|HB)-\d+\b")
 _UNIT = re.compile(r"\b(STEPDOWN|PACU|RESUS|HALLWAY|LOUNGE)\b")
-_UNIT_PLAIN = {"STEPDOWN": "close-watch beds", "PACU": "recovery", "RESUS": "resuscitation", "HALLWAY": "hallway",
-               "LOUNGE": "discharge lounge"}
+_UNIT_PLAIN = {"STEPDOWN": "close-watch beds", "PACU": "recovery room", "RESUS": "critical care room",
+               "HALLWAY": "extra hallway beds", "LOUNGE": "going-home lounge"}
 
 
 def facts_phrase(facts: list[str]) -> str:

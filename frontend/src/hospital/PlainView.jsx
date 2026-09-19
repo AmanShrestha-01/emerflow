@@ -11,28 +11,28 @@ import { factPhrase } from './format.js'
 
 export const URGENCY = { 1: 'Critical', 2: 'Very urgent', 3: 'Urgent', 4: 'Standard', 5: 'Minor' }
 export const WHERE = {
-  RESUS: 'Resuscitation room',
+  RESUS: 'Critical care room',
   ER: 'Emergency bed',
   HALLWAY: 'Hallway bed',
-  ICU: 'Intensive care (ICU)',
+  ICU: 'Intensive care',
   STEPDOWN: 'Close-watch bed',
   WARD: 'Ward bed',
   OR: 'In surgery',
   PACU: 'Recovery room',
-  LOUNGE: 'Discharge lounge',
+  LOUNGE: 'Going-home lounge',
   HOME: 'Gone home',
   PARTNER: 'Another hospital',
 }
 export const TO_WORDS = {
-  RESUS: 'the resuscitation room',
+  RESUS: 'the critical care room',
   ER: 'an emergency bed',
   HALLWAY: 'a hallway bed',
-  ICU: 'an intensive care (ICU) bed',
+  ICU: 'an intensive care bed',
   STEPDOWN: 'a close-watch bed',
   WARD: 'a ward bed',
   OR: 'surgery',
   PACU: 'the recovery room',
-  LOUNGE: 'the discharge lounge',
+  LOUNGE: 'the going-home lounge',
   HOME: 'home',
   PARTNER: 'another hospital',
 }

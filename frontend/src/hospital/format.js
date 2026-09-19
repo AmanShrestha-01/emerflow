@@ -17,15 +17,15 @@ export function mins(n) {
 export const WAIT_TARGET = { 1: 0, 2: 10, 3: 30, 4: 60, 5: 120 }
 
 export const UNIT_LABEL = {
-  RESUS: 'Resuscitation',
+  RESUS: 'Critical care room',
   ER: 'Emergency',
-  HALLWAY: 'Hallway overflow',
+  HALLWAY: 'Extra hallway beds',
   ICU: 'ICU',
   STEPDOWN: 'Close-watch',
   WARD: 'Ward',
   OR: 'Surgery',
-  PACU: 'Recovery (PACU)',
-  LOUNGE: 'Discharge lounge',
+  PACU: 'Recovery room',
+  LOUNGE: 'Going-home lounge',
   HOME: 'home',
   PARTNER: 'a partner hospital',
 }
@@ -81,10 +81,10 @@ export const AGENTS = {
   ICU: { label: 'ICU', short: 'ICU', kind: 'ai' },
   STEPDOWN: { label: 'Close-watch', short: 'CW', kind: 'ai' },
   OR: { label: 'Surgery', short: 'OR', kind: 'ai' },
-  STAFFING: { label: 'Staffing', short: 'ST', kind: 'ai' },
-  IMAGING: { label: 'Imaging', short: 'IM', kind: 'ai' },
+  STAFFING: { label: 'Nurses', short: 'NU', kind: 'ai' },
+  IMAGING: { label: 'Scans (X-ray & CT)', short: 'SC', kind: 'ai' },
   BLOODBANK: { label: 'Blood bank', short: 'BB', kind: 'ai' },
-  EMS: { label: 'EMS', short: 'EMS', kind: 'ai' },
+  EMS: { label: 'Ambulances', short: 'AM', kind: 'ai' },
   COORDINATOR: { label: 'Coordinator', short: 'CO', kind: 'coord' },
   FASTLANE: { label: 'Fast lane', short: 'FL', kind: 'rule' },
   VALIDATOR: { label: 'Validator', short: 'VA', kind: 'rule' },
