@@ -67,8 +67,16 @@ Escalation levels:
 
 \* needs human approval
 
+## Logging in
+One staff login for the whole app (PIN `demo`): pick the hospital, then a role.
+- **Commander** lands on the command board (`/`).
+- **Doctor** lands in DeepChart (`/doctor`).
+- **Patients** never log in; they get a private link (`/p/<token>`).
+
+The board shows who's logged in, with **DeepChart** and **Log out**, in the bottom-right corner. `/?mock=1` skips the login for the offline demo.
+
 ## DeepChart portal
-Open **`/doctor`** (PIN `demo`) and log in as **Emer Flow General**, the board hospital:
+Log in as a **doctor** at **Emer Flow General**, the board hospital:
 - The patient list puts held and conflicting patients first.
 - Pick a reason for access, then use **Look up other hospitals** to pull the same patient's records from Hospital B
   (cardiology) and Hospital C (primary care). Hospital C also holds lookalikes: same name and birthday, but a different

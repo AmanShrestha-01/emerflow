@@ -23,13 +23,13 @@ const AGENT = {
   DEEPCHART: { name: 'Records check', rule: true },
   ALL: { name: 'everyone' },
 }
-const PERSONA = { ER: 'Apex', ICU: 'Veil', STEPDOWN: 'Forge', OR: 'Crux', STAFFING: 'Root', IMAGING: 'Trace', BLOODBANK: 'Void', EMS: 'Orbit', COORDINATOR: 'Prism' }
+export const PERSONA = { ER: 'Apex', ICU: 'Veil', STEPDOWN: 'Forge', OR: 'Crux', STAFFING: 'Root', IMAGING: 'Trace', BLOODBANK: 'Void', EMS: 'Orbit', COORDINATOR: 'Prism' }
 const nameOf = (a) => AGENT[a]?.name || a || 'Someone'
 const shortOf = (a) => AGENT[a]?.short || nameOf(a)
 const isRule = (a) => !!AGENT[a]?.rule
 const RENDER_CAP = 260
 
-function Avatar({ a, size = 'md', typing }) {
+export function Avatar({ a, size = 'md', typing }) {
   return (
     <span className={`sw-av sw-av-${size} swc-${a}${typing ? ' is-typing' : ''}`} aria-hidden="true">
       {AGENT[a]?.ini || '?'}
@@ -37,7 +37,7 @@ function Avatar({ a, size = 'md', typing }) {
   )
 }
 
-function Who({ a, persona }) {
+export function Who({ a, persona }) {
   return (
     <b className={`sw-who swt-${a}`}>
       {nameOf(a)}

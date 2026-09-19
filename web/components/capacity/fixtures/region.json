@@ -1,0 +1,271 @@
+{
+ "generated_at": "2026-09-19T21:47:00",
+ "simulated": true,
+ "region": {
+  "name": "Baltimore, MD",
+  "center": [
+   39.2904,
+   -76.6122
+  ]
+ },
+ "hospitals": [
+  {
+   "id": "jhh",
+   "name": "Johns Hopkins Hospital",
+   "address": "1800 Orleans St",
+   "lat": 39.2963,
+   "lon": -76.5925,
+   "trauma": "Level I",
+   "status": "critical",
+   "er": {
+    "occupied": 52,
+    "capacity": 52,
+    "waiting": 5
+   },
+   "icu": {
+    "occupied": 61,
+    "capacity": 62,
+    "waiting": 0
+   },
+   "beds_free": 54,
+   "er_wait_min": 40,
+   "receiving_incident": true
+  },
+  {
+   "id": "shock-trauma",
+   "name": "UMMC R Adams Cowley Shock Trauma",
+   "address": "22 S Greene St",
+   "lat": 39.2887,
+   "lon": -76.6245,
+   "trauma": "Level I",
+   "status": "busy",
+   "er": {
+    "occupied": 38,
+    "capacity": 48,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 58,
+    "capacity": 58,
+    "waiting": 0
+   },
+   "beds_free": 69,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "bayview",
+   "name": "Johns Hopkins Bayview",
+   "address": "4940 Eastern Ave",
+   "lat": 39.2894,
+   "lon": -76.5487,
+   "trauma": "Level II",
+   "status": "critical",
+   "er": {
+    "occupied": 36,
+    "capacity": 36,
+    "waiting": 2
+   },
+   "icu": {
+    "occupied": 35,
+    "capacity": 43,
+    "waiting": 0
+   },
+   "beds_free": 39,
+   "er_wait_min": 40,
+   "receiving_incident": true
+  },
+  {
+   "id": "mercy",
+   "name": "Mercy Medical Center",
+   "address": "345 St Paul Pl",
+   "lat": 39.2946,
+   "lon": -76.6139,
+   "trauma": null,
+   "status": "open",
+   "er": {
+    "occupied": 22,
+    "capacity": 28,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 24,
+    "capacity": 34,
+    "waiting": 0
+   },
+   "beds_free": 76,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "midtown",
+   "name": "UMMC Midtown Campus",
+   "address": "827 Linden Ave",
+   "lat": 39.299,
+   "lon": -76.6219,
+   "trauma": null,
+   "status": "critical",
+   "er": {
+    "occupied": 20,
+    "capacity": 20,
+    "waiting": 1
+   },
+   "icu": {
+    "occupied": 14,
+    "capacity": 24,
+    "waiting": 0
+   },
+   "beds_free": 58,
+   "er_wait_min": 40,
+   "receiving_incident": false
+  },
+  {
+   "id": "union-memorial",
+   "name": "MedStar Union Memorial",
+   "address": "201 E University Pkwy",
+   "lat": 39.3302,
+   "lon": -76.613,
+   "trauma": null,
+   "status": "open",
+   "er": {
+    "occupied": 23,
+    "capacity": 32,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 32,
+    "capacity": 38,
+    "waiting": 0
+   },
+   "beds_free": 67,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "sinai",
+   "name": "Sinai Hospital of Baltimore",
+   "address": "2401 W Belvedere Ave",
+   "lat": 39.353,
+   "lon": -76.6617,
+   "trauma": "Level II",
+   "status": "busy",
+   "er": {
+    "occupied": 17,
+    "capacity": 40,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 44,
+    "capacity": 48,
+    "waiting": 0
+   },
+   "beds_free": 90,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "harbor",
+   "name": "MedStar Harbor Hospital",
+   "address": "3001 S Hanover St",
+   "lat": 39.2494,
+   "lon": -76.6139,
+   "trauma": null,
+   "status": "open",
+   "er": {
+    "occupied": 14,
+    "capacity": 20,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 16,
+    "capacity": 24,
+    "waiting": 0
+   },
+   "beds_free": 74,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "st-agnes",
+   "name": "Ascension Saint Agnes",
+   "address": "900 S Caton Ave",
+   "lat": 39.2723,
+   "lon": -76.6776,
+   "trauma": null,
+   "status": "open",
+   "er": {
+    "occupied": 22,
+    "capacity": 32,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 30,
+    "capacity": 38,
+    "waiting": 0
+   },
+   "beds_free": 85,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "good-sam",
+   "name": "MedStar Good Samaritan",
+   "address": "5601 Loch Raven Blvd",
+   "lat": 39.3587,
+   "lon": -76.5906,
+   "trauma": null,
+   "status": "open",
+   "er": {
+    "occupied": 11,
+    "capacity": 24,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 23,
+    "capacity": 29,
+    "waiting": 0
+   },
+   "beds_free": 72,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  },
+  {
+   "id": "gbmc",
+   "name": "GBMC",
+   "address": "6701 N Charles St, Towson",
+   "lat": 39.3955,
+   "lon": -76.6222,
+   "trauma": null,
+   "status": "open",
+   "er": {
+    "occupied": 17,
+    "capacity": 32,
+    "waiting": 0
+   },
+   "icu": {
+    "occupied": 25,
+    "capacity": 38,
+    "waiting": 0
+   },
+   "beds_free": 107,
+   "er_wait_min": 10,
+   "receiving_incident": false
+  }
+ ],
+ "incidents": [
+  {
+   "id": "i95-collision",
+   "kind": "mass_casualty",
+   "title": "Multi-vehicle collision on I-95 near the Fort McHenry Tunnel",
+   "lat": 39.262,
+   "lon": -76.579,
+   "casualties": 40,
+   "started": "2026-09-19T20:57",
+   "receiving": [
+    "Johns Hopkins Hospital",
+    "Johns Hopkins Bayview"
+   ],
+   "summary": "40 casualties being taken to Johns Hopkins Hospital and Johns Hopkins Bayview."
+  }
+ ]
+}

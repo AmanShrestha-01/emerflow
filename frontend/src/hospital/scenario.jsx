@@ -87,3 +87,54 @@ export function useView() {
   }
   return [view, setView]
 }
+
+// Speed meter: pause/play plus a 5-stop slider. 1× = one hospital minute every real second.
+export const SPEEDS = [0.25, 0.5, 1, 2, 5]
+const SPEED_LABEL = { 0.25: '¼×', 0.5: '½×', 1: '1×', 2: '2×', 5: '5×' }
+export const speedLabel = (sp) => SPEED_LABEL[sp] || `${sp}×`
+
+export function SpeedMeter({ st, sc }) {
+  const live = st.speed ?? 0.5
+  const [idx, setIdx] = useState(Math.max(0, SPEEDS.indexOf(live)))
+  useEffect(() => {
+    const i = SPEEDS.indexOf(live)
+    if (i >= 0) setIdx(i)
+  }, [live])
+  const pick = (i) => {
+    setIdx(i)
+    if (SPEEDS[i] !== live || st.paused) sc.control('speed', { speed: SPEEDS[i] }, `Speed ${speedLabel(SPEEDS[i])}`)
+  }
+  const sp = SPEEDS[idx]
+  return (
+    <div className={`d-speed${st.paused ? ' paused' : ''}`} title={`Each real second moves the hospital clock ${sp === 1 ? '1 minute' : sp < 1 ? `${sp * 60} seconds` : `${sp} minutes`}`}>
+      <button
+        className="d-speed-play"
+        aria-label={st.paused ? 'Resume the clock' : 'Pause the clock'}
+        onClick={() => (st.paused ? sc.control('resume', {}, 'Resumed') : sc.control('pause', {}, 'Paused'))}
+      >
+        {st.paused ? (
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor" /></svg>
+        ) : (
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor" /></svg>
+        )}
+      </button>
+      <label className="d-speed-body">
+        <span className="d-speed-k">{st.paused ? 'Paused' : 'Speed'}</span>
+        <input
+          type="range"
+          min="0"
+          max={SPEEDS.length - 1}
+          step="1"
+          value={idx}
+          aria-valuetext={speedLabel(sp)}
+          onChange={(e) => pick(Number(e.target.value))}
+          list="d-speed-ticks"
+        />
+        <datalist id="d-speed-ticks">
+          {SPEEDS.map((_, i) => <option key={i} value={i} />)}
+        </datalist>
+      </label>
+      <span className="d-speed-v">{speedLabel(sp)}</span>
+    </div>
+  )
+}

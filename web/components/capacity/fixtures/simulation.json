@@ -1,0 +1,4846 @@
+{
+ "generated_at": "2026-09-19T21:47:00",
+ "simulated": true,
+ "incident": {
+  "lat": 39.278,
+  "lon": -76.6227,
+  "casualties": 60,
+  "seed": 492708328,
+  "severity_mix": {
+   "1": 6,
+   "2": 11,
+   "3": 25,
+   "4": 11,
+   "5": 7
+  }
+ },
+ "assignments": [
+  {
+   "hospital_id": "shock-trauma",
+   "casualties": 30,
+   "severe": 0,
+   "drive_min": 7
+  },
+  {
+   "hospital_id": "bayview",
+   "casualties": 9,
+   "severe": 9,
+   "drive_min": 16
+  },
+  {
+   "hospital_id": "jhh",
+   "casualties": 6,
+   "severe": 6,
+   "drive_min": 11
+  },
+  {
+   "hospital_id": "st-agnes",
+   "casualties": 6,
+   "severe": 0,
+   "drive_min": 13
+  },
+  {
+   "hospital_id": "harbor",
+   "casualties": 4,
+   "severe": 0,
+   "drive_min": 10
+  },
+  {
+   "hospital_id": "mercy",
+   "casualties": 3,
+   "severe": 0,
+   "drive_min": 8
+  },
+  {
+   "hospital_id": "sinai",
+   "casualties": 2,
+   "severe": 2,
+   "drive_min": 20
+  }
+ ],
+ "frames": [
+  {
+   "minute": 0,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "critical",
+     "er": {
+      "occupied": 51,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 38,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 32,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 33,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 56,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 58,
+     "er_wait_min": 40,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 23,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 67,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 90,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 14,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 85,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 11,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 72,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 60,
+    "nearest": 60
+   }
+  },
+  {
+   "minute": 10,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 49,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 70,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 41,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 67,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 34,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 33,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 55,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 23,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 56,
+     "er_wait_min": 40,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 23,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 67,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 18,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 90,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 14,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 85,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 11,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 71,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 55,
+    "nearest": 52
+   }
+  },
+  {
+   "minute": 20,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 48,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 53,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 31,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 36,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 54,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 23,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 3
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 57,
+     "er_wait_min": 58,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 65,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 90,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 20,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 87,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 9,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 32,
+    "nearest": 31
+   }
+  },
+  {
+   "minute": 30,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 48,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 42,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 45,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 34,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 37,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 48,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 24,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 2
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 57,
+     "er_wait_min": 46,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 21,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 20,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 87,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 71,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 24,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 9,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 6,
+    "nearest": 14
+   }
+  },
+  {
+   "minute": 40,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 48,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 44,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 33,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 46,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 57,
+     "er_wait_min": 40,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 22,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 33,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 61,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 22,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 81,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 70,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 27,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 81,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 8,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 16,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 14
+   }
+  },
+  {
+   "minute": 50,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 46,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 43,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 30,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 49,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 26,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 72,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 59,
+     "er_wait_min": 25,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 23,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 33,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 22,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 81,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 16,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 71,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 82,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 7,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 18,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 105,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 14
+   }
+  },
+  {
+   "minute": 60,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 47,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 46,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 42,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 31,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 48,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 26,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 72,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 16,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 23,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 33,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 23,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 79,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 70,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 7,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 13
+   }
+  },
+  {
+   "minute": 70,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 43,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 31,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 49,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 26,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 72,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 63,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 33,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 59,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 22,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 43,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 19,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 68,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 6,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 12
+   }
+  },
+  {
+   "minute": 80,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 40,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 44,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 30,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 50,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 26,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 61,
+     "er_wait_min": 25,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 57,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 43,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 81,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 19,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 68,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 83,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 5,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 16,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 11
+   }
+  },
+  {
+   "minute": 90,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 40,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 70,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 58,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 41,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 28,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 54,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 24,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 18,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 25,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 27,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 56,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 24,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 43,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 82,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 19,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 27,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 80,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 7,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 25,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 109,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 11
+   }
+  },
+  {
+   "minute": 100,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 38,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 71,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "critical",
+     "er": {
+      "occupied": 48,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 57,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 36,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 32,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 50,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 16,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 13,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 63,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 57,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 80,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 7,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 10
+   }
+  },
+  {
+   "minute": 110,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 40,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 70,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 57,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 41,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 33,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 38,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 48,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 23,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 13,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 59,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 79,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 77,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 7,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 10
+   }
+  },
+  {
+   "minute": 120,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 39,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 57,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 40,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 31,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 49,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 24,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 13,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 58,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 27,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 79,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 80,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 9,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 9
+   }
+  },
+  {
+   "minute": 130,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 39,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 57,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 40,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 31,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 49,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 24,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 16,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 13,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 59,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 28,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 77,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 28,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 10,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 9
+   }
+  },
+  {
+   "minute": 140,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 40,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "critical",
+     "er": {
+      "occupied": 47,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 57,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 39,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 32,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 47,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 24,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 13,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 63,
+     "er_wait_min": 25,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 31,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 61,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 1
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 10,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 9
+   }
+  },
+  {
+   "minute": 150,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 39,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 41,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 30,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 50,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 23,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 14,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 65,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 31,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 30,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 45,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 24,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 82,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 11,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 18,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 107,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 5
+   }
+  },
+  {
+   "minute": 160,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 39,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 73,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 42,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 28,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 53,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 24,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 71,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 14,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 65,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 26,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 58,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 78,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "critical",
+     "er": {
+      "occupied": 20,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 40,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 10,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 17,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 109,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 5
+   }
+  },
+  {
+   "minute": 170,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 40,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 54,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 42,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 45,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 49,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 25,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 69,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 64,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 25,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 28,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 79,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 19,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 66,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 21,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 30,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 10,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 76,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 18,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 26,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 109,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 4
+   }
+  },
+  {
+   "minute": 180,
+   "hospitals": [
+    {
+     "id": "jhh",
+     "name": "Johns Hopkins Hospital",
+     "address": "1800 Orleans St",
+     "lat": 39.2963,
+     "lon": -76.5925,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 41,
+      "capacity": 52,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 55,
+      "capacity": 62,
+      "waiting": 0
+     },
+     "beds_free": 74,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "shock-trauma",
+     "name": "UMMC R Adams Cowley Shock Trauma",
+     "address": "22 S Greene St",
+     "lat": 39.2887,
+     "lon": -76.6245,
+     "trauma": "Level I",
+     "status": "busy",
+     "er": {
+      "occupied": 40,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 56,
+      "capacity": 58,
+      "waiting": 0
+     },
+     "beds_free": 48,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "bayview",
+     "name": "Johns Hopkins Bayview",
+     "address": "4940 Eastern Ave",
+     "lat": 39.2894,
+     "lon": -76.5487,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 29,
+      "capacity": 36,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 40,
+      "capacity": 43,
+      "waiting": 0
+     },
+     "beds_free": 51,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "mercy",
+     "name": "Mercy Medical Center",
+     "address": "345 St Paul Pl",
+     "lat": 39.2946,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 26,
+      "capacity": 28,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 23,
+      "capacity": 34,
+      "waiting": 0
+     },
+     "beds_free": 67,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "midtown",
+     "name": "UMMC Midtown Campus",
+     "address": "827 Linden Ave",
+     "lat": 39.299,
+     "lon": -76.6219,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 15,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 14,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 63,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "union-memorial",
+     "name": "MedStar Union Memorial",
+     "address": "201 E University Pkwy",
+     "lat": 39.3302,
+     "lon": -76.613,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 27,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 32,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 60,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "sinai",
+     "name": "Sinai Hospital of Baltimore",
+     "address": "2401 W Belvedere Ave",
+     "lat": 39.353,
+     "lon": -76.6617,
+     "trauma": "Level II",
+     "status": "busy",
+     "er": {
+      "occupied": 31,
+      "capacity": 40,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 44,
+      "capacity": 48,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "harbor",
+     "name": "MedStar Harbor Hospital",
+     "address": "3001 S Hanover St",
+     "lat": 39.2494,
+     "lon": -76.6139,
+     "trauma": null,
+     "status": "busy",
+     "er": {
+      "occupied": 17,
+      "capacity": 20,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 16,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "beds_free": 68,
+     "er_wait_min": 25,
+     "receiving_incident": true
+    },
+    {
+     "id": "st-agnes",
+     "name": "Ascension Saint Agnes",
+     "address": "900 S Caton Ave",
+     "lat": 39.2723,
+     "lon": -76.6776,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 22,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 29,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 84,
+     "er_wait_min": 10,
+     "receiving_incident": true
+    },
+    {
+     "id": "good-sam",
+     "name": "MedStar Good Samaritan",
+     "address": "5601 Loch Raven Blvd",
+     "lat": 39.3587,
+     "lon": -76.5906,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 10,
+      "capacity": 24,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 22,
+      "capacity": 29,
+      "waiting": 0
+     },
+     "beds_free": 75,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    },
+    {
+     "id": "gbmc",
+     "name": "GBMC",
+     "address": "6701 N Charles St, Towson",
+     "lat": 39.3955,
+     "lon": -76.6222,
+     "trauma": null,
+     "status": "open",
+     "er": {
+      "occupied": 18,
+      "capacity": 32,
+      "waiting": 0
+     },
+     "icu": {
+      "occupied": 27,
+      "capacity": 38,
+      "waiting": 0
+     },
+     "beds_free": 108,
+     "er_wait_min": 10,
+     "receiving_incident": false
+    }
+   ],
+   "without_bed": {
+    "coordinated": 0,
+    "nearest": 4
+   }
+  }
+ ],
+ "comparison": {
+  "coordinated": {
+   "avg_to_bed_min": 20,
+   "longest_to_bed_min": 38,
+   "without_bed": 0
+  },
+  "nearest": {
+   "avg_to_bed_min": 44,
+   "longest_to_bed_min": 180,
+   "without_bed": 4,
+   "hospital_id": "shock-trauma",
+   "hospital": "UMMC R Adams Cowley Shock Trauma"
+  }
+ }
+}

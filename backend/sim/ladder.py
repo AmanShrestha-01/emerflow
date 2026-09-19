@@ -121,11 +121,14 @@ def rule_plan(live: Hospital, *, escalate: bool = True) -> Plan:
     if escalate and h.level >= ESCALATION_ACTIONS["cancel_elective"]:
         upcoming = [c.case_id for c in h.or_cases
                     if not c.cancelled and c.kind == "elective" and c.starts_at > h.clock]
-        if upcoming and any(p.severity <= 2 for p in unplaced) and not _pending(live, "cancel_elective"):
+        crit = sum(p.severity <= 2 for p in unplaced)
+        upstairs_full = h.units["ICU"].free == 0 and h.units["STEPDOWN"].free == 0
+        if upcoming and (crit or upstairs_full) and not _pending(live, "cancel_elective"):
+            why = (f"{crit} critical patients have no ICU-level bed" if crit
+                   else "intensive care and the close-watch beds are full")
             escalations.append(PlanEscalation(
                 action="cancel_elective", case_ids=upcoming,
-                reason=f"{sum(p.severity <= 2 for p in unplaced)} critical patients have no ICU-level bed; "
-                       f"cancelling {len(upcoming)} elective case(s) frees recovery-room beds"))
+                reason=f"{why}; postponing {len(upcoming)} planned surgery(ies) keeps recovery-room beds free"))
         from backend.sim.rules import NURSE_RATIO
         tight = [u for u, r in NURSE_RATIO.items() if h.units[u].free > 0 and
                  len(h.units[u].occupants) + len(h.units[u].reserved) >= h.nurses.get(u, 0) * r]

@@ -30,7 +30,7 @@ def describe(h: Hospital, e: PlanEscalation) -> str | None:
     if e.action == "call_in_staff":
         unit = e.unit if e.unit in NURSE_RATIO else "ICU"
         n = max(1, min(e.count or 2, h.off_duty_nurses))
-        return (f"call in {n} off-duty nurse(s) for {UNIT_WORDS.get(unit, unit)}; they arrive in {CALLIN_DELAY} min"
+        return (f"call in {n} off-duty nurse{'s' if n != 1 else ''} for {UNIT_WORDS.get(unit, unit)}; they arrive in {CALLIN_DELAY} min"
                 if h.off_duty_nurses else None)
     if e.action == "divert_ambulances":
         return "ask ambulances with less serious patients to go to other hospitals" if not h.diversion else None
@@ -77,7 +77,7 @@ def resolve(h: Hospital, approval_id: str, approve: bool, emit: Emit = _noop) ->
             n = max(1, min(p.get("count") or 2, h.off_duty_nurses))
             h.off_duty_nurses -= n
             h.callins.append((h.clock + CALLIN_DELAY, unit, n))
-            detail = f"{n} nurse(s) called in for {UNIT_WORDS.get(unit, unit)}, arriving in {CALLIN_DELAY} min"
+            detail = f"{n} nurse{'s' if n != 1 else ''} called in for {UNIT_WORDS.get(unit, unit)}, arriving in {CALLIN_DELAY} min"
         elif e.action == "divert_ambulances":
             h.diversion = True
             detail = "ambulances with less serious patients now go to other hospitals"

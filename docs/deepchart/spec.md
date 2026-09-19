@@ -60,7 +60,8 @@ Demo hospitals:
 
 ## 4. Screens
 
-### 4.1 Login (shared by `/board` and `/doctor`)
+### 4.1 Login (one for the whole app, built as `frontend/src/auth/`)
+The role picks the screen: Commander → board (`/`), Doctor → DeepChart (`/doctor`). A doctor at Emer Flow General can also view the board.
 ```
 +---------------------------------------------+
 |  Emer Flow                                  |

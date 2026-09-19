@@ -100,12 +100,15 @@ def _radio_stub(text: str) -> RadioParse:
     return RadioParse(patients=pts)
 
 
+SPEEDS = (0.25, 0.5, 1, 2, 5)  # sim-minutes per real second; 0.5 is the default demo pace
+
+
 class Engine:
     def __init__(self, llm: LLM | None = None) -> None:
         self.bus = EventBus()
         self.llm = llm or LLM()
         self.paused = False
-        self.speed = 1
+        self.speed: float = 0.5
         self.drafts: dict[str, list[RadioPatient]] = {}
         self._loop_task: asyncio.Task | None = None
         self._cycle_task: asyncio.Task | None = None
@@ -223,20 +226,21 @@ Use at most 30 patients. Do not add anyone not described.""",
     def resolve_hold(self, hold_id: str, outcome: str) -> str:
         return resolve_hold(self.h, hold_id, outcome, lambda t, d, **k: self.emit(t, d))
 
-    def control(self, action: str, speed: int | None = None, key: str | None = None) -> None:
+    def control(self, action: str, speed: float | None = None, key: str | None = None) -> None:
         if action == "pause":
             self.paused = True
         elif action == "resume":
             self.paused = False
-        elif action == "speed" and speed in (1, 2, 5):
+        elif action == "speed" and speed in SPEEDS:
             self.speed = speed
+            self.paused = False
         elif action == "reset":
             if key != DEMO_KEY:
                 raise PermissionError("reset needs the demo key")
             if self._cycle_task and not self._cycle_task.done():
                 self._cycle_task.cancel()
             self.reset(self.seed)
-        self.emit("notice", {"text": f"control: {action}" + (f" {speed}x" if action == "speed" else "")})
+        self.emit("notice", {"text": f"control: {action}" + (f" {speed:g}x" if action == "speed" and speed is not None else "")})
 
     # ---------- outputs ----------
     def state(self, include_feed: bool = True) -> dict:

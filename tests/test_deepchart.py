@@ -235,3 +235,18 @@ def test_hold_resolve_rejects_wrong_patient(eng):
     pid, hid = _held(eng)
     with pytest.raises(NotFound):
         eng.portal.resolve_hold(DOC, "IN-01", hid, "cancel", "er")
+
+
+# ---------- one login for the whole app ----------
+def test_me_reports_the_session_and_401s_when_stale():
+    c = TestClient(app)
+    assert c.get("/api/me").status_code == 401
+    assert c.get("/api/me", headers={"X-Session": "stale"}).status_code == 401
+    tok = c.post("/api/login", json={"hospital": HOME, "role": "commander", "pin": "demo"}).json()["token"]
+    assert c.get("/api/me", headers={"X-Session": tok}).json() == {"hospital": HOME, "role": "commander"}
+
+
+def test_commander_only_at_the_board_hospital():
+    c = TestClient(app)
+    r = c.post("/api/login", json={"hospital": HOSP_B, "role": "commander", "pin": "demo"})
+    assert r.status_code == 400

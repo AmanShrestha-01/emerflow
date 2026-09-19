@@ -206,7 +206,7 @@ function Header({ st, ev, run, onSimple }) {
 
       <div className="clock" aria-label="Simulated time">
         <span className="clock-t">{simTime(st.clock)}</span>
-        <span className="clock-s">{st.paused ? 'Paused' : `Running at ${st.speed || 1}×`}</span>
+        <span className="clock-s">{st.paused ? 'Paused' : `Running at ${st.speed ?? 0.5}×`}</span>
       </div>
 
       <div className="controls" role="group" aria-label="Simulation controls">
@@ -219,11 +219,11 @@ function Header({ st, ev, run, onSimple }) {
             <PauseIcon /> Pause
           </button>
         )}
-        {[1, 2].map((sp) => (
+        {[0.5, 1, 2].map((sp) => (
           <button
             key={sp}
             className="ctl ctl-speed"
-            aria-pressed={!st.paused && (st.speed || 1) === sp}
+            aria-pressed={!st.paused && (st.speed ?? 0.5) === sp}
             aria-label={`Speed ${sp}×`}
             onClick={() => control('speed', { speed: sp }, `Speed ${sp}×`)}
           >

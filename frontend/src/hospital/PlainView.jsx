@@ -457,8 +457,8 @@ export function MoreMenu({ st, sc, onFull, source, onResults }) {
           )}
           <p className="s-pop-k">Speed</p>
           <div className="s-pop-row">
-            {[1, 2].map((sp) => (
-              <button key={sp} role="menuitemradio" aria-checked={(st.speed || 1) === sp} className="s-chip" onClick={() => sc.control('speed', { speed: sp }, `Speed ${sp}×`)}>
+            {[0.5, 1, 2].map((sp) => (
+              <button key={sp} role="menuitemradio" aria-checked={(st.speed ?? 0.5) === sp} className="s-chip" onClick={() => sc.control('speed', { speed: sp }, `Speed ${sp}×`)}>
                 {sp}×
               </button>
             ))}

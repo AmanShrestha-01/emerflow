@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Sev } from '../hospital/bits.jsx'
 import { FACT_LABEL, FACT_TECH, FACTS, REASONS, loadSession, portal, saveSession, unitWord } from './portalApi.js'
+import Login from '../auth/Login.jsx'
+import { HOME, landing, logout } from '../auth/session.js'
 import './deepchart.css'
 
-const HOME = 'Emer Flow General'
 const NOTICE = 'sources disagree; a human must resolve'
 // Deep link from the board: /doctor?pid=MC-03&hold=H12 (optionally &pin=demo for the demo).
 const DEEP = (() => {
@@ -19,9 +20,11 @@ const STATE_WORD = {
 const STATUS_WORD = { active: 'ACTIVE', present: 'PRESENT', stopped: 'STOPPED', absent: 'NONE RECORDED' }
 
 // ---------------------------------------------------------------- shell
+// Uses the app's one staff login (src/auth). DeepChart itself is for doctors.
 export default function DoctorPortal() {
   const [session, setSession] = useState(null)
   const [ready, setReady] = useState(false)
+  const [who, setWho] = useState(null)
   useEffect(() => {
     const stored = loadSession()
     const done = (s) => {
@@ -37,17 +40,20 @@ export default function DoctorPortal() {
         .catch(() => done(null))
     } else if (stored) {
       portal
-        .patients(stored)
+        .me(stored)
         .then(() => done(stored))
         .catch(() => done(null))
     } else {
       done(null)
     }
   }, [])
-  const logout = () => {
-    saveSession(null)
-    setSession(null)
-  }
+  useEffect(() => {
+    if (!DEEP.pid) return
+    fetch('/api/state')
+      .then((r) => r.json())
+      .then((st) => setWho((st.patients || []).find((p) => p.pid === DEEP.pid)?.name || null))
+      .catch(() => {})
+  }, [])
   const onError = useCallback((e) => {
     if (e?.status === 401) {
       saveSession(null)
@@ -56,20 +62,34 @@ export default function DoctorPortal() {
   }, [])
 
   if (!ready) return <p className="dc-empty">Loading…</p>
-  if (!session) return <Login onIn={(s) => (saveSession(s), setSession(s))} />
+  if (!session || session.role !== 'doctor') {
+    const ask = DEEP.pid
+      ? `The board is asking you to check ${who || 'a patient'}'s records. Log in as a doctor to open their chart.`
+      : session
+        ? 'DeepChart is for doctors. Log in as a doctor to open patient records.'
+        : null
+    return (
+      <Login
+        presetRole="doctor"
+        banner={ask}
+        next={window.location.pathname + window.location.search}
+        onIn={(s) => (s.role === 'doctor' ? setSession(s) : window.location.assign(landing(s)))}
+      />
+    )
+  }
   return (
     <div className="dc">
       <header className="dc-top">
         <div>
           <h1 className="dc-title">DeepChart</h1>
-          <p className="dc-sub">
-            {session.hospital} · {session.role}
-          </p>
+          <p className="dc-sub">Doctor · {session.hospital}</p>
         </div>
         <nav className="dc-nav">
-          <a className="linkbtn" href="/">
-            Command board
-          </a>
+          {session.hospital === HOME && (
+            <a className="linkbtn" href="/">
+              Command board
+            </a>
+          )}
           <button className="linkbtn" onClick={logout}>
             Log out
           </button>
@@ -81,74 +101,6 @@ export default function DoctorPortal() {
         <p className="dc-empty">Hospital C only holds records in this demo. Log in to {HOME} or Hospital B.</p>
       )}
     </div>
-  )
-}
-
-function Login({ onIn }) {
-  const [hospitals, setHospitals] = useState([HOME, 'Hospital B', 'Hospital C'])
-  const [hospital, setHospital] = useState(HOME)
-  const [role, setRole] = useState('doctor')
-  const [pin, setPin] = useState(DEEP.pin || '')
-  const [error, setError] = useState(null)
-  useEffect(() => {
-    portal
-      .hospitals()
-      .then((hs) => setHospitals(hs.map((h) => h.name)))
-      .catch(() => {})
-  }, [])
-  const [who, setWho] = useState(null)
-  useEffect(() => {
-    if (!DEEP.pid) return
-    fetch('/api/state')
-      .then((r) => r.json())
-      .then((st) => setWho((st.patients || []).find((p) => p.pid === DEEP.pid)?.name || null))
-      .catch(() => {})
-  }, [])
-  const submit = async (e) => {
-    e.preventDefault()
-    try {
-      onIn(await portal.login(hospital, role, pin))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-  return (
-    <main className="dc-login">
-      <form className="dc-card" onSubmit={submit}>
-        <h1 className="dc-title">DeepChart</h1>
-        <p className="muted">Doctor portal · Emer Flow</p>
-        {DEEP.pid && (
-          <p className="dc-toast">
-            The board is asking you to check {who || 'a patient'}&apos;s records. Log in to open their chart.
-          </p>
-        )}
-        <label className="dc-field">
-          Hospital
-          <select value={hospital} onChange={(e) => setHospital(e.target.value)}>
-            {hospitals.map((h) => (
-              <option key={h}>{h}</option>
-            ))}
-          </select>
-        </label>
-        <fieldset className="dc-field">
-          <legend>Role</legend>
-          {['doctor', 'commander'].map((r) => (
-            <label key={r} className="dc-radio">
-              <input type="radio" checked={role === r} onChange={() => setRole(r)} /> {r}
-            </label>
-          ))}
-        </fieldset>
-        <label className="dc-field">
-          PIN
-          <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} autoFocus />
-        </label>
-        {error && <p className="dc-error">{error}</p>}
-        <button className="dc-btn dc-btn-primary" type="submit">
-          Enter
-        </button>
-        <p className="dc-fine muted">Demo only. A real deployment uses the hospital&apos;s own single sign-on.</p>
-      </form>
-    </main>
   )
 }
 

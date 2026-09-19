@@ -158,7 +158,13 @@ class Swarm:
         # The hospital rules finish the plan: for anyone the plan didn't place (or placed somewhere impossible),
         # work out the full chain of moves (ward -> close-watch -> intensive care) and apply it, re-checked.
         placed: list[str] = []
-        repair = rule_plan(h, escalate=False)
+        # If the AI asked for no big action, the rules may still suggest one (same checks, still needs a person).
+        repair = rule_plan(h, escalate=not plan.escalations)
+        for e in repair.escalations:
+            a = approvals.request(h, e, lambda t, d, **_: ev(t, d, "apply"))
+            if a:
+                say("ESCALATION", [ESC_OWNER[e.action], "COORDINATOR"], "system",
+                    f"The hospital rules suggest a big step, which needs a person's approval: {a.detail}.", "apply")
         for pm in repair.moves:
             p = h.patients.get(pm.pid)
             if not p:

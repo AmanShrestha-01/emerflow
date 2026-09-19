@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { NamesContext } from './SwarmChat.jsx'
 import SwarmRoom from './SwarmRoom.jsx'
 import AiWorkflowPage from './AiWorkflowPage.jsx'
+import DemoStory, { StartDemoButton, useStory } from './DemoStory.jsx'
 import PlainView, {
   ApprovalButtons,
   approvalSentencePlain,
@@ -18,7 +19,7 @@ import PlainView, {
   useRecent,
   WHERE,
 } from './PlainView.jsx'
-import { BusCrashButton, BusyNightButton, useScenario } from './scenario.jsx'
+import { BusCrashButton, BusyNightButton, SpeedMeter, useScenario } from './scenario.jsx'
 import { ModeBadge, ResultsContent } from './results.jsx'
 import { UNIT_DEPT } from './format.js'
 
@@ -56,6 +57,7 @@ const freeIn = (u) => Math.max(0, (u.beds || 0) - (u.occupied || 0) - (u.reserve
 
 export default function DashboardView({ st, ev, run, onFull }) {
   const sc = useScenario(run)
+  const story = useStory(st, ev, run)
   const [page, setPage] = useState(() => {
     const q = new URLSearchParams(window.location.search).get('page')
     return PAGES.some((p) => p.id === q) ? q : 'dashboard'
@@ -118,14 +120,20 @@ export default function DashboardView({ st, ev, run, onFull }) {
             </p>
           </div>
           <div className="d-actions">
+            <StartDemoButton story={{ ...story, go: (n) => { setPage('dashboard'); story.go(n) } }} />
             <button className={`d-wfbtn${page === 'workflow' ? ' on' : ''}`} onClick={() => setPage('workflow')}>
               <Icon name="flow" /> AI workflow
             </button>
+            <SpeedMeter st={st} sc={sc} />
             <BusyNightButton st={st} sc={sc} />
             <BusCrashButton sc={sc} compact />
             <MoreMenu st={st} sc={sc} onFull={onFull} source={ev.source} onResults={() => setPage('results')} />
           </div>
         </header>
+
+        <NamesContext.Provider value={names}>
+          <DemoStory story={story} st={st} ev={ev} run={run} />
+        </NamesContext.Provider>
 
         {page === 'dashboard' && (
           <>

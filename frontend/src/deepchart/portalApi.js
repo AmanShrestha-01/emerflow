@@ -42,6 +42,7 @@ async function request(method, path, { body, query, session } = {}) {
 
 export const portal = {
   hospitals: () => request('GET', '/api/hospitals'),
+  me: (s) => request('GET', '/api/me', { session: s }),
   login: (hospital, role, pin) => request('POST', '/api/login', { body: { hospital, role, pin } }),
   patients: (s) => request('GET', '/api/portal/patients', { session: s }),
   lookup: (s, pid, reason) => request('GET', '/api/lookup', { session: s, query: { pid, reason } }),

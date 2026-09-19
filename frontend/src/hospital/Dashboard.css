@@ -1238,3 +1238,16 @@ button.d-tile:hover {
 .d-td-name .d-td-what { white-space: normal; overflow: visible; }
 .d-table .d-pill { white-space: normal; text-align: center; }
 .d-ok .d-empty { padding: 4px 16px 2px; }
+
+/* speed meter: pause/play + 5-stop slider */
+.d-speed { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px 0 4px;
+  background: #fff; border: 1px solid var(--t-border, #d6dde8); border-radius: 11px; color: #1e3a5f; font-family: var(--t-font, inherit); }
+.d-speed-play { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px;
+  background: #1e3a5f; color: #fff; cursor: pointer; }
+.d-speed.paused .d-speed-play { background: #1c6dd0; }
+.d-speed-play:focus-visible, .d-speed input:focus-visible { outline: 3px solid #1c6dd0; outline-offset: 2px; }
+.d-speed-body { display: flex; flex-direction: column; gap: 1px; cursor: pointer; }
+.d-speed-k { font-size: 11px; font-weight: 600; color: #5b6b82; line-height: 1; }
+.d-speed input { width: 96px; margin: 0; accent-color: #1e3a5f; cursor: pointer; }
+.d-speed-v { min-width: 26px; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; text-align: right; }
+@media (max-width: 900px) { .d-speed input { width: 70px; } }

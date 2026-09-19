@@ -8,7 +8,7 @@ import os
 import secrets
 from dataclasses import dataclass
 
-from backend.deepchart.records import HOSPITALS
+from backend.deepchart.records import HOME, HOSPITALS
 
 ROLES = ("doctor", "commander")
 REASONS = {"er": "Treating in the ER", "admit": "Admitting", "transfer": "Transfer received",
@@ -31,6 +31,8 @@ class Access:
             raise ValueError("unknown hospital")
         if role not in ROLES:
             raise ValueError("role must be doctor or commander")
+        if role == "commander" and hospital != HOME:
+            raise ValueError(f"the command board belongs to {HOME}")
         if pin != os.environ.get("EMERFLOW_DEMO_KEY", "demo"):
             raise PermissionError("wrong PIN")
         s = Session(secrets.token_urlsafe(16), hospital, role)

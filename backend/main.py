@@ -17,6 +17,7 @@ from backend.engine import Engine, compare
 engine = Engine()
 HEARTBEAT_SECS = 15
 DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+WEB = Path(__file__).resolve().parent.parent / "web" / "out"  # the Next.js site (static export)
 
 
 @asynccontextmanager
@@ -50,7 +51,7 @@ class ResolveIn(BaseModel):
 
 class ControlIn(BaseModel):
     action: str
-    speed: int | None = None
+    speed: float | None = None
     key: str | None = None
 
 
@@ -236,6 +237,13 @@ def login(body: LoginIn):
     return {"token": s.token, "hospital": s.hospital, "role": s.role}
 
 
+@app.get("/api/me")
+def me(x_session: str | None = Header(None)):
+    """Who is logged in. 401 when the session is missing or stale (e.g. after a server restart)."""
+    s = _session(x_session)
+    return {"hospital": s.hospital, "role": s.role}
+
+
 @app.get("/api/hospitals")
 def hospitals():
     return [{"name": n} for n in HOSPITALS]
@@ -325,11 +333,27 @@ def deepchart_score():
     return engine.portal.score()
 
 
-# Serve the built frontend (Cloud Run: one service for both).
+# Serve the built frontends (Cloud Run: one service for all).
+# The Next.js site (web/out) owns its pages: /, /board, /workflow, /ems, /login.
+# Everything else falls through to the classic app (frontend/dist): DeepChart /doctor and patient links /p/<token>.
+def _inside(root: Path, path: str) -> Path | None:
+    f = (root / path).resolve()
+    return f if f.is_relative_to(root.resolve()) else None
+
+
 if DIST.exists():
     app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
+if DIST.exists() or WEB.exists():
 
-    @app.get("/{path:path}")
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"])  # Next's router prefetches pages with HEAD
     def spa(path: str):
-        f = DIST / path
-        return FileResponse(f if path and f.is_file() else DIST / "index.html")
+        if WEB.exists():
+            f = _inside(WEB, path)
+            if f and f.is_file():
+                return FileResponse(f)
+            if f and (f / "index.html").is_file():
+                return FileResponse(f / "index.html")
+        if DIST.exists():
+            f = _inside(DIST, path)
+            return FileResponse(f if path and f and f.is_file() else DIST / "index.html")
+        raise HTTPException(404, "not found")

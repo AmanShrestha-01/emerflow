@@ -23,7 +23,7 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 | POST | `/api/radio/{draft_id}/confirm` | | `{"incoming": n}` |
 | POST | `/api/approvals/{approval_id}` | `{"approve": true}` | `{"ok": true}` |
 | POST | `/api/holds/{hold_id}/resolve` | `{"outcome": "proceed" \| "cancel"}` | `{"ok": true, "detail": "..."}` |
-| POST | `/api/control` | `{"action": "pause" \| "resume" \| "speed" \| "reset", "speed": 1 \| 2 \| 5, "key": "demo"}` | `{"ok": true}` |
+| POST | `/api/control` | `{"action": "pause" \| "resume" \| "speed" \| "reset", "speed": 0.25 \| 0.5 \| 1 \| 2 \| 5, "key": "demo"}` | `{"ok": true}` |
 | GET | `/api/patient/{pid}` | | `PatientDetail` |
 | GET | `/api/compare` | | `Compare` |
 
@@ -31,7 +31,7 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 ```json
 {
   "clock": 42, "version": 318, "level": 2, "level_name": "STRETCH", "diversion": false,
-  "paused": false, "speed": 1, "mode": "stub", "busy_until": null,
+  "paused": false, "speed": 0.5, "mode": "stub", "busy_until": null,
   "units": [{"unit": "ICU", "beds": 10, "occupied": 9, "reserved": 1, "percent": 100, "nurses": 5,
              "occupants": ["IN-10"], "reserved_for": ["MC-03"]}],
   "patients": [{"pid": "MC-03", "name": "Lena Cho", "age": 54, "complaint": "head injury, confused",
@@ -219,6 +219,7 @@ Source names are unchanged from the board. Render `source_name` as given.
 ## Sessions and roles
 - `POST /api/login` with `{"hospital", "role": "doctor" | "commander", "pin"}` returns `{"token", "hospital", "role"}`. The PIN is `EMERFLOW_DEMO_KEY` (default `demo`).
 - Send `X-Session: <token>` on portal calls. No session gets a `401`. The wrong role, the wrong hospital, a wrong PIN, or no reason for access gets a `403`.
+- `commander` can only log in at `Emer Flow General` (the board hospital).
 - Portal routes are for `doctor` only. `Hospital B` doctors can only list and transfer their own patients. Only `Emer Flow General` doctors can open board patients.
 
 ## REST
@@ -226,6 +227,7 @@ Source names are unchanged from the board. Render `source_name` as given.
 |---|---|---|---|
 | POST | `/api/login` | see above | `{token, hospital, role}` |
 | GET | `/api/hospitals` | | `[{"name"}]` |
+| GET | `/api/me` | | `{hospital, role}` for the current session, or `401` when it's missing or stale |
 | GET | `/api/portal/patients` | | Emer Flow General: patient rows plus `conflicts` and `held`, with held patients first. Hospital B: its own patients |
 | GET | `/api/lookup` | `?pid=MC-03&reason=er`, or `?name=&dob=&sex=&phone4=&reason=` | `{"query", "candidates": [Candidate]}` |
 | POST | `/api/lookup/confirm` | `{"pid", "record_ref", "same_person": bool, "reason"}` | `{"ok": true, "linked": bool}` |
@@ -242,6 +244,8 @@ Source names are unchanged from the board. Render `source_name` as given.
 
 `reason` is one of `er` (Treating in the ER), `admit`, `transfer`, `consult`.
 
+**One login for the app (frontend):** `/login` is the staff login (hospital → role → PIN). A commander lands on the board (`/`), and a doctor lands in DeepChart (`/doctor`).
+The board asks for any staff login at Emer Flow General (`?mock=1` skips it); `/doctor` asks for a doctor login; `/p/<token>` never asks.
 **Deep link from the board:** `/doctor?pid=MC-03&hold=H12` opens that patient's chart with the reason preset to `er`.
 With no session, the login is prefilled (Emer Flow General, doctor). `&pin=demo` logs in automatically, for the demo.
 
