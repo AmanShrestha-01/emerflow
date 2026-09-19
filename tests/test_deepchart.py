@@ -226,7 +226,7 @@ def test_doctor_resolves_hold_from_chart_and_it_is_logged(eng):
     assert r["ok"] and r["detail"] and hid not in eng.h.holds
     assert eng.portal.chart(DOC, pid, "er")["hold"] is None
     log = eng.portal.access_log(DOC, pid)
-    assert any("let the move to HOME go ahead" in e["action"] and e["reason"] == "Treating in the ER" for e in log)
+    assert any("let the move to home go ahead" in e["action"] and e["reason"] == "Treating in the ER" for e in log)
     with pytest.raises(NotFound):
         eng.portal.resolve_hold(DOC, pid, hid, "proceed", "er")
 
