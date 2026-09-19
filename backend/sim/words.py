@@ -54,8 +54,31 @@ _STEP_ING = re.compile(r"\bstepp(ing|ed) down\b", re.I)
 _STEP_NOUN = re.compile(r"\bstep-?downs?\b", re.I)
 
 
+_RESUS = re.compile(r"(\b(?:the|a|an)\s+)?\bresus(?:citation)?(\s+(?:room|bay|bays|beds?))?\b", re.I)
+_EMS = re.compile(r"(\b(?:the)\s+)?\bEMS\b")
+
+
+def _starts_sentence(m: re.Match) -> bool:
+    before = m.string[:m.start()].rstrip()
+    return not before or before[-1] in ".!?:"
+
+
+def _resus(m: re.Match) -> str:
+    plural = bool(m.group(2)) and m.group(2).strip().lower() in ("bays", "beds")
+    words = "critical care beds" if plural else "critical care room"
+    phrase = (m.group(1) or "") + words if m.group(1) else "the " + words
+    return phrase[0].upper() + phrase[1:] if _starts_sentence(m) else phrase
+
+
+def _ems(m: re.Match) -> str:
+    phrase = (m.group(1) or "the ") + "ambulance service"
+    return phrase[0].upper() + phrase[1:] if _starts_sentence(m) else phrase
+
+
 def close_watch(text: str) -> str:
     """'step-down' is hospital jargon; say 'close-watch' (beds for patients who still need watching)."""
+    text = _RESUS.sub(_resus, text)
+    text = _EMS.sub(_ems, text)
     text = _STEP_ING.sub(lambda m: ("moving" if m.group(1).lower() == "ing" else "moved"), text)
     text = _STEP_VERB.sub(lambda m: "move to close-watch beds" if m.group(0)[0].islower() else "Move to close-watch beds", text)
     return _STEP_NOUN.sub(lambda m: "close-watch" if m.group(0)[0].islower() else "Close-watch", text)

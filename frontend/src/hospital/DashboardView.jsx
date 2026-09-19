@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import SwarmChat, { NamesContext } from './SwarmChat.jsx'
+import { NamesContext } from './SwarmChat.jsx'
+import SwarmRoom from './SwarmRoom.jsx'
 import AiWorkflowPage from './AiWorkflowPage.jsx'
 import PlainView, {
   ApprovalButtons,
@@ -187,7 +188,7 @@ export default function DashboardView({ st, ev, run, onFull }) {
             </p>
             <div className="d-ai-chat">
               <NamesContext.Provider value={names}>
-                <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={open} />
+                <SwarmRoom messages={ev.messages} typing={ev.typing} pulses={ev.pulses} cycles={cycles} onSelect={open} />
               </NamesContext.Provider>
             </div>
           </section>

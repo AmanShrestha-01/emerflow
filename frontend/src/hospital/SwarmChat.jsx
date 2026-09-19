@@ -100,7 +100,7 @@ const tidy = (t) => String(t || '')
   .replace(/\bstep-?downs?\b/gi, (m) => (m[0] === 'S' ? 'Close-watch' : 'close-watch'))
   .replace(/\bPACU\b/g, 'Recovery')
 
-function Text({ text: raw = '', pids = [], onSelect }) {
+export function Text({ text: raw = '', pids = [], onSelect }) {
   const names = useContext(NamesContext)
   const text = tidy(raw)
   if (names) return <NamedText text={text} pids={pids || []} names={names} onSelect={onSelect} />
@@ -133,7 +133,7 @@ function Text({ text: raw = '', pids = [], onSelect }) {
   )
 }
 
-function How({ how }) {
+export function How({ how }) {
   if (how === 'live') return <span className="how how-live" title="Written by Gemini">Gemini</span>
   if (how === 'replay') return <span className="how how-live" title="Replayed from a recorded live Gemini run">Gemini (replay)</span>
   if (how === 'stub' || how === 'fallback') return <span className="how how-rules" title={`Written by rules (${how})`}>rules</span>

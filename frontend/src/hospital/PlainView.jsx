@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../api.js'
-import SwarmChat, { NamesContext } from './SwarmChat.jsx'
+import { NamesContext } from './SwarmChat.jsx'
+import SwarmRoom from './SwarmRoom.jsx'
 import { BusCrashButton, BusyNightButton, useScenario } from './scenario.jsx'
 import { deepchartHref } from './ApprovalDrawer.jsx'
 import { ModeBadge, ResultsDrawer } from './results.jsx'
@@ -170,7 +171,7 @@ export default function PlainView({ st, ev, run, onFull, embedded }) {
           <Sheet title="How the AI decided" wide onClose={() => setAiOpen(false)}>
             <div className="p-ai-chat">
               <NamesContext.Provider value={names}>
-                <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={(pid) => byPid[pid] && (setAiOpen(false), setOpenPid(pid))} />
+                <SwarmRoom showSwarm={false} messages={ev.messages} typing={ev.typing} pulses={ev.pulses} cycles={cycles} onSelect={(pid) => byPid[pid] && (setAiOpen(false), setOpenPid(pid))} />
               </NamesContext.Provider>
             </div>
           </Sheet>
@@ -247,7 +248,7 @@ export default function PlainView({ st, ev, run, onFull, embedded }) {
           </p>
           <div className="p-ai-chat">
             <NamesContext.Provider value={names}>
-              <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={(pid) => byPid[pid] && (setAiOpen(false), setOpenPid(pid))} />
+              <SwarmRoom showSwarm={false} messages={ev.messages} typing={ev.typing} pulses={ev.pulses} cycles={cycles} onSelect={(pid) => byPid[pid] && (setAiOpen(false), setOpenPid(pid))} />
             </NamesContext.Provider>
           </div>
         </Sheet>

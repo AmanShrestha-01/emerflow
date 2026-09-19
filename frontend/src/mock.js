@@ -952,6 +952,26 @@ export function createMock() {
             say('STAFFING', ['COORDINATOR'], 'reply', t, [], 'live', Q)
           }),
         )
+      } else {
+        // every round has a real exchange: ask the busiest department
+        const busiest = ['ER', 'ICU', 'STEPDOWN', 'WARD'].sort((x, y) => pct(y) - pct(x))[0]
+        const who = { ER: 'ER', ICU: 'ICU', STEPDOWN: 'STEPDOWN', WARD: 'STEPDOWN' }[busiest]
+        const waitingN = waitingList().length
+        front(
+          step(250, () => think('COORDINATOR', [who], Q)),
+          step(900, () => {
+            const t = `You're the fullest unit right now. ${waitingN} ${waitingN === 1 ? 'person is' : 'people are'} waiting. Who could move on in the next 15 minutes?`
+            emit('coordinator.question', { unit: who, question: t }, Q)
+            say('COORDINATOR', [who], 'ask', t, [], 'live', Q)
+          }),
+          step(200, () => think(who, ['COORDINATOR'], Q)),
+          step(900, () => {
+            const ready = S.units[busiest].occupants.map((pid) => S.patients[pid]).filter((p) => (p.ready || p.improving) && !p.locked)
+            const t = ready.length ? `${ready.length} could go: ${ready.slice(0, 2).map((p) => p.pid).join(' and ')}. I'll get them ready.` : 'Nobody is ready to leave yet. Maybe in half an hour.'
+            emit('agent.answer', { unit: who, answer: t }, Q)
+            say(who, ['COORDINATOR'], 'reply', t, ready.slice(0, 2).map((p) => p.pid), 'live', Q)
+          }),
+        )
       }
     })
 
