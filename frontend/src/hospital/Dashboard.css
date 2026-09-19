@@ -812,3 +812,20 @@ button.d-tile:hover {
 .d-okcard { align-content: start; }
 .d-okcard .p-btns { align-items: center; }
 .d-okcard .p-btn { height: auto; min-height: 2.2em; align-self: center; }
+
+/* AI workflow button + page (teammate's workflow view, fed by our live rounds) */
+.d-wfbtn { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 700; font-size: 15px;
+  padding: 0 14px; min-height: 42px; border-radius: 10px; border: 1.5px solid #1E3A5F; background: #fff; color: #1E3A5F; cursor: pointer; }
+.d-wfbtn:hover, .d-wfbtn.on { background: #1E3A5F; color: #fff; }
+.d-wfbtn:focus-visible { outline: 3px solid #1C6DD0; outline-offset: 2px; }
+.d-wf { display: flex; flex-direction: column; gap: 14px; }
+.d-wf-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; align-items: baseline; }
+.d-wf-intro { margin: 0; max-width: 70ch; color: var(--muted, #5A6B75); }
+.d-wf-status { margin: 0; font-weight: 700; color: var(--muted, #5A6B75); }
+.d-wf-status.live { color: #1C6DD0; }
+.d-wf-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 14px; }
+.d-wf-canvas { grid-column: 1; min-width: 0; border: 1px solid var(--d-rule, #D8E0E6); border-radius: 10px; overflow: hidden; }
+.d-wf-side { grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+.d-wf-log { grid-column: 1; min-width: 0; }
+.d-wf-snap { grid-column: 1 / -1; min-width: 0; }
+@media (max-width: 1100px) { .d-wf-grid { grid-template-columns: 1fr; } .d-wf-side, .d-wf-log, .d-wf-snap { grid-column: 1; grid-row: auto; } }

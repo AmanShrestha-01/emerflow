@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hospital-swarm/agent-workflow": "file:agent-workflow",
+    "@xyflow/react": "^12.11.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

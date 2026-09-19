@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import SwarmChat, { NamesContext } from './SwarmChat.jsx'
+import AiWorkflowPage from './AiWorkflowPage.jsx'
 import PlainView, {
   ApprovalButtons,
   approvalSentencePlain,
@@ -25,13 +26,14 @@ import { UNIT_DEPT } from './format.js'
 
 const PAGES = [
   { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
+  { id: 'workflow', label: 'AI workflow', icon: 'flow' },
   { id: 'beds', label: 'Beds', icon: 'bed' },
   { id: 'patients', label: 'Patients', icon: 'people' },
   { id: 'ok', label: 'Big decisions', icon: 'hand' },
   { id: 'ai', label: 'How the AI decided', icon: 'chat' },
   { id: 'results', label: 'Results', icon: 'chart' },
 ]
-const TITLES = { dashboard: 'Dashboard', beds: 'Beds', patients: 'Patients', ok: 'Big decisions for you', ai: 'How the AI decided', results: 'Results from this run' }
+const TITLES = { dashboard: 'Dashboard', workflow: 'AI workflow', beds: 'Beds', patients: 'Patients', ok: 'Big decisions for you', ai: 'How the AI decided', results: 'Results from this run' }
 
 const GROUPS = ['RESUS', 'ER', 'ICU', 'STEPDOWN', 'WARD', 'OR', 'PACU']
 const ONLY_IF_USED = ['HALLWAY', 'LOUNGE']
@@ -116,6 +118,9 @@ export default function DashboardView({ st, ev, run, onFull }) {
             </p>
           </div>
           <div className="d-actions">
+            <button className={`d-wfbtn${page === 'workflow' ? ' on' : ''}`} onClick={() => setPage('workflow')}>
+              <Icon name="flow" /> AI workflow
+            </button>
             <BusyNightButton st={st} sc={sc} />
             <BusCrashButton sc={sc} compact />
             <MoreMenu st={st} sc={sc} onFull={onFull} source={ev.source} onResults={() => setPage('results')} />
@@ -173,7 +178,7 @@ export default function DashboardView({ st, ev, run, onFull }) {
         )}
         {page === 'ok' && (
           <section className="d-panel d-page">
-            <OkCards items={decisions} byPid={byPid} run={run} wide empty="Nothing needs you right now. When two hospitals' records disagree, or a big decision comes up, it waits here." />
+            <OkCards items={decisions} byPid={byPid} run={run} wide empty="Nothing needs you right now. When a big decision comes up, like calling in extra nurses, it waits here." />
           </section>
         )}
         {page === 'ai' && (
@@ -186,6 +191,11 @@ export default function DashboardView({ st, ev, run, onFull }) {
                 <SwarmChat messages={ev.messages} typing={ev.typing} cycles={cycles} onSelect={open} />
               </NamesContext.Provider>
             </div>
+          </section>
+        )}
+        {page === 'workflow' && (
+          <section className="d-panel d-page">
+            <AiWorkflowPage st={st} ev={ev} />
           </section>
         )}
         {page === 'results' && (
@@ -506,6 +516,13 @@ function Icon({ name }) {
       return (
         <svg {...common}>
           <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11M12 10V4.5a1.5 1.5 0 0 1 3 0V11M15 10.5V6.5a1.5 1.5 0 0 1 3 0V14c0 3.9-2.7 7-6.5 7-2.4 0-4.2-1.2-5.5-3l-2.6-4a1.6 1.6 0 0 1 2.6-1.8L9 14V8.5a1.5 1.5 0 0 1 3 0" />
+        </svg>
+      )
+    case 'flow':
+      return (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="6" height="5" rx="1" /><rect x="15" y="4" width="6" height="5" rx="1" /><rect x="9" y="15" width="6" height="5" rx="1" />
+          <path d="M6 9v2.5h12V9M12 11.5V15" />
         </svg>
       )
     case 'chat':

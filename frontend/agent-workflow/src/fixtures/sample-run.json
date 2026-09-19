@@ -1,0 +1,496 @@
+{
+ "seed": 1,
+ "casualties": 25,
+ "events": [
+  {
+   "at": 0.0,
+   "event": {
+    "type": "meta",
+    "protocol": 1,
+    "seed": 1,
+    "casualties": 25
+   }
+  },
+  {
+   "at": 0.0,
+   "event": {
+    "type": "workflow",
+    "steps": [
+     {
+      "id": "trigger",
+      "kind": "trigger",
+      "title": "Mass Casualty Event",
+      "role": "Starts the run when the crisis button is pressed."
+     },
+     {
+      "id": "engine",
+      "kind": "code",
+      "title": "Hospital Engine",
+      "role": "SimPy model of the hospital: beds, nurses and patients over time."
+     },
+     {
+      "id": "er",
+      "kind": "ai",
+      "title": "ER Agent",
+      "role": "Speaks for the emergency room only."
+     },
+     {
+      "id": "icu",
+      "kind": "ai",
+      "title": "ICU Agent",
+      "role": "Speaks for intensive care only."
+     },
+     {
+      "id": "staff",
+      "kind": "ai",
+      "title": "Staffing Agent",
+      "role": "Tracks which nurses are free and when."
+     },
+     {
+      "id": "coord",
+      "kind": "ai",
+      "title": "Coordinator",
+      "role": "Listens to every department and makes one plan for the whole hospital."
+     },
+     {
+      "id": "calc",
+      "kind": "code",
+      "title": "Bed Calculator",
+      "role": "Plain math, no AI. Finds a plan that breaks no rules."
+     },
+     {
+      "id": "deepchart",
+      "kind": "ai",
+      "title": "DeepChart Check",
+      "role": "Checks each transfer's reasons against the patient's records."
+     },
+     {
+      "id": "review",
+      "kind": "human",
+      "title": "Charge Nurse Review",
+      "role": "A person decides anything the system is unsure about."
+     },
+     {
+      "id": "outcome",
+      "kind": "code",
+      "title": "Simulated Outcome",
+      "role": "Runs the same hospital with and without this plan and compares waits."
+     }
+    ],
+    "edges": [
+     {
+      "source": "trigger",
+      "target": "engine"
+     },
+     {
+      "source": "engine",
+      "target": "er"
+     },
+     {
+      "source": "engine",
+      "target": "icu"
+     },
+     {
+      "source": "engine",
+      "target": "staff"
+     },
+     {
+      "source": "er",
+      "target": "coord"
+     },
+     {
+      "source": "icu",
+      "target": "coord"
+     },
+     {
+      "source": "staff",
+      "target": "coord"
+     },
+     {
+      "source": "coord",
+      "target": "calc"
+     },
+     {
+      "source": "calc",
+      "target": "deepchart"
+     },
+     {
+      "source": "deepchart",
+      "target": "review"
+     },
+     {
+      "source": "review",
+      "target": "outcome"
+     }
+    ]
+   }
+  },
+  {
+   "at": 0.0,
+   "event": {
+    "type": "step",
+    "id": "trigger",
+    "status": "running"
+   }
+  },
+  {
+   "at": 0.5,
+   "event": {
+    "type": "step",
+    "id": "trigger",
+    "status": "done",
+    "summary": "25 patients inbound · arriving over 20 min",
+    "input": [
+     "Crisis button pressed at 21:47"
+    ],
+    "output": [
+     "25 patients arriving over 20 min",
+     "Severity mix: S1 × 5 · S2 × 5 · S3 × 11 · S4 × 1 · S5 × 3"
+    ],
+    "reasoning": null
+   }
+  },
+  {
+   "at": 0.5,
+   "event": {
+    "type": "step",
+    "id": "engine",
+    "status": "running"
+   }
+  },
+  {
+   "at": 1.4,
+   "event": {
+    "type": "snapshot",
+    "label": "At crisis (21:47)",
+    "clock": "21:47",
+    "units": [
+     {
+      "code": "ER",
+      "name": "Emergency",
+      "occupied": 25,
+      "capacity": 40,
+      "waiting": 0
+     },
+     {
+      "code": "ICU",
+      "name": "Intensive Care",
+      "occupied": 47,
+      "capacity": 48,
+      "waiting": 0
+     },
+     {
+      "code": "SDU",
+      "name": "Step-Down",
+      "occupied": 28,
+      "capacity": 30,
+      "waiting": 0
+     },
+     {
+      "code": "OR",
+      "name": "Surgery",
+      "occupied": 7,
+      "capacity": 12,
+      "waiting": 0
+     },
+     {
+      "code": "GEN",
+      "name": "General Beds",
+      "occupied": 148,
+      "capacity": 180,
+      "waiting": 0
+     }
+    ]
+   }
+  },
+  {
+   "at": 1.4,
+   "event": {
+    "type": "step",
+    "id": "engine",
+    "status": "done",
+    "summary": "ER 62% · ICU 1 free · SDU 2 free",
+    "input": [
+     "Simulated 08:00 → 21:47 (seed 1)",
+     "215 admissions and 218 discharges so far"
+    ],
+    "output": [
+     "Emergency: 25 / 40",
+     "Intensive Care: 47 / 48",
+     "Step-Down: 28 / 30",
+     "Surgery: 7 / 12",
+     "General Beds: 148 / 180"
+    ],
+    "reasoning": null
+   }
+  },
+  {
+   "at": 1.4,
+   "event": {
+    "type": "step",
+    "id": "er",
+    "status": "running"
+   }
+  },
+  {
+   "at": 1.4,
+   "event": {
+    "type": "step",
+    "id": "icu",
+    "status": "running"
+   }
+  },
+  {
+   "at": 1.4,
+   "event": {
+    "type": "step",
+    "id": "staff",
+    "status": "running"
+   }
+  },
+  {
+   "at": 2.3,
+   "event": {
+    "type": "step",
+    "id": "staff",
+    "status": "done",
+    "summary": "“Step-down nurse free now.”",
+    "input": [
+     "Step-down nurses busy: 1 of 4",
+     "ER nurses busy: 10 of 10"
+    ],
+    "output": [
+     "Step-down can accept a transfer now",
+     "Float pool sent to the ER"
+    ],
+    "reasoning": "Step-down cannot accept a transfer without a free nurse, so transfers must wait for one."
+   }
+  },
+  {
+   "at": 2.6,
+   "event": {
+    "type": "step",
+    "id": "er",
+    "status": "done",
+    "summary": "“10 serious. I need beds now.”",
+    "input": [
+     "Emergency: 25 / 40",
+     "25 arrivals, 10 with severity 1–2"
+    ],
+    "output": [
+     "Request: 10 inpatient beds for serious patients",
+     "Can treat 4 of 4 minor patients here now"
+    ],
+    "reasoning": "15 ER bays are open and 10 arrivals are severity 1–2. Serious patients must not wait in the hallway, so I ask for beds elsewhere and keep the milder patients in the ER."
+   }
+  },
+  {
+   "at": 2.9,
+   "event": {
+    "type": "step",
+    "id": "icu",
+    "status": "done",
+    "summary": "“1 bed left, critical only.”",
+    "input": [
+     "Intensive Care: 47 / 48",
+     "5 arrivals need ICU now, 1 will need it after surgery",
+     "11 current patients are stable"
+    ],
+    "output": [
+     "Offer: 1 beds for severity 1 only",
+     "11 stable patients could move to step-down"
+    ],
+    "reasoning": "The ICU is my responsibility, so I keep the last beds for the sickest patients. Patients who have been stable no longer need ICU-level care and could move if step-down can take them."
+   }
+  },
+  {
+   "at": 2.9,
+   "event": {
+    "type": "step",
+    "id": "coord",
+    "status": "running"
+   }
+  },
+  {
+   "at": 4.4,
+   "event": {
+    "type": "step",
+    "id": "coord",
+    "status": "done",
+    "summary": "Move 2 stable ICU patients to step-down now",
+    "input": [
+     "ER: needs 10 beds",
+     "ICU: 1 free, 11 stable",
+     "Staffing: step-down nurse free now"
+    ],
+    "output": [
+     "Rule: Move 2 stable ICU patients to step-down now",
+     "Rule: ICU accepts severity-1 arrivals only",
+     "Rule: Step-down and General beds may cover for each other"
+    ],
+    "reasoning": "ICU needs 6 beds (critical arrivals plus post-op) but has 1. Asked ICU: “If step-down takes 2 of your stable patients now, can you take the critical arrivals now?” ICU agreed."
+   }
+  },
+  {
+   "at": 4.4,
+   "event": {
+    "type": "step",
+    "id": "calc",
+    "status": "running"
+   }
+  },
+  {
+   "at": 5.4,
+   "event": {
+    "type": "step",
+    "id": "calc",
+    "status": "done",
+    "summary": "23 of 25 placed · 0 rules broken",
+    "input": [
+     "25 patients",
+     "2 transfers from the Coordinator",
+     "Free beds per unit after transfers"
+    ],
+    "output": [
+     "ICU 3 · GEN 15 · OR 1 · ER 4",
+     "2 waiting (severity 1, 1)",
+     "25 moves proposed"
+    ],
+    "reasoning": null
+   }
+  },
+  {
+   "at": 5.4,
+   "event": {
+    "type": "step",
+    "id": "deepchart",
+    "status": "running"
+   }
+  },
+  {
+   "at": 6.8,
+   "event": {
+    "type": "step",
+    "id": "deepchart",
+    "status": "flagged",
+    "summary": "1 of 2 transfers: records disagree",
+    "input": [
+     "P1053 → step-down, because the ICU chart says: no blood thinners",
+     "P1055 → step-down, because the ICU chart says: no blood thinners"
+    ],
+    "output": [
+     "P1055 · ICU chart (2026-09-18): no blood thinners",
+     "P1055 · Hospital B – Cardiology (2026-03-27): warfarin 5 mg · taking",
+     "P1055 · Local clinic (2026-04-18): no blood thinners",
+     "1 other transfer: records agree"
+    ],
+    "reasoning": "Where records really disagree I can't tell which one is right, so a person must check. P1053: Hospital B – Cardiology doesn't mention blood thinners. That's a gap, not a disagreement."
+   }
+  },
+  {
+   "at": 6.8,
+   "event": {
+    "type": "step",
+    "id": "review",
+    "status": "running"
+   }
+  },
+  {
+   "at": 7.5,
+   "event": {
+    "type": "step",
+    "id": "review",
+    "status": "flagged",
+    "summary": "24 moves approved · 1 awaiting review",
+    "input": [
+     "25 proposed moves",
+     "1 flagged by DeepChart"
+    ],
+    "output": [
+     "1 transfers and 23 admissions sent to the units",
+     "P1055 transfer paused until a nurse confirms medications"
+    ],
+    "reasoning": null
+   }
+  },
+  {
+   "at": 7.5,
+   "event": {
+    "type": "step",
+    "id": "outcome",
+    "status": "running"
+   }
+  },
+  {
+   "at": 8.5,
+   "event": {
+    "type": "snapshot",
+    "label": "1 h after plan (22:47)",
+    "clock": "22:47",
+    "units": [
+     {
+      "code": "ER",
+      "name": "Emergency",
+      "occupied": 33,
+      "capacity": 40,
+      "waiting": 0
+     },
+     {
+      "code": "ICU",
+      "name": "Intensive Care",
+      "occupied": 48,
+      "capacity": 48,
+      "waiting": 3
+     },
+     {
+      "code": "SDU",
+      "name": "Step-Down",
+      "occupied": 29,
+      "capacity": 30,
+      "waiting": 0
+     },
+     {
+      "code": "OR",
+      "name": "Surgery",
+      "occupied": 9,
+      "capacity": 12,
+      "waiting": 0
+     },
+     {
+      "code": "GEN",
+      "name": "General Beds",
+      "occupied": 164,
+      "capacity": 180,
+      "waiting": 0
+     }
+    ]
+   }
+  },
+  {
+   "at": 8.5,
+   "event": {
+    "type": "step",
+    "id": "outcome",
+    "status": "done",
+    "summary": "Severity 1–2 wait: 63 min vs 101 min",
+    "input": [
+     "Same hospital, same seed, simulated 4 h past 21:47",
+     "Run A: with this plan · Run B: no coordination"
+    ],
+    "output": [
+     "Severity 1–2 average wait: 63 min (B: 101 min)",
+     "All patients average wait: 25 min (B: 40 min)",
+     "Longest wait: 230 min (B: 230 min)",
+     "Still without a bed at 01:47: 2 (B: 3)"
+    ],
+    "reasoning": "Both runs use the same random seed, so the hospital, arrivals and discharges are identical until the plan is applied. Any difference in waits comes from the coordination."
+   }
+  },
+  {
+   "at": 8.5,
+   "event": {
+    "type": "end"
+   }
+  }
+ ]
+}

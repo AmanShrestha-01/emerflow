@@ -1,0 +1,32 @@
+{
+  "name": "@hospital-swarm/agent-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Live view of the Hospital Swarm decision process: a React hook, drop-in components and pluggable data sources.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./styles.css"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build:css": "tailwindcss -i styles.src.css -o styles.css --minify"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.11.6"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4",
+    "@types/react": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
