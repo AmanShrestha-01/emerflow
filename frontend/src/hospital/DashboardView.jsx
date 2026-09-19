@@ -325,6 +325,9 @@ function BedBoard({ groups, compact, onOpen }) {
 }
 
 function Tile({ t, ring, onOpen }) {
+  // Decide once, when the tile first appears: only a tile that appeared after the board settled (its
+  // status just changed, so it re-mounted) rings. Existing tiles never pick the ring up later.
+  const [fresh] = useState(ring)
   const p = t.p
   let word = 'Empty'
   let who = null
@@ -348,7 +351,7 @@ function Tile({ t, ring, onOpen }) {
     small = 'Planned surgery'
   }
   const title = p ? `${nameOf(p)}${p.age != null ? `, ${p.age}` : ''}: ${sentence(p.complaint)}${p.need ? `. Needs: ${p.need}` : ''}` : `${t.label}: ${word}`
-  const cls = `d-tile tile-${kind}${t.leaving ? ' leaving' : ''}${ring ? ' ring' : ''}`
+  const cls = `d-tile tile-${kind}${t.leaving ? ' leaving' : ''}${fresh ? ' ring' : ''}`
   const body = (
     <>
       <span className="d-tile-num" aria-label={t.label}>

@@ -801,3 +801,9 @@ button.d-tile:hover {
     border-left: 0;
   }
 }
+
+/* Needs-your-OK rail: buttons on one row, cards scroll instead of being cut off */
+.d-ok { display: flex; flex-direction: column; }
+.d-ok .d-okcards { flex: 1; overflow-y: auto; min-height: 0; padding-bottom: 4px; }
+.d-okcard .p-btns { flex-wrap: nowrap; }
+.d-okcard .p-btn { white-space: nowrap; font-size: 0.8rem; padding: 0 0.6em; }
