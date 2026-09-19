@@ -142,6 +142,18 @@ const UNIT_NEED = {
   ER: 'Tests and treatment in the ER',
   RESUS: 'Resuscitation',
 }
+// simulated vital signs, steady per patient, worse for more urgent patients
+function vitalsFor(p) {
+  let h = 0
+  for (const c of p.pid) h = (h * 31 + c.charCodeAt(0)) % 997
+  const sev = p.severity || 3
+  const sys = [0, 86, 150, 132, 124, 118][sev] + (h % 18)
+  const dia = Math.round(sys * 0.62) + (h % 7)
+  const hr = [0, 124, 104, 92, 82, 76][sev] + (h % 14)
+  const spo2 = [0, 88, 93, 96, 97, 98][sev] + (h % 3)
+  return { bp: `${sys}/${dia}`, hr, spo2: Math.min(100, spo2) }
+}
+
 function needFor(p) {
   if (p.needs_surgery) return 'Emergency surgery'
   if (p.pid.startsWith('IN')) return UNIT_NEED[p.unit] || 'Ongoing care'
@@ -213,6 +225,7 @@ export function createMock() {
       counters: { IN: 0, W: 0, A: 0, MC: 0, RD: 0, H: 0, APR: 0, M: 0, D: 0, CY: 0, MSG: 0 },
       lastCycle: -8,
       namesUsed: 0,
+      census: [],
     }
     for (const [unit, beds, , nurses] of UNIT_SPEC) {
       S.units[unit] = { unit, beds, nurses, occupants: [], reserved_for: [] }
@@ -289,6 +302,7 @@ export function createMock() {
       conflicts: opts.conflicts || [],
       other: pick(OTHER_SOURCES),
       last_move: null,
+      ambulance: opts.state === 'incoming' ? `Medic ${4 + ((S.namesUsed * 7) % 17)}` : '',
     }
     p.records = mkRecords(p)
     S.patients[pid] = p
@@ -352,7 +366,7 @@ export function createMock() {
   // ---------- public state ----------
   function publicPatient(p) {
     const { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked, needs_surgery, note, note_by, heading_to } = p
-    return { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked, need: needFor(p), needs_surgery: !!needs_surgery, note: note || null, note_by: note_by || null, heading_to: heading_to || null }
+    return { pid, name, age, complaint, severity, state, unit, waited, eta, needs_ct, needs_blood, retriage, records_flag, locked, need: needFor(p), needs_surgery: !!needs_surgery, note: note || null, note_by: note_by || null, heading_to: heading_to || null, ...vitalsFor(p), ambulance: p.ambulance || '' }
   }
   function metrics() {
     const w = allPatients().filter((p) => p.state === 'waiting' || (p.state === 'held' && !p.unit))
@@ -372,6 +386,8 @@ export function createMock() {
   function snapshot() {
     return {
       clock: S.clock,
+      clock_start: 21 * 60,
+      census: S.census.slice(-96),
       version: S.version,
       level: S.level,
       level_name: LEVEL_NAMES[S.level],
@@ -678,6 +694,12 @@ export function createMock() {
     if (S.clock % 17 === 0) {
       S.blood['O-'] += 2
       emit('notice', { text: 'Blood bank: courier delivered 2 units O-neg' })
+    }
+    if (S.clock % 5 === 0) {
+      const c = { clock: S.clock }
+      for (const u of ['ER', 'ICU', 'STEPDOWN', 'WARD']) c[u] = pct(u)
+      S.census.push(c)
+      if (S.census.length > 96) S.census.shift()
     }
     emit('tick', { clock: S.clock, level: S.level })
     updateLevel()
