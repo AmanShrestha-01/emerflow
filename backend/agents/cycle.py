@@ -21,6 +21,7 @@ from backend.agents.schemas import DeptAnswer, DeptStatus, Plan
 from backend.sim import approvals, fastlane
 from backend.sim.hospital import Hospital
 from backend.sim.models import Move
+from backend.sim.ladder import rule_plan
 from backend.sim.pipeline import commit
 from backend.sim.words import plain
 
@@ -117,14 +118,14 @@ class Swarm:
         # 5. APPLY at live state. Rule-keepers speak up when they reject or hold.
         counts = {"applied": 0, "flagged": 0, "held": 0, "dropped": 0}
         held_from: dict[str, str] = {}
+        rejected: list[tuple[str, str]] = []
 
         def on_event(m: Move):
             def hook(t, d, **_):
                 d = _explain(d, m, t)
                 ev(t, d, "apply")
                 if t == "move.dropped":
-                    say("VALIDATOR", ["COORDINATOR"], "system",
-                        f"Rejected {m.pid} → {_where(m.to_unit)}: {d['reason']}.", "apply", [m.pid])
+                    rejected.append((m.pid, d.get("reason", "")))
                 elif t == "move.held":
                     facts = ", ".join(c["fact"].replace("_", " ") for c in d["conflicts"])
                     say("DEEPCHART", ["COORDINATOR", OWNER.get(m.to_unit, "ER")], "system",
@@ -154,16 +155,32 @@ class Swarm:
                 say("ESCALATION", [ESC_OWNER[e.action], "COORDINATOR"], "system",
                     f"Needs the incident commander's approval: {a.detail}.", "apply")
 
-        # Anyone still waiting whose natural bed is free gets it (code fallback).
-        placed = []
-        for p in h.waiting():
-            r = fastlane.place_one(h, p, lambda t, d, **_: ev(t, d, "apply"), source="fallback")
-            if r:
-                counts[r] += 1
-                placed.append(p.pid)
-        if placed:
-            say("FASTLANE", ["ER"], "system", f"Placed {len(placed)} more waiting patient(s) in free beds: "
-                f"{', '.join(placed[:5])}.", "apply", placed[:5])
+        # The hospital rules finish the plan: for anyone the plan didn't place (or placed somewhere impossible),
+        # work out the full chain of moves (ward -> close-watch -> intensive care) and apply it, re-checked.
+        placed: list[str] = []
+        repair = rule_plan(h, escalate=False)
+        for pm in repair.moves:
+            p = h.patients.get(pm.pid)
+            if not p:
+                continue
+            m = Move(h.next_id("M"), pm.pid, p.unit, pm.to_unit, pm.kind, source="fallback", reason=pm.reason)
+            r = commit(h, m, lambda t, d, **_: ev(t, d, "apply"))
+            counts[r] += 1
+            if r in ("applied", "flagged") and pm.kind == "admit":
+                placed.append(pm.pid)
+        if rejected:
+            full = sum("full" in why or "no nurse" in why for _, why in rejected)
+            wrong = len(rejected) - full
+            parts = [f"{full} bed(s) were full" if full else "", f"{wrong} were the wrong kind of bed" if wrong else ""]
+            fixed = sum(pid in placed for pid, _ in rejected)
+            say("VALIDATOR", ["COORDINATOR"], "system",
+                f"Rule check: {len(rejected)} move(s) in the plan weren't possible ({' and '.join(x for x in parts if x)}). "
+                + (f"The hospital rules found beds for {fixed} of those patients." if fixed else
+                   "Those patients wait for the next round."), "apply", [pid for pid, _ in rejected][:6])
+        extra = [pid for pid in placed if pid not in {x for x, _ in rejected}]
+        if extra:
+            say("FASTLANE", ["ER"], "system", f"The hospital rules also placed {len(extra)} more waiting patient(s): "
+                f"{', '.join(extra[:5])}.", "apply", extra[:5])
 
         ms = round(1000 * (time.monotonic() - started))
         ev("cycle.end", {"cycle_id": cid, **counts, "ms": ms, "how": how})

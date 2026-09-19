@@ -31,7 +31,6 @@ const PAGES = [
   { id: 'patients', label: 'Patients', icon: 'people' },
   { id: 'ok', label: 'Big decisions', icon: 'hand' },
   { id: 'ai', label: 'How the AI decided', icon: 'chat' },
-  { id: 'results', label: 'Results', icon: 'chart' },
 ]
 const TITLES = { dashboard: 'Dashboard', workflow: 'AI workflow', beds: 'Beds', patients: 'Patients', ok: 'Big decisions for you', ai: 'How the AI decided', results: 'Results from this run' }
 
