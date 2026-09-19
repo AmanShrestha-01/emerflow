@@ -9,6 +9,7 @@ from backend.agents.schemas import Plan, PlanEscalation, PlanMove
 from backend.sim.hospital import Hospital
 from backend.sim.models import Move, Patient
 from backend.sim.rules import ESCALATION_ACTIONS, check_move
+from backend.sim.words import place
 
 # What we'd like for each severity, best first. Level-gated options are filtered by check_move.
 OPTIONS: dict[int, list[str]] = {
@@ -43,9 +44,9 @@ def _make_room(h: Hospital, unit: str, moves: list[PlanMove], depth: int = 0) ->
              (p.improving if unit in ("ICU", "STEPDOWN") else p.ready_for_discharge)]
     for p in sorted(cands, key=lambda p: -p.severity):
         for dest in MAKE_ROOM[unit]:
-            why = {"STEPDOWN": "improving; steps down to free an ICU bed",
-                   "WARD": "stable; moves to the ward to free a step-down bed",
-                   "LOUNGE": "ready to go home; waits in the discharge lounge"}[dest]
+            why = {"STEPDOWN": "Getting better, so moving out of intensive care to free a bed for someone sicker",
+                   "WARD": "Stable now, so moving to the ward to free a step-down bed",
+                   "LOUNGE": "Ready to go home; waiting in the discharge lounge to free a ward bed"}[dest]
             if _try(h, p.pid, unit, dest, "transfer", why, moves):
                 return True
             if _make_room(h, dest, moves, depth + 1) and _try(h, p.pid, unit, dest, "transfer", why, moves):
@@ -58,10 +59,11 @@ def _place(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
     if p.severity == 3 and p.needs_ct and not p.ct_done:
         opts = ["ER", "HALLWAY"]  # must be scanned before step-down
     for unit in opts:
-        if _try(h, p.pid, None, unit, "admit", f"severity {p.severity}, {p.complaint}", moves):
+        if _try(h, p.pid, None, unit, "admit", f"{p.need or 'Needs care'}: {place(unit)} was free", moves):
             return True
         if unit in MAKE_ROOM and _make_room(h, unit, moves) and \
-                _try(h, p.pid, None, unit, "admit", f"severity {p.severity}, into the bed just freed", moves):
+                _try(h, p.pid, None, unit, "admit",
+                     f"{p.need or 'Needs care'}: a bed was freed by moving a recovering patient on", moves):
             return True
     return False
 
@@ -76,7 +78,7 @@ def boarders(h: Hospital) -> list[Patient]:
 
 def _admit_up(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
     for unit in ADMIT_TO.get(p.severity, []):
-        why = f"admitted from {p.unit.lower()}; frees an emergency bed"
+        why = "Admitted to the hospital; moving upstairs so the emergency bed is free for someone new"
         if _try(h, p.pid, p.unit, unit, "transfer", why, moves):
             return True
         if _make_room(h, unit, moves) and _try(h, p.pid, p.unit, unit, "transfer", why, moves):
@@ -101,12 +103,12 @@ def rule_plan(live: Hospital, *, escalate: bool = True) -> Plan:
     unplaced = [p for p in h.waiting() if not _place(h, p, moves)]
     for p in surgical(h)[:2]:  # emergency surgery first, when a room is free
         _try(h, p.pid, p.unit, "OR", "admit" if p.unit is None else "transfer",
-             f"{p.need}: operating room free", moves)
+             f"{p.need}: an operating room was free", moves)
     for p in boarders(h)[:4]:  # move admitted ER patients upstairs, freeing emergency beds
         _admit_up(h, p, moves)
     # Routine flow: recovered patients move down a level when a bed is free there.
-    for unit, dest, why in (("STEPDOWN", "WARD", "recovered; moves to the ward"),
-                            ("ICU", "STEPDOWN", "improving; steps down from ICU")):
+    for unit, dest, why in (("STEPDOWN", "WARD", "Recovered enough to move to the ward"),
+                            ("ICU", "STEPDOWN", "Getting better, so stepping down from intensive care")):
         for p in [p for p in h.in_unit(unit) if p.improving and p.pid not in h.locked][:2]:
             _try(h, p.pid, unit, dest, "transfer", why, moves)
 

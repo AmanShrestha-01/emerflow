@@ -33,11 +33,13 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
                 emit("notice", {"text": f"{p.pid} diverted to another hospital by EMS"}, clock=t)
                 continue
             p.state = "waiting"
+            p.note, p.note_by = "Just arrived; waiting for a bed", ""
             h.version += 1
             emit("patient.arrived", {"pid": p.pid, "severity": p.severity, "complaint": p.complaint}, clock=t)
     busy = bool(h.busy_until and h.busy_until > t)
     if walkins and rng.random() < WALKIN_RATE * (BUSY_FACTOR if busy else 1):
         p = walk_in(h, rng, busy=busy)
+        p.note = "Just arrived; waiting for a bed"
         emit("patient.arrived", {"pid": p.pid, "severity": p.severity, "complaint": p.complaint}, clock=t)
 
     # Staff call-ins arriving.
@@ -85,13 +87,13 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
             p.needs_surgery, p.need = False, "Recovery after surgery"
             for dest in ("PACU", "ICU"):
                 if commit(h, Move(h.next_id("M"), p.pid, "OR", dest, "transfer", source="fastlane",
-                                  reason="Surgery finished; recovering"), emit, clock=t) in ("applied", "flagged", "held"):
+                                  reason="Surgery is finished; now recovering"), emit, clock=t) in ("applied", "flagged", "held"):
                     break
     for p in h.in_unit("PACU"):
         if p.moved_at is not None and t - p.moved_at >= RECOVERY_MIN and p.pid not in h.locked:
             p.severity, p.need = max(p.severity, 3), "Ward care after surgery"
             commit(h, Move(h.next_id("M"), p.pid, "PACU", "WARD", "transfer", source="fastlane",
-                           reason="Recovered from surgery; to the ward"), emit, clock=t)
+                           reason="Recovered from surgery; moving to the ward"), emit, clock=t)
     # Everyday flow out of the hospital, so it doesn't just fill up.
     for p in h.in_unit("ER"):
         if p.severity >= 4 and not p.ready_for_discharge and p.moved_at is not None and t - p.moved_at >= ER_VISIT_MIN:
@@ -100,11 +102,11 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
         for p in h.in_unit(unit):
             if p.ready_for_discharge and p.pid not in h.locked and t - (p.ready_at or 0) >= after:
                 commit(h, Move(h.next_id("M"), p.pid, unit, "HOME", "discharge", source="fastlane",
-                               reason="treated and discharged home"), emit, clock=t)
+                               reason="Treated and sent home"), emit, clock=t)
     for p in h.in_unit("LOUNGE"):
         if p.moved_at is not None and t - p.moved_at >= LOUNGE_STAY and p.pid not in h.locked:
             commit(h, Move(h.next_id("M"), p.pid, "LOUNGE", "HOME", "discharge", source="fastlane",
-                           reason="discharged home"), emit, clock=t)
+                           reason="Sent home"), emit, clock=t)
 
     h.expire_reservations()
     h.hallway_minutes += len(h.units["HALLWAY"].occupants)

@@ -7,13 +7,14 @@ from backend import gate
 from backend.sim.hospital import Hold, Hospital
 from backend.sim.models import Move
 from backend.sim.rules import attach_because, check_move
+from backend.sim.words import facts_phrase, place, plain
 
 HOLD_UNTIL = 10**9  # a held patient's target bed stays reserved until a human decides
 
 Emit = Callable[..., object]
 
-BY = {"fastlane": "Fast lane (code)", "swarm": "Agent plan", "fallback": "Fallback (code)",
-      "baseline": "Rules (code)", "human": "A human"}
+BY = {"fastlane": "Hospital rules", "swarm": "AI agents", "fallback": "Hospital rules",
+      "baseline": "Hospital rules", "human": "A person"}
 PLACE = {"RESUS": "a resuscitation bay", "ER": "an emergency bed", "HALLWAY": "a hallway bed", "ICU": "an ICU bed",
          "STEPDOWN": "a step-down bed", "WARD": "a ward bed", "OR": "surgery", "PACU": "recovery (PACU)",
          "LOUNGE": "the discharge lounge", "HOME": "home", "PARTNER": "a partner hospital"}
@@ -45,24 +46,26 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
             h.locked.add(p.pid)
             p.state = "held"
             p.heading_to = m.to_unit
-            facts = " and ".join(c.fact.replace("_", " ") for c in verdict.conflicts)
-            p.note, p.note_by = (f"Move to {PLACE.get(m.to_unit, m.to_unit)} paused: two records disagree about "
-                                 f"{facts}. A human must check.", "Records check (code)")
+            about = facts_phrase([c.fact for c in verdict.conflicts])
+            p.note, p.note_by = (f"Can't move {p.name.split()[0]} to {place(m.to_unit)} yet: two hospitals' records "
+                                 f"disagree about {about}. A person needs to check.", "Records check")
             emit("move.held", {"hold_id": hold.hold_id, "pid": p.pid, "to_unit": m.to_unit,
                                "because": m.because, "conflicts": conflicts_json(verdict)}, **ev)
             return "held"
         p.records_flag = True
         h.apply_move(m)
-        p.note, p.note_by = (f"Life-saving move to {PLACE.get(m.to_unit, m.to_unit)}; records disagree, "
-                             f"flagged for review", BY.get(m.source, m.source))
+        about = facts_phrase([c.fact for c in verdict.conflicts])
+        p.note, p.note_by = (f"Moved to {place(m.to_unit)} straight away to save their life. Two hospitals' records "
+                             f"disagree about {about}, so a person should check.", BY.get(m.source, m.source))
         emit("move.flagged", {"pid": p.pid, "to_unit": m.to_unit, "because": m.because,
                               "conflicts": conflicts_json(verdict)}, **ev)
         return "flagged"
     from_unit = p.unit
     h.apply_move(m)
     p.heading_to = None
-    p.note = (m.reason[:1].upper() + m.reason[1:]) if m.reason else f"Moved to {PLACE.get(m.to_unit, m.to_unit)}"
-    p.note_by = "A human (records checked)" if verified else BY.get(m.source, m.source)
+    reason = plain(m.reason, h)
+    p.note = (reason[:1].upper() + reason[1:]) if reason else f"Moved to {place(m.to_unit)}"
+    p.note_by = "A person (after checking the records)" if verified else BY.get(m.source, m.source)
     emit("move.applied", {"move_id": m.move_id, "pid": p.pid, "from_unit": from_unit, "to_unit": m.to_unit,
                           "source": m.source, "because": m.because, "reason": m.reason}, **ev)
     return "applied"
@@ -78,7 +81,7 @@ def resolve_hold(h: Hospital, hold_id: str, outcome: str, emit: Emit = _noop) ->
     detail = "hold cancelled; patient stays where they are"
     p.heading_to = None
     if outcome != "proceed":
-        p.note, p.note_by = "Move cancelled after a records check; staying put for now", "A human"
+        p.note, p.note_by = "A person checked the records and decided not to move them for now", "A person"
     if outcome == "proceed":
         p.verified.update(c.fact for c in hold.verdict.conflicts)
         m = hold.move

@@ -22,6 +22,7 @@ from backend.sim import approvals, fastlane
 from backend.sim.hospital import Hospital
 from backend.sim.models import Move
 from backend.sim.pipeline import commit
+from backend.sim.words import plain
 
 MAX_HOPS = 2
 PERSONA = {d.name: d.archetype for d in DEPARTMENTS} | {"COORDINATOR": "Prism"}
@@ -53,7 +54,7 @@ class Swarm:
         def say(frm: str, to: list[str], kind: str, text: str, round_: str, pids=(), how: str = "code"):
             self._msg += 1
             ev("agent.message", {"msg_id": f"{cid}-{self._msg}", "from": frm, "to": to, "kind": kind,
-                                 "persona": PERSONA.get(frm, ""), "text": text,
+                                 "persona": PERSONA.get(frm, ""), "text": plain(text, h),
                                  "pids": [p for p in pids if p], "how": how}, round_)
 
         def thinking(frm: str, to: list[str], round_: str):

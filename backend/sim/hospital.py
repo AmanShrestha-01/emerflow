@@ -31,6 +31,30 @@ class Approval:
     detail: str = ""
 
 
+def _hold_sentence(h: "Hospital", hold: "Hold") -> str:
+    from backend.sim.words import facts_phrase, place
+    p = h.patients[hold.move.pid]
+    about = facts_phrase([c.fact for c in hold.verdict.conflicts])
+    return (f"{p.name} can't be moved to {place(hold.move.to_unit)} yet: two hospitals' records disagree "
+            f"about {about}.")
+
+
+def _approval_sentence(h: "Hospital", a: "Approval") -> str:
+    from backend.sim.words import plain
+    e, prm = a.escalation, a.escalation.params
+    if e.action == "cancel_elective":
+        n = len(prm.get("case_ids") or []) or "the"
+        return f"Postpone {n} planned (non-urgent) surgeries so their recovery beds can take critical patients?"
+    if e.action == "call_in_staff":
+        return f"Call in {prm.get('count') or 2} off-duty nurses? They'd arrive in about 45 minutes."
+    if e.action == "divert_ambulances":
+        return "Ask ambulances with less serious patients to go to other hospitals for now?"
+    if e.action == "transfer_out":
+        names = ", ".join(h.patients[x].name for x in prm.get("pids") or [] if x in h.patients)
+        return plain(f"Transfer {names} to a partner hospital to free beds?", h)
+    return plain(a.detail, h)
+
+
 @dataclass
 class Hospital:
     units: dict[str, Unit] = field(default_factory=lambda: {n: Unit(n, b) for n, b in BEDS.items()})
@@ -193,6 +217,8 @@ class Hospital:
             "off_duty_nurses": self.off_duty_nurses,
             "holds": [
                 {"hold_id": h.hold_id, "pid": h.move.pid, "to_unit": h.move.to_unit,
+                 "name": self.patients[h.move.pid].name,
+                 "sentence": _hold_sentence(self, h),
                  "because": h.move.because, "created_at": h.created_at,
                  "conflicts": [
                      {"fact": c.fact, "reason": c.reason, "versions": [v.__dict__ for v in c.versions]}
@@ -202,6 +228,7 @@ class Hospital:
             ],
             "approvals": [
                 {"approval_id": a.approval_id, "action": a.escalation.action, "level": a.escalation.level,
+                 "sentence": _approval_sentence(self, a),
                  "reason": a.escalation.reason, "params": a.escalation.params, "detail": a.detail,
                  "created_at": a.created_at}
                 for a in self.approvals.values()

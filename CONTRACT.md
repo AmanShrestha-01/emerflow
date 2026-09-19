@@ -66,6 +66,13 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 
 Trauma cases (gunshot, stab wound, internal bleeding) go Resus → OR → Recovery/ICU → Ward.
 
+**Plain-language fields (use these on screen; never show patient codes):**
+- `holds[].name` and `holds[].sentence`, e.g. "Lena Cho can't be moved to an intensive care (ICU) bed yet: two hospitals' records disagree about whether they take blood thinners."
+- `approvals[].sentence`, e.g. "Call in 2 off-duty nurses? They'd arrive in about 45 minutes."
+- Patient `note`: already plain words, with codes replaced by names.
+- Agent `agent.message.text`: patient codes are replaced by names.
+- `note_by` values: `Hospital rules`, `AI agents`, `Records check`, `A person`, `A person (after checking the records)`.
+
 ### Event (SSE `data:` line, JSON)
 ```json
 {"id": 57, "type": "agent.status", "clock": 41, "cycle_id": "cy7", "round": "status",
