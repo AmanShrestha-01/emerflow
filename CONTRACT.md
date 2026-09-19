@@ -165,6 +165,7 @@ Source names are unchanged from the board. Render `source_name` as given.
 | GET | `/api/lookup` | `?pid=MC-03&reason=er`, or `?name=&dob=&sex=&phone4=&reason=` | `{"query", "candidates": [Candidate]}` |
 | POST | `/api/lookup/confirm` | `{"pid", "record_ref", "same_person": bool, "reason"}` | `{"ok": true, "linked": bool}` |
 | GET | `/api/chart/{pid}` | `?reason=er` | `Chart` |
+| POST | `/api/chart/{pid}/resolve` | `{"hold_id", "outcome": "proceed" \| "cancel", "reason": "er"}` | `{"ok", "detail", "outcome", "to_unit"}`. The same `resolve_hold` as `POST /api/holds/{id}/resolve`, but logged as a doctor action with its reason |
 | POST | `/api/orders` | `{"pid", "text", "because": [fact]}` | `{"order_id", "status": "saved" \| "needs_ack", "warnings": [Conflict]}` |
 | POST | `/api/orders/{order_id}/ack` | `{"reason"}` (must not be empty) | `{"order_id", "status": "saved"}` |
 | POST | `/api/transfers` | `{"pid": "HB-01", "to_hospital": "Emer Flow General"}` (Hospital B only) | `{"transfer_id", "pid": "TR-01"}` |
@@ -175,6 +176,9 @@ Source names are unchanged from the board. Render `source_name` as given.
 | GET | `/api/deepchart/score` | no session | precision and recall against the answer key (records and identity) |
 
 `reason` is one of `er` (Treating in the ER), `admit`, `transfer`, `consult`.
+
+**Deep link from the board:** `/doctor?pid=MC-03&hold=H12` opens that patient's chart with the reason preset to `er`.
+With no session, the login is prefilled (Emer Flow General, doctor). `&pin=demo` logs in automatically, for the demo.
 
 **Rules:**
 - Nothing links to a patient without a human. `confirm` with `same_person: true` appends the record to `Patient.sources`. `false` hides it from later lookups, and it also unlinks the record if it was already linked (logged).

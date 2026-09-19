@@ -5,6 +5,12 @@ import './deepchart.css'
 
 const HOME = 'Emer Flow General'
 const NOTICE = 'sources disagree; a human must resolve'
+// Deep link from the board: /doctor?pid=MC-03&hold=H12 (optionally &pin=demo for the demo).
+const DEEP = (() => {
+  const q = new URLSearchParams(window.location.search)
+  return { pid: q.get('pid'), hold: q.get('hold'), pin: q.get('pin') }
+})()
+const UNIT_WORD = { HOME: 'home', PARTNER: 'a partner hospital' }
 const STATUS_WORD = { active: 'ACTIVE', present: 'PRESENT', stopped: 'STOPPED', absent: 'NONE RECORDED' }
 
 // ---------------------------------------------------------------- shell
@@ -53,13 +59,21 @@ function Login({ onIn }) {
   const [hospitals, setHospitals] = useState([HOME, 'Hospital B', 'Hospital C'])
   const [hospital, setHospital] = useState(HOME)
   const [role, setRole] = useState('doctor')
-  const [pin, setPin] = useState('')
+  const [pin, setPin] = useState(DEEP.pin || '')
   const [error, setError] = useState(null)
   useEffect(() => {
     portal
       .hospitals()
       .then((hs) => setHospitals(hs.map((h) => h.name)))
       .catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (!DEEP.pin) return
+    portal
+      .login(HOME, 'doctor', DEEP.pin)
+      .then(onIn)
+      .catch((err) => setError(err.message))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const submit = async (e) => {
     e.preventDefault()
@@ -74,6 +88,11 @@ function Login({ onIn }) {
       <form className="dc-card" onSubmit={submit}>
         <h1 className="dc-title">DeepChart</h1>
         <p className="muted">Doctor portal · Emer Flow</p>
+        {DEEP.pid && (
+          <p className="dc-toast">
+            The board is asking you to check <span className="pid">{DEEP.pid}</span>. Log in to open their chart.
+          </p>
+        )}
         <label className="dc-field">
           Hospital
           <select value={hospital} onChange={(e) => setHospital(e.target.value)}>
@@ -174,7 +193,7 @@ function HomeDesk({ session, onError }) {
   const [inbox, setInbox] = useState([])
   const [filter, setFilter] = useState('')
   const [onlyFlags, setOnlyFlags] = useState(true)
-  const [pid, setPid] = useState(null)
+  const [pid, setPid] = useState(DEEP.pid)
 
   usePoll(
     (alive) => {
@@ -195,7 +214,7 @@ function HomeDesk({ session, onError }) {
   const q = filter.trim().toLowerCase()
   const shown = rows.filter(
     (p) =>
-      (!onlyFlags || p.held || p.conflicts > 0 || inbox.some((t) => t.pid === p.pid)) &&
+      (!onlyFlags || p.held || p.conflicts > 0 || p.pid === pid || inbox.some((t) => t.pid === p.pid)) &&
       (!q || p.name.toLowerCase().includes(q) || p.pid.toLowerCase().includes(q)),
   )
 
@@ -252,7 +271,13 @@ function HomeDesk({ session, onError }) {
       </aside>
       <main className="dc-main">
         {pid ? (
-          <Workspace key={pid} pid={pid} session={session} onError={onError} />
+          <Workspace
+            key={pid}
+            pid={pid}
+            session={session}
+            onError={onError}
+            initialReason={pid === DEEP.pid ? 'er' : ''}
+          />
         ) : (
           <p className="dc-empty">Pick a patient. Held patients and record conflicts are listed first.</p>
         )}
@@ -262,8 +287,9 @@ function HomeDesk({ session, onError }) {
 }
 
 // ---------------------------------------------------------------- one patient
-function Workspace({ pid, session, onError }) {
-  const [reason, setReason] = useState('')
+function Workspace({ pid, session, onError, initialReason = '' }) {
+  const [reason, setReason] = useState(initialReason)
+  const [resolved, setResolved] = useState(null)
   const [chart, setChart] = useState(null)
   const [matches, setMatches] = useState(null)
   const [log, setLog] = useState([])
@@ -289,6 +315,11 @@ function Workspace({ pid, session, onError }) {
     [pid, reason, session],
   )
 
+  useEffect(() => {
+    if (initialReason) loadChart(initialReason)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const pickReason = (r) => {
     setReason(r)
     if (r) loadChart(r)
@@ -312,7 +343,8 @@ function Workspace({ pid, session, onError }) {
   }
   const resolve = async (outcome) => {
     try {
-      await portal.resolveHold(chart.hold.hold_id, outcome)
+      const r = await portal.resolveHold(session, pid, chart.hold.hold_id, outcome, reason)
+      setResolved(r)
       await loadChart()
     } catch (e) {
       fail(e)
@@ -361,20 +393,38 @@ function Workspace({ pid, session, onError }) {
 
       {reason && chart && (
         <>
+          {resolved && (
+            <section className={`dc-resolved is-${resolved.outcome}`}>
+              <p>
+                <strong>{resolved.outcome === 'proceed' ? 'Move released.' : 'Move stopped.'}</strong> {resolved.detail}
+              </p>
+              <a className="dc-btn dc-btn-primary" href="/">
+                Back to the board
+              </a>
+            </section>
+          )}
           {chart.hold && (
             <section className="dc-hold">
               <p className="dc-verify">VERIFICATION REQUIRED</p>
               <p>
-                The board is holding a move to <strong>{chart.hold.to_unit}</strong>. It relies on:{' '}
+                The board is holding a move to <strong>{unitWord(chart.hold.to_unit)}</strong>. It relies on:{' '}
                 {chart.hold.because.map((f) => FACT_LABEL[f] || f).join(', ')}.
               </p>
+              {chart.hold.conflicts.map((c) => (
+                <div key={c.fact} className="dc-hold-conflict">
+                  <p>
+                    <strong>{FACT_LABEL[c.fact] || c.fact}</strong>: {c.reason}
+                  </p>
+                  <Versions versions={c.versions} />
+                </div>
+              ))}
               <p className="dc-notice">{NOTICE}</p>
               <div className="dc-actions">
                 <button className="dc-btn dc-btn-primary" onClick={() => resolve('proceed')}>
-                  I checked the records: proceed
+                  Records checked — move to {unitWord(chart.hold.to_unit)}
                 </button>
                 <button className="dc-btn" onClick={() => resolve('cancel')}>
-                  Cancel the move
+                  Don&apos;t move
                 </button>
               </div>
             </section>
@@ -577,18 +627,7 @@ function OrderBox({ session, pid, onDone, onError }) {
               <p>
                 This order relies on <strong>{FACT_LABEL[w.fact] || w.fact}</strong>. The records disagree:
               </p>
-              <table className="dc-versions">
-                <tbody>
-                  {w.versions.map((v) => (
-                    <tr key={v.resource_id}>
-                      <td>{v.source_name}</td>
-                      <td className="time">{v.recorded_date}</td>
-                      <td>{v.value}</td>
-                      <td className="dc-status">{STATUS_WORD[v.status] || v.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Versions versions={w.versions} />
             </div>
           ))}
           <p className="dc-notice">{NOTICE}</p>
@@ -601,5 +640,26 @@ function OrderBox({ session, pid, onDone, onError }) {
         </div>
       )}
     </section>
+  )
+}
+
+function unitWord(u) {
+  return UNIT_WORD[u] || u
+}
+
+function Versions({ versions }) {
+  return (
+    <table className="dc-versions">
+      <tbody>
+        {versions.map((v) => (
+          <tr key={v.resource_id}>
+            <td>{v.source_name}</td>
+            <td className="time">{v.recorded_date}</td>
+            <td>{v.value}</td>
+            <td className="dc-status">{STATUS_WORD[v.status] || v.status}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }

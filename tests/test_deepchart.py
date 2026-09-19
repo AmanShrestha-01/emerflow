@@ -206,3 +206,32 @@ def test_http_demo_flow():
     view = c.get(f"/api/p/{link['token']}").json()
     assert len(view["access_log"]) >= 4
     assert c.get("/api/deepchart/score").json()["records"]["recall"] == 1.0
+
+
+# ---------- resolving the board's hold from the chart ----------
+def _held(eng):
+    from backend.sim.models import Move
+    from backend.sim.pipeline import commit
+    p = eng.h.patients["IN-36"]  # planted anticoagulant conflict, seed 7
+    assert commit(eng.h, Move(eng.h.next_id("M"), p.pid, p.unit, "HOME", "discharge")) == "held"
+    return p.pid, next(iter(eng.h.holds))
+
+
+def test_doctor_resolves_hold_from_chart_and_it_is_logged(eng):
+    pid, hid = _held(eng)
+    assert eng.portal.chart(DOC, pid, "er")["hold"]["hold_id"] == hid
+    with pytest.raises(Forbidden):
+        eng.portal.resolve_hold(DOC, pid, hid, "proceed", None)  # reason for access required
+    r = eng.portal.resolve_hold(DOC, pid, hid, "proceed", "er")
+    assert r["ok"] and r["detail"] and hid not in eng.h.holds
+    assert eng.portal.chart(DOC, pid, "er")["hold"] is None
+    log = eng.portal.access_log(DOC, pid)
+    assert any("let the move to HOME go ahead" in e["action"] and e["reason"] == "Treating in the ER" for e in log)
+    with pytest.raises(NotFound):
+        eng.portal.resolve_hold(DOC, pid, hid, "proceed", "er")
+
+
+def test_hold_resolve_rejects_wrong_patient(eng):
+    pid, hid = _held(eng)
+    with pytest.raises(NotFound):
+        eng.portal.resolve_hold(DOC, "IN-01", hid, "cancel", "er")

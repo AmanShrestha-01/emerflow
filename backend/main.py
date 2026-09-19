@@ -244,6 +244,18 @@ def chart(pid: str, reason: str | None = None, x_session: str | None = Header(No
     return _portal(lambda: engine.portal.chart(s, pid, reason))
 
 
+class HoldResolveIn(BaseModel):
+    hold_id: str
+    outcome: str
+    reason: str | None = None
+
+
+@app.post("/api/chart/{pid}/resolve")
+def chart_resolve(pid: str, body: HoldResolveIn, x_session: str | None = Header(None)):
+    s = _session(x_session)
+    return _portal(lambda: engine.portal.resolve_hold(s, pid, body.hold_id, body.outcome, body.reason))
+
+
 @app.post("/api/orders")
 def orders(body: OrderIn, x_session: str | None = Header(None)):
     s = _session(x_session)

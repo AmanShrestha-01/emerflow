@@ -217,6 +217,26 @@ class Portal:
             "notice": gate.NOTICE if hold or any(f["kind"] == "conflict" for f in facts) else "",
         }
 
+    def resolve_hold(self, sess: Session, pid: str, hold_id: str, outcome: str, reason: str | None) -> dict:
+        """A doctor resolves the board's hold from the chart. Same path as the board's resolve button."""
+        self._need_doctor(sess)
+        reason = self._need_reason(reason)
+        self._need_home(sess, pid)
+        hold = self.h.holds.get(hold_id)
+        if hold is None or hold.move.pid != pid:
+            raise NotFound("hold no longer pending")
+        if outcome not in ("proceed", "cancel"):
+            raise ValueError("outcome must be proceed or cancel")
+        to_unit = hold.move.to_unit
+        detail = self.e.resolve_hold(hold_id, outcome)
+        if outcome == "proceed":
+            self._log(sess, pid, f"checked the records and let the move to {to_unit} go ahead", reason,
+                      public="double-checked your records")
+        else:
+            self._log(sess, pid, f"checked the records and stopped the move to {to_unit}", reason,
+                      public="double-checked your records")
+        return {"ok": True, "detail": detail, "outcome": outcome, "to_unit": to_unit}
+
     # ---------- orders ----------
     def order(self, sess: Session, pid: str, text: str, because: list[str]) -> dict:
         self._need_doctor(sess)
