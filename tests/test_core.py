@@ -229,3 +229,13 @@ def test_gunshot_patient_goes_resus_then_surgery_with_plain_reasons():
         fastlane.run(h)
         _ladder_flow(h)
     assert p.unit == "OR" and "surgery" in p.note.lower() and p.note_by
+
+
+def test_records_check_is_off_by_default_so_moves_are_never_paused_for_records():
+    h = Hospital(records_check=False)
+    p = _patient("A", 3)
+    _records(p, Claim("anticoagulant", "none recorded", "absent", "r1"),
+             Claim("anticoagulant", "warfarin 5mg", "active", "r2"))
+    h.add_patient(p)
+    assert commit(h, Move("m", "A", None, "STEPDOWN", "admit")) == "applied"
+    assert not h.holds and p.unit == "STEPDOWN" and "records" not in p.note.lower()

@@ -27,11 +27,11 @@ const PAGES = [
   { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
   { id: 'beds', label: 'Beds', icon: 'bed' },
   { id: 'patients', label: 'Patients', icon: 'people' },
-  { id: 'ok', label: 'Needs your OK', icon: 'hand' },
+  { id: 'ok', label: 'Big decisions', icon: 'hand' },
   { id: 'ai', label: 'How the AI decided', icon: 'chat' },
   { id: 'results', label: 'Results', icon: 'chart' },
 ]
-const TITLES = { dashboard: 'Dashboard', beds: 'Beds', patients: 'Patients', ok: 'Needs your OK', ai: 'How the AI decided', results: 'Results from this run' }
+const TITLES = { dashboard: 'Dashboard', beds: 'Beds', patients: 'Patients', ok: 'Big decisions for you', ai: 'How the AI decided', results: 'Results from this run' }
 
 const GROUPS = ['RESUS', 'ER', 'ICU', 'STEPDOWN', 'WARD', 'OR', 'PACU']
 const ONLY_IF_USED = ['HALLWAY', 'LOUNGE']
@@ -136,7 +136,7 @@ export default function DashboardView({ st, ev, run, onFull }) {
               <div className="d-right">
                 <section className="d-panel d-ok" aria-labelledby="d-ok-h">
                   <div className="d-panel-h">
-                    <h2 id="d-ok-h">Needs your OK</h2>
+                    <h2 id="d-ok-h">Big decisions for you</h2>
                     {decisions.length > 3 && (
                       <button className="d-link" onClick={() => setPage('ok')}>
                         See all {decisions.length}
@@ -216,7 +216,7 @@ function Kpis({ st, decisions, onPage }) {
   const cards = [
     { k: 'Free beds', v: free, icon: 'bed', tone: free === 0 ? 'crit' : 'ok', cap: free ? `${free} free across the main units` : 'The main units are full', page: 'beds' },
     { k: 'Waiting for a bed', v: waiting, icon: 'clock', tone: waiting > 0 ? 'plain' : 'ok', cap: waiting && longest != null ? `Longest wait ${longest} min` : 'No one is waiting', page: 'patients' },
-    { k: 'Needs your OK', v: decisions, icon: 'hand', tone: decisions ? 'you' : 'ok', cap: decisions ? 'Waiting for a person to decide' : 'Nothing waiting', page: 'ok' },
+    { k: 'Big decisions for you', v: decisions, icon: 'hand', tone: decisions ? 'you' : 'ok', cap: decisions ? 'The AI can\'t do these without you' : 'Nothing to decide', page: 'ok' },
     { k: 'Arriving by ambulance', v: incoming.length, icon: 'ambulance', tone: 'blue', cap: nextEta != null ? `Next one in ${nextEta} min` : 'None on the way', page: 'patients' },
   ]
   return (
@@ -386,9 +386,6 @@ function Legend() {
       </li>
       <li>
         <i className="lg-occ" /> Occupied
-      </li>
-      <li>
-        <i className="lg-held" /> Needs your OK
       </li>
       <li>
         <i className="lg-booked" /> Booked

@@ -5,7 +5,7 @@ from typing import Callable
 
 from backend import gate
 from backend.sim.hospital import Hold, Hospital
-from backend.sim.models import Move
+from backend.sim.models import Move, Verdict
 from backend.sim.rules import attach_because, check_move
 from backend.sim.words import facts_phrase, place, plain
 
@@ -37,7 +37,7 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
         emit("move.dropped", {"pid": m.pid, "to_unit": m.to_unit, "reason": reason, "source": m.source}, **ev)
         return "dropped"
     p = h.patients[m.pid]
-    verdict = gate.check(p, m.because, m.to_unit)
+    verdict = gate.check(p, m.because, m.to_unit) if h.records_check else Verdict()
     if verdict.conflicts and not verified:
         if verdict.blocking:
             hold = Hold(h.next_id("H"), m, verdict, h.clock)

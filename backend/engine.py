@@ -257,6 +257,7 @@ Use at most 30 patients. Do not add anyone not described.""",
         return {
             "time_to_bed": {k: {"patients": len(v), "avg_min": round(statistics.mean(v), 1) if v else None,
                                 "max_min": max(v) if v else None} for k, v in by_sev.items()},
+            "records_check": h.records_check,
             "records": {"planted": len(planted), "on_arrived_patients": len(exposed),
                         "caught_before_moving": len(caught), "waiting_for_a_human": len(h.holds),
                         "resolved_by_a_human": verified,

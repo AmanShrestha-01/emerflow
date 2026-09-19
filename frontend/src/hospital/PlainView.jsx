@@ -362,7 +362,7 @@ function NeedsOk({ items, byPid, run }) {
   return (
     <section className="p-ok" aria-labelledby="p-ok-h">
       <h2 id="p-ok-h" className="p-ok-h">
-        Needs your OK <span>({idx + 1} of {n})</span>
+        Big decision for you <span>({idx + 1} of {n})</span>
       </h2>
       <div className="p-ok-body" key={it.id}>
         <p className="p-ok-text">{it.type === 'hold' ? holdSentencePlain(it.h, byPid[it.h.pid]) : approvalSentencePlain(it.a)}</p>

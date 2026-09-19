@@ -90,9 +90,8 @@ Write ONE plan:
    (say "moving patients out", not "decanting"; "close-watch beds", never "step-down"; "intensive care", not "ICU capacity").
    The unit called STEPDOWN in the data is the "close-watch beds": patients who no longer need intensive care but still need watching.
    Refer to patients by name if at all, never by id.
-Use only patient ids listed above. Choose units, never bed numbers. Code re-checks every move, and a records
-check compares each patient's records on the facts the move relies on. Never state which record is correct
-and never give clinical instructions."""
+Use only patient ids listed above. Choose units, never bed numbers. Code re-checks every move.
+Never give clinical instructions."""
 
 
 def question_for(h: Hospital) -> tuple[str, str] | None:

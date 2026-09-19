@@ -64,6 +64,7 @@ export function ResultsContent() {
       {error && !data && <p className="muted">{error}</p>}
       {data && (
         <>
+          {data.records?.records_check !== false && data.records_check !== false && (
           <section className="rblock rblock-records">
             <p className="rbig">
               {n(r.caught_before_moving)} <span>of {n(r.on_arrived_patients)}</span>
@@ -74,6 +75,7 @@ export function ResultsContent() {
               {n(r.waiting_for_a_human)} waiting for a human, {n(r.resolved_by_a_human)} resolved by a human
             </p>
           </section>
+          )}
 
           <section className="rblock">
             <p className="rbig">

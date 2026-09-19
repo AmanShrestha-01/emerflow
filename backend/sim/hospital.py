@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from dataclasses import dataclass, field
 
 from backend.sim.models import OFFSITE, Escalation, Move, ORCase, Patient, Unit, Verdict
@@ -69,6 +70,8 @@ class Hospital:
     or_cases: list[ORCase] = field(default_factory=list)
     partners: dict[str, int] = field(default_factory=lambda: {"Mercy General": 4, "St. Luke's": 3})
     diversion: bool = False
+    # The medical-records check (DeepChart) is a separate product. Off in Hospital Swarm unless turned on.
+    records_check: bool = field(default_factory=lambda: os.environ.get("EMERFLOW_RECORDS_CHECK", "0") == "1")
     busy_until: int | None = None  # a busy night: more everyday arrivals until this minute
     level: int = 0
     level_since: int = 0
