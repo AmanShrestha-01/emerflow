@@ -198,6 +198,7 @@ class Hospital:
             "locked": p.pid in self.locked,
             "need": p.need, "needs_surgery": p.needs_surgery,
             "note": p.note, "note_by": p.note_by, "heading_to": p.heading_to,
+            "bp": p.bp, "hr": p.hr, "spo2": p.spo2, "ambulance": p.ambulance,
         }
 
     def snapshot(self) -> dict:

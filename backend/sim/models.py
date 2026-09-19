@@ -70,6 +70,10 @@ class Patient:
     note: str = ""                   # why the patient is where they are (last decision, plain words)
     note_by: str = ""                # who made that decision (agent, rule, or human)
     heading_to: str | None = None    # unit a paused (held) move would take them to
+    bp: str = ""                     # simulated vital signs, matched to severity (synthetic)
+    hr: int = 0
+    spo2: int = 0
+    ambulance: str = ""              # e.g. "Medic 12" for ambulance arrivals
 
 
 @dataclass

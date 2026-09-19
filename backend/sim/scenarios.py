@@ -122,12 +122,26 @@ def plant(p: Patient, fact: str, kind: str, key: list[dict]) -> None:
     key.append({"pid": p.pid, "fact": fact, "kind": kind})
 
 
+def _vitals(rng: random.Random, severity: int) -> tuple[str, int, int]:
+    """Plausible synthetic vital signs: sicker patients look sicker. Not medical advice."""
+    if severity == 1:
+        return f"{rng.randint(78, 95)}/{rng.randint(40, 58)}", rng.randint(118, 142), rng.randint(84, 91)
+    if severity == 2:
+        return f"{rng.randint(95, 165)}/{rng.randint(58, 96)}", rng.randint(98, 122), rng.randint(89, 94)
+    if severity == 3:
+        return f"{rng.randint(110, 150)}/{rng.randint(68, 92)}", rng.randint(84, 104), rng.randint(93, 97)
+    return f"{rng.randint(112, 138)}/{rng.randint(70, 86)}", rng.randint(66, 92), rng.randint(96, 99)
+
+
 def _patient(h: Hospital, rng: random.Random, prefix: str, severity: int, complaint: str,
              arrived_at: int, **kw) -> Patient:
     pid = f"{prefix}-{len([x for x in h.patients if x.startswith(prefix)]) + 1:02d}"
     taken = {q.name for q in h.patients.values()}
     p = Patient(pid=pid, name=_name(rng, taken), age=rng.randint(19, 88), complaint=complaint,
                 severity=severity, arrived_at=arrived_at, blood_type=rng.choice(BLOOD_TYPES), **kw)
+    p.bp, p.hr, p.spo2 = _vitals(rng, severity)
+    if kw.get("state") == "incoming":
+        p.ambulance = f"Medic {rng.randint(2, 19)}"
     p.need, surgery = care_need(complaint, severity)
     p.needs_surgery = p.needs_surgery or surgery
     if p.needs_surgery and severity <= 2:

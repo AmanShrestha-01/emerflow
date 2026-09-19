@@ -66,6 +66,11 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 
 Trauma cases (gunshot, stab wound, internal bleeding) go Resus → OR → Recovery/ICU → Ward.
 
+**Nurse-station fields (synthetic):**
+- Patient rows add `bp` (e.g. "121/85"), `hr`, `spo2`: simulated vital signs, matched to severity.
+- `ambulance`: e.g. "Medic 12", for ambulance arrivals.
+- State adds `census`: `[{"clock", "ER", "ICU", "STEPDOWN", "WARD"}]`, occupancy % every 5 sim-minutes (last 8 hours), for the census chart.
+
 **Plain-language fields (use these on screen; never show patient codes):**
 - `holds[].name` and `holds[].sentence`, e.g. "Lena Cho can't be moved to an intensive care (ICU) bed yet: two hospitals' records disagree about whether they take blood thinners."
 - `approvals[].sentence`, e.g. "Call in 2 off-duty nurses? They'd arrive in about 45 minutes."

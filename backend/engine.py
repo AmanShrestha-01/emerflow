@@ -27,6 +27,8 @@ CYCLE_GAP = 3        # min sim-minutes between cycles when patients are waiting
 CYCLE_IDLE = 10      # otherwise, a cycle every 10 sim-minutes if a unit is >= 90%
 CLOCK_START = 21 * 60
 BUSY_MINUTES = 60
+CENSUS_EVERY = 5      # sim-minutes between occupancy samples for the census chart
+CENSUS_KEEP = 96      # samples kept (8 hours)
 
 
 # ---------- audit trail: every decision, who made it, and why ----------
@@ -125,6 +127,7 @@ class Engine:
         self.audit: list[dict] = []
         self.caught: set[tuple[str, str]] = set()   # (pid, fact) the records check caught before a move
         self.cycle_ms: list[int] = []
+        self.census: list[dict] = [{"clock": 0, **{u: self.h.occupancy(u) for u in ("ER", "ICU", "STEPDOWN", "WARD")}}]
         self.emit("notice", {"text": "Hospital reset. Normal evening, nearly full."})
         self.emit("snapshot", self.state(include_feed=False))
 
@@ -156,6 +159,9 @@ class Engine:
         tick(h, self.rng, lambda t, d, **k: self.emit(t, d))
         fastlane.run(h, lambda t, d, **k: self.emit(t, d))
         self.emit("tick", {"clock": h.clock, "level": h.level})
+        if h.clock % CENSUS_EVERY == 0:
+            self.census.append({"clock": h.clock, **{u: h.occupancy(u) for u in ("ER", "ICU", "STEPDOWN", "WARD")}})
+            self.census = self.census[-CENSUS_KEEP:]
         busy = self._cycle_task is not None and not self._cycle_task.done()
         if busy:
             return
@@ -237,7 +243,8 @@ Use at most 30 patients. Do not add anyone not described.""",
         s = self.h.snapshot()
         s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused, "speed": self.speed,
                   "mode": self.llm.mode if not self.llm.breaker_open else "fallback",
-                  "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at})
+                  "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at,
+                  "census": self.census})
         if include_feed:
             # Ticks are noise on reload; keep the conversation and decisions.
             s["feed"] = [e for e in self.bus.history if e["type"] not in ("tick", "agent.thinking")][-300:]
