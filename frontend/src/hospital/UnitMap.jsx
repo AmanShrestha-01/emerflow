@@ -12,7 +12,7 @@ const GROUPS = [
 const CORE = new Set(['ER', 'ICU', 'STEPDOWN', 'WARD', 'OR', 'PACU'])
 const FLASH_TAG = { fastlane: 'Fast lane', swarm: 'Agents', fallback: 'Rules' }
 
-export default function UnitMap({ st, patientsById, flashes, onSelect }) {
+export default function UnitMap({ st, patientsById, flashes, onSelect, only }) {
   const [showAll, setShowAll] = useState(false)
   const byUnit = Object.fromEntries(st.units.map((u) => [u.unit, u]))
   const known = new Set(GROUPS.flat())
@@ -26,6 +26,17 @@ export default function UnitMap({ st, patientsById, flashes, onSelect }) {
     if (!newestByUnit[f.unit] || newestByUnit[f.unit].id < f.id) newestByUnit[f.unit] = f
   }
   for (const f of Object.values(newestByUnit)) tagIds.add(f.id)
+
+  if (only) {
+    // one unit, used by the simple view's unit drawer
+    const u = byUnit[only]
+    return (
+      <div className="map-only">
+        <Legend />
+        {u ? <Unit u={u} patientsById={patientsById} flashByPid={flashByPid} tagIds={tagIds} onSelect={onSelect} /> : <p className="empty">No such unit.</p>}
+      </div>
+    )
+  }
 
   return (
     <section className="zone zone-map" aria-labelledby="map-h">

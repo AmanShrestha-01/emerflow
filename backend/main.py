@@ -32,6 +32,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allo
 
 
 class SurgeIn(BaseModel):
+    kind: str = "bus"  # "bus" (mass casualty) or "busy" (a busy night of everyday patients)
     n: int = 25
 
 
@@ -90,8 +91,12 @@ async def events(request: Request):
 
 @app.post("/api/surge")
 def surge(body: SurgeIn | None = None):
-    n = max(1, min((body.n if body else 25), 60))
-    return {"incoming": engine.surge(n)}
+    body = body or SurgeIn()
+    if body.kind == "busy":
+        return {"busy_until": engine.busy_night()}
+    if body.kind != "bus":
+        raise HTTPException(400, "kind must be bus or busy")
+    return {"incoming": engine.surge(max(1, min(body.n, 60)))}
 
 
 @app.post("/api/radio")

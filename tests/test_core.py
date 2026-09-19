@@ -195,3 +195,18 @@ def test_hallway_is_only_life_saving_for_severity_one():
              Claim("vitals_stable", "unstable", "present", "r2"))
     h.add_patient(p)
     assert commit(h, Move("m", "A", None, "HALLWAY", "admit")) == "held"
+
+
+def test_severity_one_is_never_held_and_never_left_waiting():
+    h = Hospital()
+    for unit in ("RESUS", "ICU", "HALLWAY"):  # every emergency option is full
+        for i in range(h.units[unit].beds):
+            q = _patient(f"{unit}{i}", 2, unit=unit, state="placed")
+            h.add_patient(q); h.units[unit].occupants.append(q.pid)
+    p = _patient("A", 1)
+    _records(p, Claim("vitals_stable", "unstable", "present", "r1"),  # a hallway move relies on this fact
+             Claim("vitals_stable", "stable", "present", "r2"))
+    h.add_patient(p)
+    assert fastlane.place_one(h, p) == "flagged"   # placed despite the records conflict
+    assert p.unit == "HALLWAY" and p.records_flag and p.state == "placed"
+    assert h.occupancy("HALLWAY") > 100           # shown as over capacity, not hidden

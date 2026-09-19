@@ -40,6 +40,7 @@ def check(patient: Patient, because: list[str], to_unit: str) -> Verdict:
                 versions=[ConflictVersion(s.source_name, s.recorded_date, c.value, c.status, c.resource_id)
                           for s, c in pairs],
             ))
-    # Life-saving only: resuscitation, or an overflow bed for a severity-1 patient.
-    life_saving = to_unit == "RESUS" or (to_unit in EMERGENCY_UNITS and patient.severity == 1)
+    # Life-saving: resuscitation, or ANY move for a severity-1 patient. A critical patient is never
+    # left waiting on paperwork; the move goes ahead and the disagreement is flagged for a human.
+    life_saving = to_unit == "RESUS" or patient.severity == 1
     return Verdict(conflicts=conflicts, blocking=not life_saving)

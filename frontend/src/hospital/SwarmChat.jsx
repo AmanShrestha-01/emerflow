@@ -208,6 +208,12 @@ function SwarmChat({ messages, typing, cycles, onSelect }) {
   const lastId = useRef(0)
   const groups = useMemo(() => buildGroups(messages.slice(-RENDER_CAP), cycles), [messages, cycles])
   const typingList = Object.values(typing)
+  // persona per agent, from what they last said (thinking events don't carry it)
+  const personas = useMemo(() => {
+    const m = {}
+    for (const x of messages) if (x.persona) m[x.from] = x.persona
+    return m
+  }, [messages])
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -219,10 +225,14 @@ function SwarmChat({ messages, typing, cycles, onSelect }) {
     else if (added) setUnseen((n) => n + 1)
   }, [messages, typingList.length])
 
+  const lastTop = useRef(0)
   const onScroll = () => {
     const el = scrollRef.current
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40
-    stuck.current = atBottom
+    // only a real upward scroll unsticks; layout changes (resize, view switch) don't
+    if (atBottom) stuck.current = true
+    else if (el.scrollTop < lastTop.current - 4) stuck.current = false
+    lastTop.current = el.scrollTop
     if (atBottom && unseen) setUnseen(0)
   }
   const jump = () => {
@@ -242,7 +252,7 @@ function SwarmChat({ messages, typing, cycles, onSelect }) {
   return (
     <div className="chat">
       <div className="chat-scroll" ref={scrollRef} onScroll={onScroll} aria-live="polite" aria-relevant="additions">
-        {groups.length === 0 && <p className="empty chat-empty">The agents talk when patients need beds. Press Bus crash to start a conversation.</p>}
+        {groups.length === 0 && <p className="empty chat-empty">A normal evening. Everyday patients are arriving; the agents place them as beds open.</p>}
         {groups.map((g) => {
           const expanded = open.has(g.id)
           return (
@@ -282,7 +292,10 @@ function SwarmChat({ messages, typing, cycles, onSelect }) {
         {typingList.length === 0 && <span className="typing-idle">No agent is writing right now</span>}
         {typingList.slice(0, 3).map((t) => (
           <span key={t.from} className={`typing-item ag-${t.from}`}>
-            <b className="who">{agentLabel(t.from)}</b>
+            <b className="who">
+              {agentLabel(t.from)}
+              {personas[t.from] ? ` (${personas[t.from]})` : ''}
+            </b>
             <Dots />
           </span>
         ))}

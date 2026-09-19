@@ -1,0 +1,454 @@
+/* ============ simple view: three zones ============ */
+.simple {
+  height: 100vh;
+  min-height: 560px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 14px 12px;
+  max-width: 2400px;
+  margin: 0 auto;
+}
+.simple-nodecide {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+/* header: one row */
+.s-hdr {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+}
+.s-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: none;
+}
+.s-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.s-practice {
+  font-size: 0.8rem;
+  color: var(--coord);
+  border: 1px solid #c3c9ea;
+  border-radius: 999px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.s-sign {
+  flex: none;
+  padding: 7px 14px;
+  max-width: none;
+}
+.s-sign .sign-name {
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+.s-status {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-status b {
+  font-weight: 800;
+}
+.s-you {
+  color: var(--held-ink);
+}
+.s-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.busy {
+  height: 2.6rem;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 2px solid var(--held);
+  background: var(--panel);
+  color: var(--held-ink);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.busy:hover:not(:disabled) {
+  background: var(--held-bg);
+}
+.busy-on,
+.busy:disabled {
+  background: var(--held-bg);
+  opacity: 1;
+}
+.mci-compact {
+  padding: 0 18px;
+  height: 2.6rem;
+  align-content: center;
+}
+.mci-compact .mci-t {
+  font-size: 1.1rem;
+}
+.s-ctl {
+  min-width: 2.6rem;
+  height: 2.6rem;
+  padding: 0 0.8rem;
+  border-radius: 10px;
+  background: var(--sunk);
+  font-weight: 800;
+  color: var(--ink);
+}
+.s-ctl:hover {
+  background: #dce5e8;
+}
+.s-full {
+  color: var(--coord);
+  font-weight: 700;
+  font-size: 0.93rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+.s-menu {
+  position: relative;
+}
+.s-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: 15rem;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(22, 36, 44, 0.16);
+}
+.s-pop-k {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.s-pop-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.s-chip {
+  padding: 4px 14px;
+  border-radius: 8px;
+  background: var(--sunk);
+  font-weight: 800;
+}
+.s-chip[aria-checked='true'] {
+  background: var(--ink);
+  color: #fff;
+}
+.s-item {
+  text-align: left;
+  padding: 7px 8px;
+  border-radius: 7px;
+  font-weight: 700;
+}
+.s-item:hover {
+  background: var(--wall);
+}
+.s-item.danger {
+  color: var(--crit);
+  background: var(--crit-bg);
+}
+.s-help {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 35;
+  width: min(28rem, 92vw);
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(22, 36, 44, 0.16);
+  font-size: 0.97rem;
+}
+.s-help .btn {
+  justify-self: start;
+}
+
+/* body: talk + hospital */
+.s-main {
+  display: grid;
+  grid-template-columns: minmax(0, 62fr) minmax(300px, 38fr);
+  gap: 10px;
+  min-height: 0;
+}
+.s-talk,
+.s-hosp {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.s-h {
+  flex: none;
+  padding: 12px 16px 6px;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.s-talk .chat-scroll {
+  padding: 0 16px 14px;
+}
+.s-talk .cgroup-h {
+  margin: 0 -16px 6px;
+  padding: 7px 16px 5px;
+}
+.s-talk .msg {
+  max-width: 86%;
+}
+.s-talk .msg-text {
+  font-size: 1.07rem;
+}
+.s-talk .msg-broadcast .msg-text {
+  font-size: 1.15rem;
+}
+/* rule-keeper lines: short and grey, not chat bubbles */
+.s-talk .sysmsg {
+  width: 100%;
+  margin: 2px 0;
+  padding: 3px 2px 3px 10px;
+  font-size: 0.87rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-left: 2px dashed #a9b7be;
+  border-radius: 0;
+}
+.s-talk .sysmsg.ag-DEEPCHART {
+  background: none;
+  border-left-color: var(--held);
+}
+.s-talk .sysmsg-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-talk .sysmsg:hover .sysmsg-text,
+.s-talk .sysmsg:focus-within .sysmsg-text {
+  white-space: normal;
+}
+.s-talk .typing {
+  padding: 7px 16px;
+  font-size: 0.93rem;
+}
+
+/* the hospital as bars */
+.bars {
+  display: grid;
+  gap: 4px;
+  padding: 4px 10px 8px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.bar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 8.6rem minmax(0, 1fr) 4.6rem;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  text-align: left;
+}
+.bar:hover {
+  background: var(--wall);
+}
+.bar-name {
+  padding-left: 9px;
+  border-left: 6px solid var(--agc);
+  font-weight: 800;
+  line-height: 1.2;
+}
+.bar-track {
+  position: relative;
+  display: flex;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: var(--sunk);
+  overflow: hidden;
+}
+.bar-fill {
+  background: var(--agc);
+}
+.bar-held {
+  background: repeating-linear-gradient(135deg, var(--held) 0 5px, #d98f1f 5px 10px);
+}
+.bar-res {
+  background: repeating-linear-gradient(135deg, #a9b7be 0 3px, #e8eef0 3px 6px);
+}
+.bar-over {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 8px;
+  background: var(--crit);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.bar-words {
+  text-align: right;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.bar-words.full {
+  color: var(--ink);
+}
+.bar-words.over {
+  color: var(--crit);
+}
+.s-waiting {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: auto 14px 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--wall);
+  border: 1px solid var(--rule);
+  font-size: 1.07rem;
+  font-weight: 700;
+}
+.s-waiting b {
+  margin-left: auto;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.s-waiting:hover {
+  border-color: var(--muted);
+}
+
+/* one decision at a time */
+.s-decide {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--held-bg);
+  border: 2px solid var(--held);
+  border-radius: 12px;
+}
+.s-decide-h {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.s-decide-h span {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--held-ink);
+}
+.s-decide-card .card {
+  border: 0;
+  padding: 8px 12px;
+}
+.s-decide-card .card-q {
+  font-size: 1.1rem;
+}
+.s-decide-card .card-actions {
+  flex-wrap: wrap;
+}
+.s-decide-card .card-compare {
+  margin-left: 6px;
+}
+.s-pager {
+  display: flex;
+  gap: 6px;
+}
+.s-pager .s-ctl {
+  font-size: 1.3rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+}
+
+/* drawers (waiting room, one unit) */
+.s-drawer {
+  width: min(40rem, 100vw);
+}
+.s-drawer-t {
+  flex: 1;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.s-drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.s-drawer-body > .zone {
+  border: 0;
+  border-radius: 0;
+  flex: 1;
+}
+.map-only {
+  padding: 14px 16px;
+  display: grid;
+  gap: 14px;
+}
+.map-only .legend {
+  margin: 0;
+}
+
+@media (max-width: 1360px) {
+  .s-practice {
+    display: none;
+  }
+  .s-hdr {
+    gap: 10px;
+  }
+  .s-status {
+    font-size: 1.02rem;
+  }
+  .bar {
+    grid-template-columns: 7.4rem minmax(0, 1fr) 4rem;
+    gap: 8px;
+  }
+}
+@media (max-width: 1100px) {
+  .simple {
+    height: auto;
+  }
+  .s-hdr {
+    flex-wrap: wrap;
+  }
+  .s-main {
+    grid-template-columns: 1fr;
+  }
+  .s-talk {
+    height: 70vh;
+  }
+  .s-decide {
+    grid-template-columns: 1fr;
+  }
+}

@@ -23,7 +23,7 @@ def preferred_unit(p: Patient) -> str:
 
 
 def place_one(h: Hospital, p: Patient, emit: Emit = _noop, source: str = "fastlane") -> str | None:
-    options = ["RESUS", "HALLWAY"] if p.severity == 1 else [preferred_unit(p)]
+    options = ["RESUS", "ICU", "HALLWAY"] if p.severity == 1 else [preferred_unit(p)]
     for unit in options:
         m = Move(h.next_id("M"), p.pid, p.unit, unit, "admit", source=source,
                  reason="critical: life-saving bed" if p.severity == 1 else f"free {unit} bed")

@@ -66,7 +66,7 @@ export default function ApprovalDrawer({ approvals = [], holds = [], patientsByI
   )
 }
 
-function ApprovalCard({ a, run }) {
+export function ApprovalCard({ a, run }) {
   const [busy, setBusy] = useState(null)
   const act = async (approve) => {
     setBusy(approve ? 'approve' : 'reject')
@@ -123,7 +123,7 @@ export function HoldActions({ h, run, onCompare }) {
   )
 }
 
-function HoldCard({ h, p, onSelect, run }) {
+export function HoldCard({ h, p, onSelect, run }) {
   const s = holdSentence(h)
   return (
     <article className="card card-hold">

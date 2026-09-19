@@ -31,7 +31,8 @@ async function request(method, path, body) {
 
 export const api = {
   state: () => request('GET', '/api/state'),
-  surge: (n = 25) => request('POST', '/api/surge', { n }),
+  // kind: 'bus' (25 bus-crash patients) or 'busy' (about 3x everyday arrivals for 60 min)
+  surge: (kind = 'bus', n) => request('POST', '/api/surge', n ? { kind, n } : { kind }),
   radio: (text) => request('POST', '/api/radio', { text }),
   confirmRadio: (draftId) => request('POST', `/api/radio/${encodeURIComponent(draftId)}/confirm`),
   resolveApproval: (approvalId, approve) =>

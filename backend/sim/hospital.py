@@ -43,6 +43,7 @@ class Hospital:
     or_cases: list[ORCase] = field(default_factory=list)
     partners: dict[str, int] = field(default_factory=lambda: {"Mercy General": 4, "St. Luke's": 3})
     diversion: bool = False
+    busy_until: int | None = None  # a busy night: more everyday arrivals until this minute
     level: int = 0
     level_since: int = 0
     clock: int = 0
@@ -174,6 +175,7 @@ class Hospital:
             "version": self.version,
             "level": self.level,
             "diversion": self.diversion,
+            "busy_until": self.busy_until if self.busy_until and self.busy_until > self.clock else None,
             "units": [
                 {"unit": n, "beds": u.beds, "occupied": len(u.occupants), "reserved": len(u.reserved),
                  "percent": self.occupancy(n), "nurses": self.nurses.get(n),

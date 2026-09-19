@@ -50,6 +50,10 @@ def plan_prompt(h: Hospital, statuses: dict[str, DeptStatus], answers: dict[str,
                 "may_go_to": [d for d in options_for(h, p.pid) if d in ("STEPDOWN", "WARD", "LOUNGE", "HOME")]}
                for u in ("ICU", "STEPDOWN", "WARD") for p in h.in_unit(u)
                if p.pid not in h.locked and (p.improving or p.ready_for_discharge)]
+    from backend.sim.ladder import ADMIT_TO, boarders
+    movable += [{"pid": p.pid, "in": p.unit, "severity": p.severity, "why": "admitted, waiting in an ER bed",
+                 "may_go_to": [d for d in options_for(h, p.pid) if d in ADMIT_TO.get(p.severity, [])]}
+                for p in boarders(h)]
     movable = [m for m in movable if m["may_go_to"]]
     return f"""You are Prism, the hospital coordinator and the incident commander's right hand during a surge.
 Your thinking style (Prism): you refract one crisis into every department's perspective, then choose.
@@ -65,7 +69,8 @@ Waiting patients, most critical first. "may_go_to" is the ONLY list of units eac
 applied severity, CT-scan and level rules; capacity is shown separately):
 {json.dumps(waiting)}
 
-Inpatients who can move on to make room ("may_go_to" is their only allowed list):
+Inpatients who can move on to make room, and admitted ER patients waiting for an upstairs bed
+("may_go_to" is their only allowed list):
 {json.dumps(movable)}
 
 Free beds per unit right now: {json.dumps(units)}

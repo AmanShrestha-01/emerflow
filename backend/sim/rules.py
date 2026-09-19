@@ -27,7 +27,8 @@ REQUIRED_FACTS: dict[str, list[str]] = {
     "PARTNER": ["vitals_stable", "icu_need"],
 }
 
-# Life-saving destinations: a records conflict is flagged, never allowed to block.
+# Overflow/life-saving destinations. A records conflict never blocks a move here for a severity-1
+# patient (see gate.check); RESUS never blocks for anyone.
 EMERGENCY_UNITS: tuple[str, ...] = ("RESUS", "HALLWAY")
 
 # Patients per nurse, for units where the ratio is a hard limit.
@@ -117,7 +118,8 @@ def check_move(move: Move, hospital: "Hospital", *, level: int | None = None) ->
     if move.to_unit in hospital.units:
         u = hospital.units[move.to_unit]
         has_reservation = p.pid in u.reserved
-        if not has_reservation and u.free <= 0:
+        sev1_overflow = move.to_unit == "HALLWAY" and p.severity == 1  # never "no place" for the sickest
+        if not has_reservation and u.free <= 0 and not sev1_overflow:
             return f"{move.to_unit} is full"
         ratio = NURSE_RATIO.get(move.to_unit)
         if ratio is not None:

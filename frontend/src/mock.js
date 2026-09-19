@@ -325,6 +325,7 @@ export function createMock() {
       paused: S.paused,
       speed: S.speed,
       mode: 'mock',
+      busy_until: S.busy_until ?? null,
       units: Object.values(S.units).map((u) => ({
         unit: u.unit,
         beds: u.beds,
@@ -531,6 +532,12 @@ export function createMock() {
     return { incoming: n }
   }
 
+  function busyNight() {
+    S.busy_until = Math.max(S.busy_until || 0, S.clock) + 60
+    emit('notice', { text: `Busy night: about three times the usual walk-ins for the next ${S.busy_until - S.clock} minutes` })
+    return { busy_until: S.busy_until }
+  }
+
   // ---------- one simulated minute ----------
   function advanceMinute() {
     S.clock++
@@ -546,7 +553,8 @@ export function createMock() {
       }
     }
     // walk-ins and ambulances keep coming
-    if (S.clock % 4 === 2) {
+    const busy = S.busy_until != null && S.clock < S.busy_until
+    if (S.clock % 4 === 2 || (busy && S.clock % 4 !== 0)) {
       const sev = pick([2, 3, 3, 3, 4, 4, 5])
       const p = mkPatient('W', {
         severity: sev,
@@ -741,8 +749,9 @@ export function createMock() {
   const UNIT_NAME = { RESUS: 'resuscitation', ER: 'the ER', HALLWAY: 'an ER hallway bed', ICU: 'ICU', PACU: 'PACU', OR: 'the OR', STEPDOWN: 'step-down', WARD: 'the ward', LOUNGE: 'the discharge lounge', HOME: 'home', PARTNER: 'a partner hospital' }
   const agentFor = (u) => UNIT_AGENT[u] || 'ER'
   const think = (from, to, ctx) => emit('agent.thinking', { from, to }, ctx)
+  const PERSONA = { ER: 'Apex', ICU: 'Veil', STEPDOWN: 'Forge', OR: 'Crux', STAFFING: 'Root', IMAGING: 'Trace', BLOODBANK: 'Void', EMS: 'Orbit', COORDINATOR: 'Prism' }
   const say = (from, to, kind, text, pids = [], how = 'live', ctx = {}) =>
-    emit('agent.message', { msg_id: `m${++S.counters.MSG}`, from, to, kind, text, pids, how }, ctx)
+    emit('agent.message', { msg_id: `m${++S.counters.MSG}`, from, to, kind, text, pids, how, persona: PERSONA[from] || null }, ctx)
 
   function statusText(d, st) {
     const bits = [st.line]
@@ -939,7 +948,7 @@ export function createMock() {
     const m = (re) => path.match(re)
     let mm
     if (method === 'GET' && path === '/api/state') return snapshot()
-    if (method === 'POST' && path === '/api/surge') return surge(body?.n || 25)
+    if (method === 'POST' && path === '/api/surge') return body?.kind === 'busy' ? busyNight() : surge(body?.n || 25)
     if (method === 'POST' && path === '/api/radio') return parseRadio(body?.text || '')
     if (method === 'POST' && (mm = m(/^\/api\/radio\/([^/]+)\/confirm$/))) return confirmDraft(decodeURIComponent(mm[1]))
     if (method === 'POST' && (mm = m(/^\/api\/approvals\/([^/]+)$/))) return resolveApproval(decodeURIComponent(mm[1]), !!body?.approve)

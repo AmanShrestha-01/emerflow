@@ -18,6 +18,9 @@ OPTIONS: dict[int, list[str]] = {
     4: ["ER", "HALLWAY"],
     5: ["ER", "HALLWAY"],
 }
+BOARD_AFTER = 30  # minutes an ER patient who needs admission waits before moving up
+# Where an admitted ER patient goes, by severity, best first.
+ADMIT_TO: dict[int, list[str]] = {1: ["ICU"], 2: ["ICU", "STEPDOWN"], 3: ["WARD", "STEPDOWN"]}
 # To free a bed in unit X, move an eligible patient from X to one of these.
 MAKE_ROOM: dict[str, list[str]] = {"ICU": ["STEPDOWN"], "STEPDOWN": ["WARD"], "WARD": ["LOUNGE"]}
 
@@ -63,6 +66,24 @@ def _place(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
     return False
 
 
+def boarders(h: Hospital) -> list[Patient]:
+    """Patients admitted from the ER who are still sitting in an ER bed ("boarding"), sickest first."""
+    ps = [p for u in ("ER", "HALLWAY") for p in h.in_unit(u)
+          if p.severity <= 3 and p.pid not in h.locked and p.moved_at is not None
+          and h.clock - p.moved_at >= BOARD_AFTER and not (p.needs_ct and not p.ct_done)]
+    return sorted(ps, key=lambda p: (p.severity, p.moved_at))
+
+
+def _admit_up(h: Hospital, p: Patient, moves: list[PlanMove]) -> bool:
+    for unit in ADMIT_TO.get(p.severity, []):
+        why = f"admitted from {p.unit.lower()}; frees an emergency bed"
+        if _try(h, p.pid, p.unit, unit, "transfer", why, moves):
+            return True
+        if _make_room(h, unit, moves) and _try(h, p.pid, p.unit, unit, "transfer", why, moves):
+            return True
+    return False
+
+
 def _pending(h: Hospital, action: str) -> bool:
     return any(a.escalation.action == action for a in h.approvals.values())
 
@@ -71,6 +92,13 @@ def rule_plan(live: Hospital, *, escalate: bool = True) -> Plan:
     h = live.clone()  # plan on a scratch copy; the real apply re-validates against live state
     moves: list[PlanMove] = []
     unplaced = [p for p in h.waiting() if not _place(h, p, moves)]
+    for p in boarders(h)[:4]:  # move admitted ER patients upstairs, freeing emergency beds
+        _admit_up(h, p, moves)
+    # Routine flow: recovered patients move down a level when a bed is free there.
+    for unit, dest, why in (("STEPDOWN", "WARD", "recovered; moves to the ward"),
+                            ("ICU", "STEPDOWN", "improving; steps down from ICU")):
+        for p in [p for p in h.in_unit(unit) if p.improving and p.pid not in h.locked][:2]:
+            _try(h, p.pid, unit, dest, "transfer", why, moves)
 
     # Level 1+: clear discharge-ready patients to the lounge proactively.
     if h.level >= 1:

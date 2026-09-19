@@ -28,8 +28,16 @@ MCI_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {  # (complaint, needs
     4: [("cuts and bruises", False, False), ("sprained ankle", False, False)],
     5: [("minor scrapes", False, False), ("panic, no injury", False, False)],
 }
-WALKIN_COMPLAINTS = [(3, "chest pain"), (4, "fever"), (3, "shortness of breath"), (4, "back pain"),
-                     (2, "stroke symptoms"), (5, "rash"), (3, "kidney stone")]
+WALKIN_COMPLAINTS = [  # (severity, complaint): an everyday emergency-department mix
+    (2, "stroke symptoms"), (2, "chest pain, sweaty"), (2, "severe asthma attack"), (2, "sepsis, confused"),
+    (3, "chest pain"), (3, "shortness of breath"), (3, "kidney stone"), (3, "abdominal pain"),
+    (3, "fall, hip pain"), (3, "diabetic, blood sugar high"), (3, "child with high fever"),
+    (4, "fever"), (4, "back pain"), (4, "broken wrist"), (4, "cut hand, needs stitches"), (4, "migraine"),
+    (4, "vomiting, dehydrated"), (5, "rash"), (5, "sprained ankle"), (5, "sore throat"),
+]
+BUSY_COMPLAINTS = [(3, "flu, short of breath"), (4, "flu, fever and aches"), (4, "flu, dehydrated"),
+                   (3, "flu, elderly and confused"), (5, "flu, cough")]
+CT_COMPLAINTS = ("stroke symptoms", "chest pain, sweaty", "fall, hip pain", "abdominal pain")
 BLOOD_TYPES = ["O+", "O+", "A+", "A+", "B+", "O-", "A-", "AB+"]
 
 
@@ -131,7 +139,7 @@ def build_hospital(seed: int = 7) -> tuple[Hospital, list[dict]]:
             if unit == "STEPDOWN" and i < 3:
                 p.improving, p.severity = True, 3  # ready for the ward
             if unit == "WARD" and i < 5:
-                p.ready_for_discharge = True
+                p.ready_for_discharge, p.ready_at = True, -rng.randint(0, 30)
             give_records(p, rng)
             h.add_patient(p)
             h.units[unit].occupants.append(p.pid)
@@ -181,10 +189,10 @@ def mass_casualty(h: Hospital, key: list[dict], seed: int = 7, n: int = 25, star
     return out
 
 
-def walk_in(h: Hospital, rng: random.Random) -> Patient:
-    sev, complaint = rng.choice(WALKIN_COMPLAINTS)
+def walk_in(h: Hospital, rng: random.Random, busy: bool = False) -> Patient:
+    sev, complaint = rng.choice(BUSY_COMPLAINTS if busy and rng.random() < 0.6 else WALKIN_COMPLAINTS)
     p = _patient(h, rng, "WI", sev, complaint, arrived_at=h.clock, state="waiting",
-                 needs_ct=complaint in ("stroke symptoms", "chest pain"))
+                 needs_ct=complaint in CT_COMPLAINTS)
     give_records(p, rng)
     h.add_patient(p)
     return p

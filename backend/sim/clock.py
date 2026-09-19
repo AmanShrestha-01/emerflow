@@ -10,7 +10,10 @@ from backend.sim.pipeline import Emit, _noop, commit
 from backend.sim.scenarios import walk_in
 
 CT_EVERY = 6          # minutes per CT scan
-WALKIN_RATE = 0.04    # chance per minute
+WALKIN_RATE = 0.10    # chance per minute of an everyday patient (~6 an hour)
+BUSY_FACTOR = 3       # a busy night triples everyday arrivals
+ER_VISIT_MIN = 90     # minor ER patients (severity 4-5) are treated and ready to go home after this
+HOME_AFTER_READY = 45 # ward patients ready to go home leave on their own after this (the swarm can speed it up)
 LOUNGE_STAY = 20      # minutes in the discharge lounge before going home
 RETRIAGE_AFTER = {1: 5, 2: 15, 3: 45, 4: 90, 5: 120}
 
@@ -30,8 +33,9 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
             p.state = "waiting"
             h.version += 1
             emit("patient.arrived", {"pid": p.pid, "severity": p.severity, "complaint": p.complaint}, clock=t)
-    if walkins and rng.random() < WALKIN_RATE:
-        p = walk_in(h, rng)
+    busy = bool(h.busy_until and h.busy_until > t)
+    if walkins and rng.random() < WALKIN_RATE * (BUSY_FACTOR if busy else 1):
+        p = walk_in(h, rng, busy=busy)
         emit("patient.arrived", {"pid": p.pid, "severity": p.severity, "complaint": p.complaint}, clock=t)
 
     # Staff call-ins arriving.
@@ -63,10 +67,25 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
         cands = [p for p in h.in_unit("ICU") if not p.improving and p.severity >= 2]
         if cands:
             rng.choice(cands).improving = True
+    if t % 20 == 0:
+        cands = [p for p in h.in_unit("STEPDOWN") if not p.improving and p.pid not in h.locked]
+        if cands:
+            q = rng.choice(cands)
+            q.improving, q.severity = True, max(q.severity, 3)  # stable enough for the ward
     if t % 10 == 0:
         cands = [p for p in h.in_unit("WARD") if not p.ready_for_discharge]
         if cands:
-            rng.choice(cands).ready_for_discharge = True
+            q = rng.choice(cands)
+            q.ready_for_discharge, q.ready_at = True, t
+    # Everyday flow out of the hospital, so it doesn't just fill up.
+    for p in h.in_unit("ER"):
+        if p.severity >= 4 and not p.ready_for_discharge and p.moved_at is not None and t - p.moved_at >= ER_VISIT_MIN:
+            p.ready_for_discharge, p.ready_at = True, t
+    for unit, after in (("ER", 0), ("WARD", HOME_AFTER_READY)):
+        for p in h.in_unit(unit):
+            if p.ready_for_discharge and p.pid not in h.locked and t - (p.ready_at or 0) >= after:
+                commit(h, Move(h.next_id("M"), p.pid, unit, "HOME", "discharge", source="fastlane",
+                               reason="treated and discharged home"), emit, clock=t)
     for p in h.in_unit("LOUNGE"):
         if p.moved_at is not None and t - p.moved_at >= LOUNGE_STAY and p.pid not in h.locked:
             commit(h, Move(h.next_id("M"), p.pid, "LOUNGE", "HOME", "discharge", source="fastlane",

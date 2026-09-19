@@ -58,6 +58,7 @@ class Patient:
     blood_type: str = "O+"
     improving: bool = False          # ICU/STEPDOWN patient who could step down
     ready_for_discharge: bool = False
+    ready_at: int | None = None      # sim minute they became ready to go home
     elective: bool = False           # scheduled elective surgery patient
     retriage_flag: bool = False
     placed_at: int | None = None

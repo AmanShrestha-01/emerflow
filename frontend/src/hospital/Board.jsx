@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { api, DEMO_KEY } from '../api.js'
 import { useEvents } from '../useEvents.js'
 import { LEVEL_SIGN, simTime } from './format.js'
 import KpiBar from './KpiBar.jsx'
@@ -12,7 +11,10 @@ import ApprovalDrawer from './ApprovalDrawer.jsx'
 import PatientDetail from './PatientDetail.jsx'
 import StoryStrip from './StoryStrip.jsx'
 import { Hint, HintProvider, useHints } from './Hints.jsx'
+import SimpleView from './SimpleView.jsx'
+import { BusCrashButton, BusyNightButton, useScenario, useView } from './scenario.jsx'
 import './Board.css'
+import './Simple.css'
 
 export default function Board() {
   return (
@@ -24,6 +26,7 @@ export default function Board() {
 
 function BoardInner() {
   const ev = useEvents()
+  const [view, setView] = useView()
   const [selected, setSelected] = useState(null)
   const [toast, setToast] = useState(null)
   const st = ev.state
@@ -63,9 +66,27 @@ function BoardInner() {
     )
   }
 
+  const detail = selected && (
+    <PatientDetail pid={selected} st={st} lastMove={ev.lastMoves[selected]} onClose={() => setSelected(null)} run={run} />
+  )
+  const toastEl = toast && (
+    <div className={`toast toast-${toast.tone}`} role="status" aria-live="polite">
+      {toast.text}
+    </div>
+  )
+  if (view === 'simple') {
+    return (
+      <>
+        <SimpleView st={st} ev={ev} run={run} patientsById={patientsById} onSelect={setSelected} onFull={() => setView('full')} />
+        {detail}
+        {toastEl}
+      </>
+    )
+  }
+
   return (
     <div className={`board lvl-${st.level ?? 0}`}>
-      <Header st={st} ev={ev} run={run} />
+      <Header st={st} ev={ev} run={run} onSimple={() => setView('simple')} />
       <div className="storyrow">
         <StoryStrip st={st} feed={ev.feed} />
         <KpiBar metrics={st.metrics || {}} decisions={(st.holds?.length || 0) + (st.approvals?.length || 0)} />
@@ -81,20 +102,8 @@ function BoardInner() {
         <RightPanel ev={ev} onSelect={setSelected} />
       </main>
       <ApprovalDrawer approvals={st.approvals} holds={st.holds} patientsById={patientsById} onSelect={setSelected} run={run} />
-      {selected && (
-        <PatientDetail
-          pid={selected}
-          st={st}
-          lastMove={ev.lastMoves[selected]}
-          onClose={() => setSelected(null)}
-          run={run}
-        />
-      )}
-      {toast && (
-        <div className={`toast toast-${toast.tone}`} role="status" aria-live="polite">
-          {toast.text}
-        </div>
-      )}
+      {detail}
+      {toastEl}
     </div>
   )
 }
@@ -134,13 +143,12 @@ function RightPanel({ ev, onSelect }) {
   )
 }
 
-function Header({ st, ev, run }) {
+function Header({ st, ev, run, onSimple }) {
   const level = Math.max(0, Math.min(4, st.level ?? 0))
   const sign = LEVEL_SIGN[level]
   const { showAll } = useHints()
-  const [surging, setSurging] = useState(false)
-  const [armReset, setArmReset] = useState(false)
-  const resetTimer = useRef(null)
+  const sc = useScenario(run)
+  const { control, reset, armReset } = sc
   const prevLevel = useRef(level)
   const [bump, setBump] = useState(false)
 
@@ -152,30 +160,6 @@ function Header({ st, ev, run }) {
       return () => clearTimeout(t)
     }
   }, [level])
-  useEffect(() => () => clearTimeout(resetTimer.current), [])
-
-  const surge = async () => {
-    setSurging(true)
-    try {
-      await run(() => api.surge(25), (r) => `Bus crash: ${r?.incoming ?? 25} patients on the way`)
-    } catch {
-      /* toast already shown */
-    } finally {
-      setSurging(false)
-    }
-  }
-  const control = (action, extra, text) => run(() => api.control(action, extra), text).catch(() => {})
-  const reset = () => {
-    if (!armReset) {
-      setArmReset(true)
-      clearTimeout(resetTimer.current)
-      resetTimer.current = setTimeout(() => setArmReset(false), 3500)
-      return
-    }
-    clearTimeout(resetTimer.current)
-    setArmReset(false)
-    control('reset', { key: DEMO_KEY }, 'Simulation reset')
-  }
 
   return (
     <header className="hdr">
@@ -242,12 +226,14 @@ function Header({ st, ev, run }) {
         <button className="ctl ctl-help" onClick={showAll}>
           How to read this
         </button>
+        <button className="ctl ctl-help" onClick={onSimple}>
+          Simple view
+        </button>
       </div>
 
-      <button className="mci" onClick={surge} disabled={surging}>
-        <span className="mci-t">{surging ? 'Sending…' : 'Bus crash'}</span>
-        <span className="mci-s">Send 25 patients</span>
-      </button>
+      <BusyNightButton st={st} sc={sc} />
+
+      <BusCrashButton sc={sc} />
     </header>
   )
 }

@@ -18,7 +18,7 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 |---|---|---|---|
 | GET | `/api/state` | | `State` (below) |
 | GET | `/api/events` | | Server-Sent Events stream of `Event` |
-| POST | `/api/surge` | `{"n": 25}` (optional) | `{"incoming": 25}` |
+| POST | `/api/surge` | `{"kind": "bus"}` for 25 bus-crash patients, or `{"kind": "busy"}` for a busy night (about 3× more everyday arrivals for 60 min). Optional `"n"` for bus | `{"incoming": 25}` or `{"busy_until": 160}` |
 | POST | `/api/radio` | `{"text": "bus crash, 12 patients, 3 critical, 10 min out"}` | `{"draft_id": "D1", "patients": [{"complaint","severity","eta"}]}` |
 | POST | `/api/radio/{draft_id}/confirm` | | `{"incoming": n}` |
 | POST | `/api/approvals/{approval_id}` | `{"approve": true}` | `{"ok": true}` |
@@ -31,7 +31,7 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 ```json
 {
   "clock": 42, "version": 318, "level": 2, "level_name": "STRETCH", "diversion": false,
-  "paused": false, "speed": 1, "mode": "stub",
+  "paused": false, "speed": 1, "mode": "stub", "busy_until": null,
   "units": [{"unit": "ICU", "beds": 10, "occupied": 9, "reserved": 1, "percent": 100, "nurses": 5,
              "occupants": ["IN-10"], "reserved_for": ["MC-03"]}],
   "patients": [{"pid": "MC-03", "name": "Lena Cho", "age": 54, "complaint": "head injury, confused",

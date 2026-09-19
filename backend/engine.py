@@ -26,6 +26,7 @@ DEMO_KEY = os.environ.get("EMERFLOW_DEMO_KEY", "demo")
 CYCLE_GAP = 3        # min sim-minutes between cycles when patients are waiting
 CYCLE_IDLE = 10      # otherwise, a cycle every 10 sim-minutes if a unit is >= 90%
 CLOCK_START = 21 * 60
+BUSY_MINUTES = 60
 
 
 def metrics(h: Hospital) -> dict:
@@ -124,6 +125,13 @@ class Engine:
         pts = mass_casualty(self.h, self.key, seed=self.seed + self.surges * 13, n=n, start=self.h.clock)
         self.emit("notice", {"text": f"MASS CASUALTY: bus crash, {len(pts)} patients inbound"})
         return len(pts)
+
+    def busy_night(self, minutes: int = BUSY_MINUTES) -> int:
+        """A busy night: everyday arrivals (mostly flu) triple for the next hour."""
+        self.h.busy_until = self.h.clock + minutes
+        self.h.version += 1
+        self.emit("notice", {"text": f"Busy night: about three times more everyday patients for {minutes} minutes"})
+        return self.h.busy_until
 
     async def radio(self, text: str) -> dict:
         out, _ = await self.llm.call(

@@ -3,7 +3,7 @@ import { BloodIcon, CtIcon, Sev } from './bits.jsx'
 import RadioInput from './RadioInput.jsx'
 import { Hint } from './Hints.jsx'
 
-export default function Queue({ patients, holds, onSelect, run }) {
+export default function Queue({ patients, holds, onSelect, run, bare }) {
   const incoming = patients.filter((p) => p.state === 'incoming').sort((a, b) => (a.eta ?? 99) - (b.eta ?? 99))
   // Waiting room: waiting, plus held patients who have no bed yet.
   const waiting = patients
@@ -20,9 +20,9 @@ export default function Queue({ patients, holds, onSelect, run }) {
         </div>
         <span className="zone-count">{incoming.length + waiting.length}</span>
       </header>
-      <Hint id="queue">
+      {!bare && <Hint id="queue">
         These patients have no bed yet. The coloured number is urgency, 1 is most urgent. A red wait time is longer than it should be.
-      </Hint>
+      </Hint>}
       <RadioInput run={run} />
       <div className="queue-scroll">
         {incoming.length > 0 && (
