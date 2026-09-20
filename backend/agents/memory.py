@@ -41,6 +41,13 @@ class Memory:
     notes: deque[Note] = field(default_factory=lambda: deque(maxlen=CAP))
 
     def add(self, kind: str, text: str, clock: int, pid: str = "") -> None:
+        """Remember one thing. Saying the same thing again refreshes the note rather than adding another:
+        a department that reports "we have no O-negative blood" every round for an hour is holding one
+        fact, not sixty, and the cap should go on facts."""
+        for old in self.notes:
+            if old.kind == kind and old.text == text and old.pid == pid:
+                self.notes.remove(old)
+                break
         self.notes.append(Note(time.monotonic(), clock, kind, text, pid))
 
     def live(self, now: float | None = None) -> list[Note]:

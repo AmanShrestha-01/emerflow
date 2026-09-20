@@ -219,9 +219,11 @@ export function MemoryCanvas({
 
   const held = (notes?.agents || []).reduce((t, a) => t + a.notes.filter((n) => n.here && n.age_s <= maxAgeS).length, 0)
   const dim = hot.nodes.size > 0
-  const nodeColor = useCallback((n: N) => (!dim || hot.nodes.has(n.id) ? n.color : "#2a3b38"), [dim, hot])
+  // Hovering pushes the rest back rather than switching it off: a flat dark grey made the whole sphere
+  // look dead every time the pointer crossed a node.
+  const nodeColor = useCallback((n: N) => (!dim || hot.nodes.has(n.id) ? n.color : withAlpha(n.color, 0.3)), [dim, hot])
   const linkColor = useCallback((l: L) => {
-    if (dim) return hot.links.has(l.key) ? l.color : "rgba(255,255,255,0.03)"
+    if (dim) return hot.links.has(l.key) ? l.color : withAlpha(l.color, 0.07)
     const a = l.kind === "in" || l.kind === "reports" ? 0.13 : l.kind === "owns" ? 0.22 : 0.45 + l.fade * 0.5
     return withAlpha(l.color, a)
   }, [dim, hot])

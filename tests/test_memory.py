@@ -113,3 +113,12 @@ def test_memory_json_is_safe_to_serve():
     for a in out["agents"]:
         for n in a["notes"]:
             assert set(n) == {"age_s", "clock", "kind", "pid", "name", "text", "here"}
+
+
+def test_saying_the_same_thing_again_refreshes_one_note():
+    m = mem.Memory()
+    m.add("said", "we have no O-negative blood", 10)
+    m.add("offered", "you offered Ana Diaz a ward bed", 11, "W-1")
+    m.add("said", "we have no O-negative blood", 14)  # the same report, a round later
+    assert [n.text for n in m.notes] == ["you offered Ana Diaz a ward bed", "we have no O-negative blood"]
+    assert m.notes[-1].clock == 14  # and it is the fresh one that survived
