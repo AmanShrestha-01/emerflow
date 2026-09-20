@@ -140,7 +140,7 @@ export default function PatientLinkPage() {
             <p className="flex items-start gap-2 px-1 text-xs leading-relaxed text-ink-soft">
               <ShieldCheck className="size-4 shrink-0 text-sapphire" />
               Only people with this link can see this page. It never shows test results or medicines. Questions about your care? Ask
-              your care team. Demo: the hospital, doctors and data are fictional.
+              your care team. Demo: invented patients, doctors and records. EmerFlow is not affiliated with or endorsed by any hospital named here.
             </p>
           </>
         )}

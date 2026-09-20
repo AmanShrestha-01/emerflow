@@ -256,6 +256,7 @@ Use at most 30 patients. Do not add anyone not described.""",
         s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused, "speed": self.speed,
                   "mode": self.llm.mode if not self.llm.breaker_open else "fallback",
                   "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at, "run": self.run_id, "incident": self.incident,
+                  "model": self.llm.model_name,
                   "census": self.census})
         if include_feed:
             # Ticks are noise on reload; keep the conversation and decisions.

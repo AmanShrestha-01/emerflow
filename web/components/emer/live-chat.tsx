@@ -26,13 +26,20 @@ export function LiveChat({ cid: forced, limit = 30, className = "" }: { cid?: st
   const { ev, names } = useHospital()
   const cid = forced ?? latestRound(ev.feed)
   const box = useRef<HTMLDivElement>(null)
-  const list = useMemo(
-    () => ev.messages.filter((m: Message) => m.cycle_id === cid && m.text && (AGENT[m.from] || RULES.has(m.from))).slice(-limit),
-    [ev.messages, cid, limit],
-  )
+  const list = useMemo(() => {
+    const sayable = ev.messages.filter((m: Message) => m.text && (AGENT[m.from] || RULES.has(m.from)))
+    const round = sayable.filter((m: Message) => m.cycle_id === cid)
+    // A new round starts with nothing said for a few seconds. Hold the last round on screen until then,
+    // so the chat never blanks out mid-demo.
+    if (round.length || forced) return round.slice(-limit)
+    const previous = sayable.length ? sayable[sayable.length - 1].cycle_id : null
+    return sayable.filter((m: Message) => m.cycle_id === previous).slice(-limit)
+  }, [ev.messages, cid, forced, limit])
   const typing = Object.entries(ev.typing || {}).filter(([a, t]) => AGENT[a] && t?.cycle_id === cid).map(([a]) => a)
   useEffect(() => {
-    box.current?.scrollTo({ top: box.current.scrollHeight, behavior: "smooth" })
+    // Instant, not smooth: a smooth scroll that is still animating when the next message lands leaves a
+    // message half-hidden under the top of the box.
+    box.current?.scrollTo({ top: box.current.scrollHeight })
   }, [list.length, typing.length])
 
   return (

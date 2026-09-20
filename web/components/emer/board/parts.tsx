@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Slider } from "@/components/ui/slider"
 import { api, type Approval, type HState, type Patient, useHospital } from "@/lib/emer/hospital"
 import { SEVERITY, type BedGroup } from "@/lib/emer/beds"
+import { PatientFace } from "./face"
 import { PLACE, UNIT_NAME, plainText } from "@/lib/emer/agents"
 
 const cap = (t?: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "")
@@ -122,8 +123,8 @@ export function BedWall({ groups, recent, onOpen }: { groups: BedGroup[]; recent
                       transition={{ duration: 1.1, ease: "easeOut" }}
                     />
                     <span aria-hidden className="absolute inset-y-2 left-0 w-1 rounded-r-full" style={{ background: hex }} />
-                    <span className="relative grid size-9 shrink-0 place-items-center rounded-xl text-white" style={{ background: hex }}>
-                      <BedDouble className="size-4.5" />
+                    <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl text-white" style={{ background: hex }}>
+                      {t.pid ? <PatientFace pid={t.pid} severity={p?.severity} age={p?.age} size={36} /> : <BedDouble className="size-4.5" />}
                       {glow && (
                         <motion.span
                           aria-hidden

@@ -85,11 +85,11 @@ export const REASONS: [string, string][] = [
 ]
 // Everyday words first; the clinical term is kept for tooltips.
 export const FACT_LABEL: Record<string, string> = {
-  anticoagulant: "Blood thinners",
+  anticoagulant: "Blood thinner",
   penicillin_allergy: "Penicillin allergy",
-  vitals_stable: "Stable heart rate and breathing",
+  vitals_stable: "Heart rate and breathing",
   icu_need: "Needs intensive care",
-  on_pressors: "On blood-pressure support",
+  on_pressors: "Blood-pressure support",
   blood_type: "Blood type",
 }
 export const FACT_TECH: Record<string, string> = {
@@ -102,6 +102,40 @@ export const FACT_TECH: Record<string, string> = {
 }
 export const FACTS = Object.keys(FACT_LABEL)
 export const STATUS_WORD: Record<string, string> = { active: "Active", present: "Present", stopped: "Stopped", absent: "None recorded" }
+
+/** One source's version of a fact, in words a visitor can read at a glance. */
+export function plainValue(fact: string, value: string, status: string): string {
+  const v = (value || "").trim()
+  if (fact === "anticoagulant")
+    return status === "absent" ? "NOT taking one" : status === "stopped" ? `STOPPED ${v}` : `TAKING ${v}`
+  if (fact === "penicillin_allergy") return status === "absent" ? "NO penicillin allergy" : `ALLERGIC to ${v}`
+  if (fact === "on_pressors") return status === "absent" ? "NOT on support" : `ON support${v && v !== "yes" ? ` (${v})` : ""}`
+  if (fact === "icu_need") return /^(yes|true)$/i.test(v) ? "NEEDS intensive care" : "Does NOT need intensive care"
+  if (fact === "vitals_stable") return v.toUpperCase()
+  if (status === "absent") return "NONE recorded"
+  return v.toUpperCase()
+}
+
+/** The same value where the fact's name is already on screen: no need to repeat it. */
+export function shortValue(fact: string, value: string, status: string): string {
+  const v = (value || "").trim()
+  if (fact === "anticoagulant") return status === "absent" ? "None" : status === "stopped" ? `Stopped ${v}` : v
+  if (fact === "penicillin_allergy") return status === "absent" ? "No" : `Yes — ${v}`
+  if (fact === "on_pressors") return status === "absent" ? "No" : v && v !== "yes" ? `Yes — ${v}` : "Yes"
+  if (fact === "icu_need") return /^(yes|true)$/i.test(v) ? "Yes" : "No"
+  if (status === "absent") return "None recorded"
+  return v
+}
+
+/** "Local intake" (today, at our hospital) vs another hospital's record: a short label for the card. */
+export function sourceLabel(sourceName: string, recordedDate: string): { who: string; when: string } {
+  const who = sourceName === "Local intake" ? "HERE, TODAY" : sourceName.split(" - ")[0].toUpperCase()
+  const d = new Date(`${recordedDate}T00:00:00`)
+  const when = Number.isNaN(d.getTime())
+    ? recordedDate
+    : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  return { who, when }
+}
 // What a doctor can record about a fact, in everyday words (the API status in brackets).
 export const ENTRY_STATUS: [string, string][] = [
   ["active", "Taking it now"],

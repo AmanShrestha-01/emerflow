@@ -18,8 +18,9 @@ const shot = async (page, name, loc) => { if (loc) { await loc.scrollIntoViewIfN
   // 1. board: commander logs in, bus crash
   const board = await ctx.newPage(); board.on('pageerror', e => errs.push(String(e)));
   await board.goto(B + '/login/'); await board.fill('#pin', 'demo'); await board.getByRole('button', { name: 'Log in' }).click();
-  await board.waitForURL(/\/board/); await board.getByRole('button', { name: /Bus crash/ }).click();
-  await post('/api/control', { action: 'speed', speed: 5 });
+  await board.waitForURL(/\/board/);
+  // start the surge through the API: the board's own buttons change from time to time
+  await post('/api/surge', { kind: 'bus' }); await post('/api/control', { action: 'speed', speed: 5 });
   await board.getByText('VERIFICATION REQUIRED').first().waitFor({ timeout: 120000 });
   await post('/api/control', { action: 'pause' });
   const card = board.locator('li', { hasText: 'VERIFICATION REQUIRED' }).first();
@@ -41,7 +42,7 @@ const shot = async (page, name, loc) => { if (loc) { await loc.scrollIntoViewIfN
   if (await nots.count()) { await nots.first().click(); await doc.waitForTimeout(800); console.log('rejected lookalike') } else console.log('NO possible match for this patient');
   // 4. merged chart
   const chart = doc.locator('section', { has: doc.getByRole('heading', { name: 'Merged chart' }) });
-  const fact = await chart.locator('li', { hasText: 'Records disagree' }).first().locator('strong').first().innerText(); console.log('conflict fact', fact);
+  const fact = await chart.locator('[data-clash]').first().getAttribute('data-fact-label'); console.log('conflict fact', fact);
   await shot(doc, '05-merged-chart', chart);
   // 5. add to the record
   const entry = doc.locator('section', { has: doc.getByRole('heading', { name: 'Add to the record' }) });

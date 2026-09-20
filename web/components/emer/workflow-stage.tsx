@@ -224,8 +224,16 @@ export function NodeDetail({ id, cid }: { id: string; cid: string | null }) {
   let lines: string[] = []
   let title = a ? `${a.name} AI · ${a.persona}` : LABEL[id]?.title
   let about = a ? `${a.role}. Pushes for: ${a.pushesFor.toLowerCase()}.` : LABEL[id]?.sub
+  let fromEarlier = false
   if (a) {
-    lines = ev.messages.filter((m) => m.cycle_id === cid && m.from === id).map((m) => plainText(m.text, names))
+    const mine = ev.messages.filter((m) => m.from === id)
+    let said = mine.filter((m) => m.cycle_id === cid)
+    if (!said.length && mine.length) {
+      const last = mine[mine.length - 1].cycle_id
+      said = mine.filter((m) => m.cycle_id === last)
+      fromEarlier = said.length > 0
+    }
+    lines = said.map((m) => plainText(m.text, names))
   } else if (id === "trigger") {
     lines = [r.trigger ? `Started because: ${r.trigger}.` : "Waiting for the next round."]
   } else if (id === "fastlane") {
@@ -258,6 +266,7 @@ export function NodeDetail({ id, cid }: { id: string; cid: string | null }) {
           <p className="text-sm text-ink-soft">{about}</p>
         </div>
       </div>
+      {fromEarlier && <p className="mt-3 text-xs font-semibold text-ink-soft">From the round before; this one is still going.</p>}
       <ul className="mt-4 space-y-2">
         {(lines.length ? lines : ["Nothing said yet in this round."]).map((l, i) => (
           <li key={i} className="rounded-2xl bg-white/80 px-3.5 py-2.5 text-[14px] leading-relaxed text-ink">{l}</li>

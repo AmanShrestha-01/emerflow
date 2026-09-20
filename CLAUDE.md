@@ -42,7 +42,7 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 **Agents** (`backend/agents/`):
 - `departments.py`: 10 department agents (CT is `IMAGING`; `XRAY` and `LAB` run real queues in `clock.py`). One class, 10 configs (view, goal, limits, rule-based stub).
 - `coordinator.py`: one Gemini call per cycle; code writes its contention question.
-- **All agents use `gemini-3.6-flash`** (set in `.env`). Each department has its own persona (role, voice, what it pushes for / back on) and temperature in `departments.py`.
+- **All agents use `gemini-2.5-flash`** (set in `.env`). Each department has its own persona (role, voice, what it pushes for / back on) and temperature in `departments.py`.
 - `cycle.py`: status (parallel) → optional question → plan → apply at live state → approvals → fallback.
 - `llm.py`: the Vertex client, timeouts, circuit breaker, stub mode, and recording to `replays/live.jsonl`.
 - `schemas.py`: the answer form each agent kind must use.

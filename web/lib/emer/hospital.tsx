@@ -17,7 +17,7 @@ export type Approval = { approval_id: string; action: string; sentence?: string;
 export type HState = {
   clock: number; level: number; level_name?: string; paused: boolean; speed: number; mode?: string; clock_start?: number
   units: Unit[]; patients: Patient[]; approvals: Approval[]; holds: any[]; metrics: Record<string, number>
-  busy_until?: number | null; bus_crash_at?: number | null; diversion?: boolean; incident?: string
+  busy_until?: number | null; bus_crash_at?: number | null; diversion?: boolean; incident?: string; model?: string
 }
 export type FeedEvent = { id?: number; type: string; clock?: number; cycle_id?: string | null; round?: string | null; data?: any }
 export type Message = { id: number; from: string; to?: string[]; kind?: string; persona?: string; text: string; pids?: string[]; cycle_id?: string | null; how?: string }

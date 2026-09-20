@@ -19,8 +19,20 @@ from typing import Callable
 
 from pydantic import BaseModel
 
-PRO_MODEL = os.environ.get("GEMINI_PRO_MODEL", "gemini-3.6-flash")
-LITE_MODEL = os.environ.get("GEMINI_LITE_MODEL", "gemini-3.6-flash")
+def model_label(model: str) -> str:
+    """"gemini-2.5-flash" -> "Gemini 2.5 Flash", for the pages that name the model."""
+    return " ".join(w.capitalize() if not w[0].isdigit() else w for w in model.split("-"))
+
+
+def _thinking(types, model: str):
+    """Keep the agents quick. Gemini 3.x names this a level; 2.5 takes a token budget and rejects a level."""
+    if model.startswith("gemini-2."):
+        return types.ThinkingConfig(thinking_budget=0)  # 2.5 Flash: no thinking tokens, the fastest setting
+    return types.ThinkingConfig(thinking_level="low")
+
+
+PRO_MODEL = os.environ.get("GEMINI_PRO_MODEL", "gemini-2.5-flash")
+LITE_MODEL = os.environ.get("GEMINI_LITE_MODEL", "gemini-2.5-flash")
 REPLAY_DIR = Path(os.environ.get("EMERFLOW_REPLAY_DIR", "backend/agents/replays"))
 DEMO_TAPE = Path(os.environ.get("EMERFLOW_TAPE", str(REPLAY_DIR / "demo.jsonl")))
 REPLAY_MAX_DELAY = 4.0  # seconds; replayed answers keep their real pacing, capped
@@ -39,6 +51,7 @@ class LLM:
         if env_mode == "live" and not project:
             env_mode = "stub"
         self.mode = mode or env_mode
+        self.model_name = model_label(LITE_MODEL)  # what the pages call the model, e.g. "Gemini 2.5 Flash"
         self.fake_latency = fake_latency
         self.failures = 0
         self.opened_at = 0.0
@@ -127,7 +140,7 @@ class LLM:
                         response_mime_type="application/json",
                         response_schema=schema,
                         temperature=temperature,
-                        thinking_config=types.ThinkingConfig(thinking_level="low"),
+                        thinking_config=_thinking(types, PRO_MODEL if tier == "pro" else LITE_MODEL),
                     ),
                 ),
                 timeout=timeout,

@@ -99,27 +99,40 @@ The role picks the screen: Commander → board (`/board`), Doctor → DeepChart 
   (`/api/lookup?name=&dob=&sex=`) but has no screen yet.
 
 ### 4.3 Merged chart (`/doctor`, after confirming)
+Built for a visitor to read in five seconds: a verdict line, then only what doesn't match, as two cards face to face.
+Everything that agrees is one click away.
 ```
-+---------------------------------------------------------------+
-|  Lena Cho · 54 F · MC-03 · in ER · HELD for ICU              |
-+---------------------------------------------------------------+
-|  anticoagulant                              ⚠ CONFLICT        |
-|    Fells Point Heart - Cardiology (2026-03-02)  warfarin 5mg  ACTIVE |
-|    Local intake            (2026-09-19)  none recorded ABSENT |
-|    sources disagree; a human must resolve                     |
-|  penicillin_allergy                         ✓ agree           |
-|    Fells Point Heart - Cardiology (2026-03-02)  Penicillin G PRESENT |
-|    Local intake            (2026-09-19)  Penicillin G PRESENT |
-|  blood_type                                 · gap             |
-|    Local intake (2026-09-19) O+  · Fells Point: not mentioned |
-+---------------------------------------------------------------+
-|  New order: [ start heparin drip                     ]        |
-|  Relies on: [x] anticoagulant  [ ] vitals_stable  ...         |
-|                                              [ Check order ]  |
-+---------------------------------------------------------------+
++-----------------------------------------------------------------------+
+|  Lena Cho, 54 · MC-03 · waiting for a bed                             |
++-----------------------------------------------------------------------+
+|  1 thing doesn't match across 3 records. It is what the paused move   |
+|  depends on.                                                          |
+|                                                                       |
+|  Blood thinner                              [ These don't match ]     |
+|   +------------------------+   ⚡   +------------------------------+   |
+|   | HERE, TODAY            |       | FELLS POINT HEART            |   |
+|   | Sep 19, 2026           |       | Jan 4, 2026                  |   |
+|   | NOT taking one         |       | TAKING warfarin 5mg          |   |
+|   | where's this from?     |       | where's this from?           |   |
+|   +------------------------+       +------------------------------+   |
+|   A person must decide which is right. We won't.                      |
+|   sources disagree; a human must resolve                              |
+|                                                                       |
+|  4 other things the records agree on. Show them.                      |
+|   Penicillin allergy   No                            [ All agree ]    |
+|   Blood type           A+                            [ All agree ]    |
+|   Blood-pressure support  No   only 1 of 3 records mention it         |
++-----------------------------------------------------------------------+
+|  New order: [ start heparin drip                     ]                |
+|  Relies on: [x] Blood thinner  [ ] Heart rate and breathing  ...      |
+|                                              [ Check order ]          |
++-----------------------------------------------------------------------+
 ```
-- Every value can be clicked to show its `resource_id`, so every value's origin can be traced.
-- Conflicts are listed first, then facts where the sources agree, then gaps.
+- **Values are written in everyday words** (`portal.ts`: `plainValue`, `shortValue`): "NOT taking one", "TAKING warfarin 5mg",
+  "ALLERGIC to …", "NEEDS intensive care". The clinical term stays as a tooltip on the fact's name.
+- **Card labels** are the hospital plus the date (`sourceLabel`); our own intake reads "HERE, TODAY".
+- **"where's this from?"** on each card reveals that value's `resource_id`, so every value can be traced.
+- The same two-card block (`Clash`) is used for the board's hold and for order warnings, so a disagreement always looks the same.
 - **As built:** under the chart, **Add to the record** lets the doctor record what they found for one fact (a value and
   "Taking it now" / "Has it" / "Stopped" / "Doesn't have it"). It's saved as one more source, `<hospital> - Doctor's entry`,
   that the gate compares like any other. It never replaces, hides or outranks another source, so if the records still

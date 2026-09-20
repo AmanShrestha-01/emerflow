@@ -138,7 +138,7 @@ function WhereToGo({
                     <span className="truncate">{h.name}</span>
                     {ours && <span className="text-xs font-semibold text-jade-deep">our demo hospital · simulated numbers</span>}
                     {h.live && <span className="text-xs font-semibold text-jade-deep">live · MIEMSS</span>}
-                    {best && <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-white">Fastest care</span>}
+                    {best && <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-white">{sortBy === "fastest" ? "Fastest care" : "Nearest care"}</span>}
                   </span>
                   <span className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
                     <Users className="size-3.5 text-ink-soft" />
@@ -242,13 +242,13 @@ export default function EmsPage() {
   const alerts = useWeatherAlerts(location)
   const ranked = useMemo(() => (location ? rankHospitals(hospitals, location, sortBy) : []), [hospitals, location, sortBy])
   const shown = ranked.filter((h) => visible[h.status])
-  // Fastest care: never a hospital on diversion (ours, when the incident commander diverts), and not a full ER
-  // while an open or busy one exists.
+  // The pick follows whichever order the crew chose (nearest or fastest): never a hospital on diversion
+  // (ours, when the incident commander diverts), and not a full ER while an open or busy one exists.
   const best = useMemo(() => {
     if (!location) return undefined
-    const ok = rankHospitals(hospitals, location, "fastest").filter((h) => !(h.id === OUR_HOSPITAL_ID && st?.diversion))
+    const ok = rankHospitals(hospitals, location, sortBy).filter((h) => !(h.id === OUR_HOSPITAL_ID && st?.diversion))
     return ok.find((h) => h.status !== "critical") ?? ok[0]
-  }, [hospitals, location, st?.diversion])
+  }, [hospitals, location, sortBy, st?.diversion])
   const report = data ? buildReport(baseHospitals, data.incidents, alerts?.alerts ?? [], data.generated_at) : []
   const note = inRegion ? "From where you are." : loc.state === "granted" ? "You're outside Baltimore, so this is measured from downtown." : "Measured from downtown Baltimore."
 

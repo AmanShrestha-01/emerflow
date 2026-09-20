@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react"
 import { Nav } from "@/components/emer/nav"
 import { TextReveal } from "@/components/ui/text-reveal"
 import { LiveChat, latestRound } from "@/components/emer/live-chat"
-import { NodeDetail, WorkflowStage, useRound } from "@/components/emer/workflow-stage"
+import { WorkflowStage, useRound } from "@/components/emer/workflow-stage"
 import { useHospital } from "@/lib/emer/hospital"
 
 export default function WorkflowPage() {
@@ -71,16 +71,13 @@ export default function WorkflowPage() {
             </div>
           </section>
           <div className="space-y-5">
-            <section className="glass-strong rounded-3xl p-5">
-              <NodeDetail id={selected} cid={cid} />
-            </section>
             <section className="glass rounded-3xl p-5">
               <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-ink">
                 <Sparkles className="size-4 text-ai" /> The conversation
               </h2>
-              <LiveChat cid={cid} limit={40} className="max-h-[420px]" />
+              <LiveChat cid={pinned ?? undefined} limit={40} className="max-h-[420px]" />
             </section>
-            {st?.mode && <p className="px-2 text-xs text-ink-soft">Agents run on {st.mode === "live" ? "Gemini 3.6 Flash, live" : st.mode === "replay" ? "recorded Gemini answers" : "the offline rules"}.</p>}
+            {st?.mode && <p className="px-2 text-xs text-ink-soft">Agents run on {st.mode === "live" ? `${st.model || "Gemini"}, live` : st.mode === "replay" ? "recorded Gemini answers" : "the offline rules"}.</p>}
           </div>
         </div>
       </div>

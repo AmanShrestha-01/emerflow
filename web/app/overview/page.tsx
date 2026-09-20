@@ -89,7 +89,7 @@ export default function Home() {
               </Link>
             </div>
             <ul className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-ink-soft">
-              <li className="flex items-center gap-2"><Sparkles className="size-4 text-ai" /> Gemini 3.6 Flash on Vertex AI</li>
+              <li className="flex items-center gap-2"><Sparkles className="size-4 text-ai" /> Gemini 2.5 Flash on Vertex AI</li>
               <li className="flex items-center gap-2"><ShieldCheck className="size-4 text-jade" /> Every move checked by rules</li>
               <li className="flex items-center gap-2"><Hand className="size-4 text-human" /> A person approves big actions</li>
             </ul>

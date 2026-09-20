@@ -1,12 +1,12 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { AnimatePresence, motion } from "motion/react"
 import {
   ArrowRightLeft, Check, FilePlus2, CircleSlash, ClipboardCheck, ExternalLink, FileWarning, Fingerprint, Hospital, Inbox, Link2,
-  Loader2, LogOut, Search, ShieldAlert, Users,
+  Loader2, LogOut, Search, ShieldAlert, Users, Zap,
 } from "lucide-react"
 import { LiveBadge, Nav } from "@/components/emer/nav"
 import { TextReveal } from "@/components/ui/text-reveal"
@@ -14,8 +14,8 @@ import { SEVERITY } from "@/lib/emer/beds"
 import { UNIT_NAME, plainText } from "@/lib/emer/agents"
 import { HOME, checkSession, loadSession, login, saveSession, type Session } from "@/lib/emer/session"
 import {
-  DIFF_LABEL, ENTRY_STATUS, FACT_LABEL, FACT_TECH, FACTS, NOTICE, PortalError, REASONS, STATUS_WORD, portal,
-  type Candidate, type Chart, type Conflict, type Fact, type LogEntry, type OrderResult, type Resolved, type Row, type Transfer,
+  DIFF_LABEL, ENTRY_STATUS, FACT_LABEL, FACT_TECH, FACTS, NOTICE, PortalError, REASONS, plainValue, portal, shortValue, sourceLabel,
+  type Candidate, type Chart, type Fact, type LogEntry, type OrderResult, type Resolved, type Row, type Transfer, type Version,
 } from "@/lib/emer/portal"
 
 const SINAI = "Fells Point Heart Institute"
@@ -101,7 +101,7 @@ function Portal() {
       </div>
 
       <p className="order-last pt-4 text-center text-xs text-ink-soft">
-        Demo: the hospitals, doctors and patients are all fictional.
+        Demo with invented patients and doctors. Fells Point Heart Institute and Hampden Family Health are fictional; EmerFlow is not affiliated with or endorsed by any hospital named here.
       </p>
       {session.hospital === HOME && <HomeDesk session={session} deep={deep} onError={onError} />}
       {session.hospital === SINAI && <SenderDesk session={session} onError={onError} />}
@@ -472,8 +472,7 @@ function Workspace({ pid, session, onError, initialReason }: { pid: string; sess
                 <div className="mt-4 space-y-3">
                   {chart.hold.conflicts.map((c) => (
                     <div key={c.fact} className="rounded-xl bg-white p-4 ring-1 ring-human/30">
-                      <p className="text-sm"><FactName f={c.fact} />: <span className="text-ink-soft">{c.reason}</span></p>
-                      <Versions versions={c.versions} />
+                      <Clash fact={c.fact} versions={c.versions} />
                     </div>
                   ))}
                 </div>
@@ -506,17 +505,8 @@ function Workspace({ pid, session, onError, initialReason }: { pid: string; sess
               )}
             </Panel>
 
-            <Panel
-              title="Merged chart"
-              action={
-                <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
-                  <Chip tone="amber">{chart.facts.filter((f) => f.kind === "conflict").length} disagree</Chip>
-                  <Chip tone="ok">{chart.facts.filter((f) => f.kind === "agree").length} agree</Chip>
-                  <Chip tone="blue">{chart.facts.filter((f) => f.kind === "gap").length} gaps</Chip>
-                </div>
-              }
-            >
-              <FactList facts={chart.facts} />
+            <Panel title="Merged chart">
+              <FactList facts={chart.facts} sources={chart.sources.length} holdFacts={chart.hold?.because || []} />
             </Panel>
 
             <EntryBox session={session} pid={pid} reason={reason} onDone={() => load(reason)} onError={fail} />
@@ -595,61 +585,81 @@ function Matches({ matches, onDecide }: { matches: Candidate[]; onDecide: (ref: 
   )
 }
 
-function FactList({ facts }: { facts: Fact[] }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({})
+/** One source's version, as a card: who said it, when, and what they said in everyday words. */
+function VersionCard({ fact, v, tone }: { fact: string; v: Version; tone: "clash" | "calm" }) {
+  const [open, setOpen] = useState(false)
+  const { who, when } = sourceLabel(v.source_name, v.recorded_date)
   return (
-    <ul className="space-y-3">
-      {facts.map((f) => {
-        const tone =
-          f.kind === "conflict" ? "bg-human-soft/60 ring-human/40" : f.kind === "gap" ? "bg-white/60 ring-[#d0ddf0] border-dashed" : "bg-white ring-[#d0ddf0]"
-        return (
-          <li key={f.fact} className={`relative overflow-hidden rounded-2xl p-4 pl-5 ring-1 ${tone}`}>
-            <span aria-hidden className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${f.kind === "conflict" ? "bg-human" : f.kind === "gap" ? "bg-[#9fb6d8]" : "bg-jade"}`} />
-            <div className="flex items-center justify-between gap-3">
+    <div className={`flex-1 rounded-2xl p-4 ring-1 ${tone === "clash" ? "bg-white ring-human/40" : "bg-white ring-[#d0ddf0]"}`}>
+      <p className="text-[11px] font-black tracking-wider text-ink-soft">{who}</p>
+      <p className="tabular text-[11px] text-ink-soft">{when}</p>
+      <p className="mt-2 text-lg font-bold leading-tight text-ink">{plainValue(fact, v.value, v.status)}</p>
+      <button onClick={() => setOpen((o) => !o)} className="mt-2 text-[11px] font-semibold text-sapphire underline decoration-dotted underline-offset-2">
+        {open ? v.resource_id : "where's this from?"}
+      </button>
+    </div>
+  )
+}
+
+/** A disagreement: the sources face to face, with the exact safety wording underneath. */
+export function Clash({ fact, versions, missing = [] }: { fact: string; versions: Version[]; missing?: string[] }) {
+  return (
+    <div data-clash data-fact={fact} data-fact-label={FACT_LABEL[fact] || fact} className="rounded-2xl bg-human-soft/60 p-4 ring-2 ring-human/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FactName f={fact} />
+        <Chip tone="amber">These don&apos;t match</Chip>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        {versions.map((v, i) => (
+          <Fragment key={v.resource_id}>
+            {i > 0 && <span aria-hidden className="grid shrink-0 place-items-center self-center text-human"><Zap className="size-5" /></span>}
+            <VersionCard fact={fact} v={v} tone="clash" />
+          </Fragment>
+        ))}
+      </div>
+      {missing.length > 0 && <p className="mt-2 text-xs text-ink-soft">Not mentioned by: {missing.join(", ")}.</p>}
+      <p className="mt-3 text-sm font-bold text-[#8a5a0f]">A person must decide which is right. We won&apos;t.</p>
+      <p className="text-xs text-[#8a5a0f]/80">{NOTICE}</p>
+    </div>
+  )
+}
+
+/** The merged chart: what doesn't match, then the rest behind a click. */
+function FactList({ facts, sources, holdFacts }: { facts: Fact[]; sources: number; holdFacts: string[] }) {
+  const [showRest, setShowRest] = useState(false)
+  const clashes = facts.filter((f) => f.kind === "conflict")
+  const rest = facts.filter((f) => f.kind !== "conflict")
+  const waiting = clashes.filter((f) => holdFacts.includes(f.fact)).length
+  const n = clashes.length
+  const verdict =
+    n === 0
+      ? `Everything matches across ${sources} record${sources === 1 ? "" : "s"}.`
+      : `${n} thing${n === 1 ? "" : "s"} ${n === 1 ? "doesn't" : "don't"} match across ${sources} records.` +
+        (waiting ? ` ${waiting === n && n === 1 ? "It is" : `${waiting} of them ${waiting === 1 ? "is" : "are"}`} what the paused move depends on.` : "")
+  return (
+    <div className="space-y-3">
+      <p className={`text-[17px] font-bold ${n ? "text-ink" : "text-jade-deep"}`}>{verdict}</p>
+      {clashes.map((f) => (
+        <Clash key={f.fact} fact={f.fact} versions={f.versions} missing={f.missing_from} />
+      ))}
+      <button onClick={() => setShowRest((v) => !v)} className="text-sm font-semibold text-sapphire underline decoration-dotted underline-offset-4">
+        {showRest ? "Hide" : `${rest.length} other thing${rest.length === 1 ? "" : "s"} the records agree on. Show ${rest.length === 1 ? "it" : "them"}.`}
+      </button>
+      {showRest && (
+        <ul className="space-y-2">
+          {rest.map((f) => (
+            <li key={f.fact} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-white/70 px-4 py-2.5 text-sm ring-1 ring-[#d0ddf0]">
               <FactName f={f.fact} />
-              {f.kind === "conflict" ? (
-                <Chip tone="amber">Records disagree</Chip>
-              ) : f.kind === "gap" ? (
-                <Chip tone="blue">Not in every record</Chip>
-              ) : (
-                <Chip tone="ok">{f.verified_by_human ? "Checked by a person" : "Agree"}</Chip>
-              )}
-            </div>
-            <div className="mt-2 overflow-x-auto">
-              <table className="w-full min-w-[440px] text-sm">
-                <tbody>
-                  {f.versions.map((v) => {
-                    const k = `${f.fact}:${v.resource_id}`
-                    return (
-                      <tr key={k} className="border-t border-ink/5 first:border-0">
-                        <td className="py-1.5 pr-3 text-ink">{v.source_name}</td>
-                        <td className="tabular py-1.5 pr-3 font-mono text-xs text-ink-soft">{v.recorded_date}</td>
-                        <td className="py-1.5 pr-3">
-                          <button className="font-semibold text-ink underline decoration-dotted underline-offset-4" title="Show where this value came from" onClick={() => setOpen((o) => ({ ...o, [k]: !o[k] }))}>
-                            {v.value}
-                          </button>
-                          {open[k] && <span className="ml-2 font-mono text-[11px] text-sapphire-deep">{v.resource_id}</span>}
-                        </td>
-                        <td className="py-1.5 text-right text-xs font-bold uppercase tracking-wide text-ink-soft">{STATUS_WORD[v.status] || v.status}</td>
-                      </tr>
-                    )
-                  })}
-                  {f.missing_from.map((s) => (
-                    <tr key={s} className="border-t border-ink/5 text-ink-soft">
-                      <td className="py-1.5 pr-3">{s}</td>
-                      <td />
-                      <td className="py-1.5 pr-3 italic">not mentioned</td>
-                      <td />
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {f.kind === "conflict" && <p className="mt-2 text-sm font-bold text-[#8a5a0f]">{NOTICE}</p>}
-          </li>
-        )
-      })}
-    </ul>
+              <span className="font-semibold text-ink">{f.versions.length ? shortValue(f.fact, f.versions[0].value, f.versions[0].status) : "not recorded anywhere"}</span>
+              <span className="ml-auto flex items-center gap-2">
+                {f.kind === "gap" && <span className="text-xs text-ink-soft">only {f.versions.length} of {sources} records mention it</span>}
+                {f.kind === "agree" ? <Chip tone="ok">{f.verified_by_human ? "Checked by a person" : "All agree"}</Chip> : <Chip tone="blue">Partly recorded</Chip>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
@@ -703,7 +713,7 @@ function EntryBox({ session, pid, reason, onDone, onError }: { session: Session;
           <motion.p key={done.fact + done.kind} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
             className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${done.kind === "conflict" ? "bg-human-soft text-[#8a5a0f]" : "bg-mist text-jade-deep"}`}>
             {done.kind === "conflict"
-              ? `Added to ${done.source}. ${FACT_LABEL[done.fact]}: the records still disagree; a human must resolve.`
+              ? `Added to ${done.source}. ${FACT_LABEL[done.fact]}: the records still don't match; a person must decide.`
               : `Added to ${done.source}. ${FACT_LABEL[done.fact]} now shows your entry beside the others.`}
           </motion.p>
         )}
@@ -772,10 +782,10 @@ function OrderBox({ session, pid, onDone, onError }: { session: Session; pid: st
         {result?.status === "needs_ack" && (
           <motion.div key="ack" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl bg-human-soft p-5 ring-2 ring-human/50">
             <p className="flex items-center gap-2 text-sm font-black tracking-wide text-[#8a5a0f]"><ShieldAlert className="size-4" /> VERIFICATION REQUIRED</p>
-            {result.warnings.map((w: Conflict) => (
+            {result.warnings.map((w) => (
               <div key={w.fact} className="mt-3 rounded-xl bg-white p-4 ring-1 ring-human/30">
-                <p className="text-sm">This order relies on <FactName f={w.fact} />. The records disagree:</p>
-                <Versions versions={w.versions} />
+                <p className="mb-2 text-sm">This order relies on <FactName f={w.fact} />:</p>
+                <Clash fact={w.fact} versions={w.versions} />
               </div>
             ))}
             <p className="mt-3 text-sm font-bold text-[#8a5a0f]">{NOTICE}</p>
@@ -787,25 +797,6 @@ function OrderBox({ session, pid, onDone, onError }: { session: Session; pid: st
         )}
       </AnimatePresence>
     </Panel>
-  )
-}
-
-function Versions({ versions }: { versions: Conflict["versions"] }) {
-  return (
-    <div className="mt-2 overflow-x-auto">
-      <table className="w-full min-w-[400px] text-sm">
-        <tbody>
-          {versions.map((v) => (
-            <tr key={v.resource_id} className="border-t border-ink/5 first:border-0">
-              <td className="py-1.5 pr-3 text-ink">{v.source_name}</td>
-              <td className="tabular py-1.5 pr-3 font-mono text-xs text-ink-soft">{v.recorded_date}</td>
-              <td className="py-1.5 pr-3 font-semibold text-ink">{v.value}</td>
-              <td className="py-1.5 text-right text-xs font-bold uppercase tracking-wide text-ink-soft">{STATUS_WORD[v.status] || v.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   )
 }
 
