@@ -61,6 +61,7 @@ type N = {
   fx?: number; fy?: number; fz?: number
 }
 type Label = SpriteText & { material: { depthWrite: boolean }; position: { set(x: number, y: number, z: number): void } }
+const STRUCTURE = new Set(["reports", "owns", "in"])  // the hospital underneath, never a memory
 type L = { key: string; source: string | N; target: string | N; kind: string; color: string; fade: number }
 
 const idOf = (e: string | N) => (typeof e === "string" ? e : e.id)
@@ -228,7 +229,9 @@ export function MemoryCanvas({
   // look dead every time the pointer crossed a node.
   const nodeColor = useCallback((n: N) => (!dim || hot.nodes.has(n.id) ? n.color : withAlpha(n.color, 0.3)), [dim, hot])
   const linkColor = useCallback((l: L) => {
-    if (dim) return hot.links.has(l.key) ? l.color : withAlpha(l.color, 0.07)
+    // Highlighting a structure line keeps it grey: "this is where they are lying" must never look like
+    // "this is something an agent remembers".
+    if (dim) return hot.links.has(l.key) ? (STRUCTURE.has(l.kind) ? "#7d9891" : l.color) : withAlpha(l.color, 0.07)
     const a = l.kind === "in" || l.kind === "reports" ? 0.13 : l.kind === "owns" ? 0.22 : 0.45 + l.fade * 0.5
     return withAlpha(l.color, a)
   }, [dim, hot])
@@ -277,7 +280,7 @@ export function MemoryCanvas({
            </div>` as any
         }
         linkColor={linkColor as any}
-        linkWidth={(l: L) => (hot.links.has(l.key) ? 2 : l.kind === "reports" || l.kind === "in" || l.kind === "owns" ? 0.35 : 0.7 + l.fade * 0.9)}
+        linkWidth={(l: L) => (STRUCTURE.has(l.kind) ? (hot.links.has(l.key) ? 0.7 : 0.35) : hot.links.has(l.key) ? 2 : 0.7 + l.fade * 0.9)}
         linkOpacity={1}
         linkCurvature={(l: L) => (l.kind === "offered" || l.kind === "kept" || l.kind === "missed" ? 0.22 : 0)}
         linkDirectionalParticles={(l: L) => (l.fade > 0.94 && l.kind === "kept" ? 2 : 0)}

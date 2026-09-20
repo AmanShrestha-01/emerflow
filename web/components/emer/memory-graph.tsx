@@ -53,6 +53,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
   const about = picked && !agent && !place
     ? (notes?.agents || []).flatMap((a) => a.notes.filter((n) => n.pid === picked).map((n) => ({ ...n, unit: a.unit })))
     : []
+  const who = picked ? (st?.patients || []).find((p) => p.pid === picked) : undefined
   const speaker = place ? AGENT[OWNER[place] || "ER"] : null
   const inside = place ? (st?.patients || []).filter((p) => p.unit === place) : []
 
@@ -108,7 +109,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
               </p>
             ) : (
               <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink-soft">
-                {own.length ? `${own.length} notes in mind` : "Nothing in mind yet"}
+                {own.length ? `${own.length} note${own.length === 1 ? "" : "s"} in mind` : "Nothing in mind yet"}
               </p>
             )}
             <ul className="mt-2 space-y-2 overflow-y-auto pr-1">
@@ -146,12 +147,20 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
 
         {picked && !agent && !place && (
           <>
-            <p className="font-heading text-lg font-bold text-ink">
-              {(st?.patients || []).find((p) => p.pid === picked)?.name || picked}
-            </p>
+            <p className="font-heading text-lg font-bold text-ink">{who?.name || picked}</p>
             <p className="text-xs text-ink-soft">
-              {about.length ? `${about.length} notes across the swarm` : "No agent is holding a note about them right now."}
+              {who ? `${who.complaint}${who.age ? `, ${who.age}` : ""} · ${whereIs(who)}` : ""}
             </p>
+            {about.length ? (
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink-soft">
+                {about.length} note{about.length === 1 ? "" : "s"} across the swarm
+              </p>
+            ) : (
+              <p className="mt-3 text-[15px] text-ink">
+                Nobody is holding a note about them. No agent has offered or moved them in this window, so there is
+                nothing to remember — the line you can see is where they are lying, not a memory.
+              </p>
+            )}
             <ul className="mt-2 space-y-2 overflow-y-auto pr-1">
               {about.map((n, i) => (
                 <li key={i} className="rounded-xl bg-white/60 p-2.5 text-[13px] leading-snug text-ink">
@@ -167,6 +176,13 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
       </aside>
     </div>
   )
+}
+
+/** Where a patient is, in plain words. */
+function whereIs(p: { state: string; unit?: string | null }): string {
+  if (p.state === "waiting") return "still waiting"
+  if (p.state === "held") return "held for a records check"
+  return p.unit ? `in ${(UNIT_NAME[p.unit] || p.unit).toLowerCase()}` : "in the hospital"
 }
 
 /** How much life a note has left, in plain words. */
