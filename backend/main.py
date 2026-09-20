@@ -70,6 +70,7 @@ def state():
 async def events(request: Request):
     async def stream():
         q = engine.bus.subscribe()
+        engine.watch()  # the hospital runs while at least one browser has this open
         try:
             snap = {"id": 0, "type": "snapshot", "clock": engine.h.clock, "cycle_id": None, "round": None,
                     "data": engine.state()}
@@ -86,6 +87,7 @@ async def events(request: Request):
                     yield ": heartbeat\n\n"
         finally:
             engine.bus.unsubscribe(q)
+            engine.unwatch()
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

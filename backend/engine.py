@@ -103,6 +103,7 @@ def _radio_stub(text: str) -> RadioParse:
 
 DEFAULT_INCIDENT = "bus crash"  # what the board calls a surge nobody named
 SPEEDS = (0.25, 0.5, 1, 2, 5)  # sim-minutes per real second; 1 is the default demo pace
+IDLE_GRACE_S = 20.0  # how long the last browser can be gone before the hospital stops
 
 
 class Engine:
@@ -111,6 +112,12 @@ class Engine:
         self.llm = llm or LLM()
         self.paused = False
         self.speed: float = 1.0  # one hospital minute a second: rounds follow each other without dead air
+        # Nobody has opened the site yet, so the hospital sits still. It starts the moment a browser opens
+        # the live feed and stops again a little after the last one closes: no clock, no Gemini calls, no
+        # bill, while nobody is looking.
+        self.watchers = 0
+        self.idle = True
+        self._idle_task: asyncio.Task | None = None
         self.drafts: dict[str, list[RadioPatient]] = {}
         self._loop_task: asyncio.Task | None = None
         self._cycle_task: asyncio.Task | None = None
@@ -153,8 +160,32 @@ class Engine:
     async def run_forever(self) -> None:
         while True:
             await asyncio.sleep(1 / self.speed)
-            if not self.paused:
+            if not self.paused and not self.idle:
                 self.step()
+
+    # ---------- nobody watching ----------
+    def watch(self) -> None:
+        """A browser opened the live feed. Start the hospital back up if it was sitting still."""
+        self.watchers += 1
+        if self.idle:
+            self.idle = False
+            self.emit("notice", {"text": "Someone is watching. The clock is running."})
+
+    def unwatch(self) -> None:
+        """A browser closed the live feed. Wait out the grace period before stopping: a page reload drops
+        the stream for a moment and should not pause the hospital."""
+        self.watchers = max(0, self.watchers - 1)
+        if self.watchers == 0 and self._idle_task is None:
+            self._idle_task = asyncio.create_task(self._go_idle())
+
+    async def _go_idle(self) -> None:
+        try:
+            await asyncio.sleep(IDLE_GRACE_S)
+            if self.watchers == 0 and not self.idle:
+                self.idle = True
+                self.emit("notice", {"text": "Nobody is watching. The clock is stopped until someone opens the site."})
+        finally:
+            self._idle_task = None
 
     def start(self) -> None:
         if self._loop_task is None:
@@ -264,7 +295,8 @@ Use at most 30 patients. Do not add anyone not described.""",
     # ---------- outputs ----------
     def state(self, include_feed: bool = True) -> dict:
         s = self.h.snapshot()
-        s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused, "speed": self.speed,
+        s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused or self.idle,
+                  "idle": self.idle, "watchers": self.watchers, "speed": self.speed,
                   "mode": self.llm.mode if not self.llm.breaker_open else "fallback",
                   "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at, "run": self.run_id, "incident": self.incident,
                   "model": self.llm.model_name,
