@@ -240,7 +240,7 @@ export function MemoryCanvas({
     // Highlighting a structure line keeps it grey: "this is where they are lying" must never look like
     // "this is something an agent remembers".
     if (dim) return hot.links.has(l.key) ? (STRUCTURE.has(l.kind) ? "#7d9891" : l.color) : withAlpha(l.color, 0.07)
-    const a = l.kind === "in" || l.kind === "reports" ? 0.13 : l.kind === "owns" ? 0.22 : 0.45 + l.fade * 0.5
+    const a = l.kind === "in" || l.kind === "reports" ? 0.10 : l.kind === "owns" ? 0.16 : 0.14 + l.fade * 0.26
     return withAlpha(l.color, a)
   }, [dim, hot])
 
@@ -288,14 +288,14 @@ export function MemoryCanvas({
            </div>` as any
         }
         linkColor={linkColor as any}
-        linkWidth={(l: L) => (STRUCTURE.has(l.kind) ? (hot.links.has(l.key) ? 0.7 : 0.35) : hot.links.has(l.key) ? 2 : 0.7 + l.fade * 0.9)}
+        linkWidth={(l: L) => (STRUCTURE.has(l.kind) ? (hot.links.has(l.key) ? 0.7 : 0.3) : hot.links.has(l.key) ? 2 : 0.5 + l.fade * 0.6)}
         linkOpacity={1}
         linkCurvature={(l: L) => (l.kind === "offered" || l.kind === "kept" || l.kind === "missed" ? 0.22 : 0)}
         // A light runs down every memory line, always from the agent that remembers to the patient it is
         // about, so the whole web reads as one direction of travel and nothing ever flows backwards. The
         // fresher the note, the quicker its light.
-        linkDirectionalParticles={(l: L) => (STRUCTURE.has(l.kind) || l.fade < 0.12 ? 0 : 1)}
-        linkDirectionalParticleWidth={(l: L) => (hot.links.has(l.key) ? 2.6 : 1.7)}
+        linkDirectionalParticles={(l: L) => (STRUCTURE.has(l.kind) ? 0 : 1)}
+        linkDirectionalParticleWidth={(l: L) => (hot.links.has(l.key) ? 3 : 2.2)}
         linkDirectionalParticleSpeed={(l: L) => 0.003 + l.fade * 0.009}
         linkDirectionalParticleColor={(l: L) => (dim && !hot.links.has(l.key) ? withAlpha(l.color, 0.12) : l.color)}
         onNodeHover={light as any}
@@ -312,8 +312,15 @@ export function MemoryCanvas({
         onEngineStop={() => {
           // Settled. Hold everything still so the web stops drifting under the pointer and a node can
           // actually be clicked; a patient arriving later is the only thing free to move.
-          for (const n of store.current.n.values()) {
-            if (n.x !== undefined) { n.fx = n.x; n.fy = n.y; n.fz = n.z }
+          // Settled, so pin everything where it stands — but centre it first. The web drifts away from the
+          // origin as it settles, and the camera and the glass shell are both fixed on the origin, so
+          // without this the ball ends up sitting off to one side of its own shell.
+          const all = [...store.current.n.values()].filter((n) => n.x !== undefined)
+          if (!all.length) return
+          const mid = all.reduce((a, n) => [a[0] + n.x!, a[1] + n.y!, a[2] + n.z!], [0, 0, 0]).map((v) => v / all.length)
+          for (const n of all) {
+            n.x! -= mid[0]; n.y! -= mid[1]; n.z! -= mid[2]
+            n.fx = n.x; n.fy = n.y; n.fz = n.z
           }
           settledAt.current = store.current.n.size
         }}
