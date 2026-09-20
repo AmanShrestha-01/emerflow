@@ -25,6 +25,10 @@ RECENT_S = 900.0   # but only the last 15 minutes count as a promise still owed
 CAP = 60           # notes per agent
 BLOCK_CHARS = 600  # how much of it may reach a prompt
 HERE = ("waiting", "placed", "held")  # a patient who has gone home is not "still with you"
+# A status line is a statement about right now, not an event, and it often quotes a bed count ("we have
+# four beds open"). Keeping several of them would leave stale counts sitting in a prompt next to the live
+# ones, which is exactly the arithmetic the models are not allowed to do. So only the newest survives.
+LATEST_ONLY = ("said",)
 
 
 @dataclass
@@ -44,10 +48,14 @@ class Memory:
         """Remember one thing. Saying the same thing again refreshes the note rather than adding another:
         a department that reports "we have no O-negative blood" every round for an hour is holding one
         fact, not sixty, and the cap should go on facts."""
-        for old in self.notes:
-            if old.kind == kind and old.text == text and old.pid == pid:
+        if kind in LATEST_ONLY:
+            for old in [n for n in self.notes if n.kind == kind]:
                 self.notes.remove(old)
-                break
+        else:
+            for old in self.notes:
+                if old.kind == kind and old.text == text and old.pid == pid:
+                    self.notes.remove(old)
+                    break
         self.notes.append(Note(time.monotonic(), clock, kind, text, pid))
 
     def live(self, now: float | None = None) -> list[Note]:

@@ -40,7 +40,7 @@ def test_a_note_past_the_window_is_forgotten():
 def test_memory_never_grows_past_the_cap():
     m = mem.Memory()
     for i in range(mem.CAP * 3):
-        m.add("said", f"line {i}", i)
+        m.add("happened", f"line {i}", i)  # an accumulating kind; "said" keeps only the newest
     assert len(m.notes) == mem.CAP
     assert m.notes[-1].text == f"line {mem.CAP * 3 - 1}"  # the newest survive
 
@@ -122,3 +122,14 @@ def test_saying_the_same_thing_again_refreshes_one_note():
     m.add("said", "we have no O-negative blood", 14)  # the same report, a round later
     assert [n.text for n in m.notes] == ["you offered Ana Diaz a ward bed", "we have no O-negative blood"]
     assert m.notes[-1].clock == 14  # and it is the fresh one that survived
+
+
+def test_only_the_newest_status_line_survives():
+    """A status line quotes a bed count. Two of them in one prompt is a stale number beside a live one."""
+    m = mem.Memory()
+    m.add("said", 'you said: "We have three beds open."', 10)
+    m.add("offered", "you offered Ana Diaz a ward bed", 11, "W-1")
+    m.add("said", 'you said: "We have one bed open."', 20)
+    said = [n.text for n in m.notes if n.kind == "said"]
+    assert said == ['you said: "We have one bed open."']
+    assert any(n.kind == "offered" for n in m.notes)  # events still accumulate

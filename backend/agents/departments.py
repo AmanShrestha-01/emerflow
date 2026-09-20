@@ -296,6 +296,7 @@ What happened in the last few rounds, on the record (written by the hospital's o
 {mem}
 If something you offered has happened, say so in a few plain words. If it has not, say what is still
 outstanding. Do not offer a patient again once they have moved.
+These are things that were said and done, not current numbers: every count comes from the state above.
 """ if mem else ""
     return f"""{_who(d)}
 You are in a hospital command center during a surge.
