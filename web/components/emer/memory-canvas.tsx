@@ -16,7 +16,10 @@ import { AGENT, AGENTS, OWNER, UNIT_NAME } from "@/lib/emer/agents"
 import type { HState, Patient } from "@/lib/emer/hospital"
 
 const UNITS = ["ER", "RESUS", "HALLWAY", "ICU", "STEPDOWN", "WARD", "OR", "PACU", "LOUNGE"]
-const MAX_EDGES = 400 // a busy hour holds a lot of notes; draw the freshest
+// A busy hour can leave every agent holding sixty notes. Cap what is drawn PER AGENT, newest first
+// (/api/memory returns them that way), so a crowded swarm thins evenly instead of one department
+// crowding the rest out — and so the hospital skeleton underneath is never what gets dropped.
+const PER_AGENT = 40
 
 // The three kinds of note an agent holds about a named patient, and what each looks like. Everything else
 // it remembers (what it said, what it was asked) has no patient attached, so it makes the agent bigger
@@ -129,10 +132,12 @@ export function MemoryCanvas({
     const held: Record<string, number> = {}
     for (const a of notes?.agents || []) {
       if (!want.has(a.unit)) continue
+      let drawnHere = 0
       for (const n of a.notes) {
         if (!n.here || n.age_s > maxAgeS) continue
         held[a.unit] = (held[a.unit] || 0) + 1
-        if (!n.pid || !want.has(n.pid)) continue
+        if (!n.pid || !want.has(n.pid) || drawnHere >= PER_AGENT) continue
+        drawnHere++
         const fade = Math.max(0.05, 1 - n.age_s / window)
         if (n.kind === "offered") join(a.unit, n.pid, "offered", PROMISE, fade)
         else if (n.kind === "happened") {
@@ -142,7 +147,7 @@ export function MemoryCanvas({
       }
     }
 
-    const drawn = [...links.values()].slice(-MAX_EDGES)
+    const drawn = [...links.values()]
     for (const l of drawn) {
       if (l.kind === "offered" || l.kind === "kept" || l.kind === "missed") {
         want.get(idOf(l.source))!.hits++

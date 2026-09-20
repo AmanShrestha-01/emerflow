@@ -86,7 +86,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
                   <li key={a.id} className="flex items-center gap-2 text-sm">
                     <span className="size-2.5 shrink-0 rounded-full" style={{ background: a.to }} />
                     <span className="flex-1 truncate text-ink">{a.name}</span>
-                    <span className="tabular-nums text-ink-soft">{n}</span>
+                    <span className="tabular-nums text-ink-soft">{a.id === "COORDINATOR" ? "—" : n}</span>
                   </li>
                 )
               })}
@@ -101,9 +101,16 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
               <p className="font-heading text-lg font-bold text-ink">{agent.name}</p>
             </div>
             <p className="text-xs text-ink-soft">{agent.role}</p>
-            <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink-soft">
-              {own.length ? `${own.length} notes in mind` : "Nothing in mind yet"}
-            </p>
+            {agent.id === "COORDINATOR" ? (
+              <p className="mt-3 text-[15px] text-ink">
+                The coordinator keeps no notes of its own. It reads all ten department reports fresh every
+                round and writes one plan from them.
+              </p>
+            ) : (
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink-soft">
+                {own.length ? `${own.length} notes in mind` : "Nothing in mind yet"}
+              </p>
+            )}
             <ul className="mt-2 space-y-2 overflow-y-auto pr-1">
               {own.map((n, i) => (
                 <li key={i} className="rounded-xl bg-white/60 p-2.5 text-[13px] leading-snug text-ink">

@@ -26,6 +26,20 @@ All times are **simulated minutes** (`clock`). One simulated minute passes per r
 | POST | `/api/control` | `{"action": "pause" \| "resume" \| "speed" \| "reset", "speed": 0.25 \| 0.5 \| 1 \| 2 \| 5, "key": "demo"}` | `{"ok": true}` |
 | GET | `/api/patient/{pid}` | | `PatientDetail` |
 | GET | `/api/compare` | | `Compare` |
+| GET | `/api/memory` | | `Memory`: what each department agent is still holding in mind |
+
+### Memory
+Written by code after every round, read back into each department's next prompt, and drawn on `/memory`.
+Only the ten departments hold notes; the coordinator holds none. `kind` is `said` (only the newest is
+kept, because a status line quotes counts), `offered`, `ordered` or `happened`. `here` is false once the
+patient has left, and those notes never reach a prompt.
+```json
+{"window_s": 7200.0,
+ "agents": [{"unit": "STEPDOWN",
+             "notes": [{"age_s": 12.4, "clock": 488, "kind": "offered", "pid": "WI-57",
+                        "name": "Grace Garcia", "text": "you offered Grace Garcia to a ward bed",
+                        "here": true}]}]}
+```
 
 ### State
 ```json

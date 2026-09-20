@@ -35,7 +35,7 @@ LATEST_ONLY = ("said",)
 class Note:
     at: float           # time.monotonic(), for fading
     clock: int          # hospital minute, for how the sentence reads
-    kind: str           # said | offered | ordered | happened | heard
+    kind: str           # said | offered | ordered | happened
     text: str           # one short plain-English line
     pid: str = ""       # the patient it is about, when there is one
 
