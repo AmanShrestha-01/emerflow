@@ -19,8 +19,8 @@ const KIND_WORD: Record<string, string> = {
   said: "said", offered: "offered", ordered: "was asked", happened: "what happened", heard: "heard",
 }
 
-export function MemoryGraph({ windowMin = 60, className = "" }: { windowMin?: number; className?: string }) {
-  const { st, ev } = useHospital()
+export function MemoryGraph({ ageMin = 15, className = "" }: { ageMin?: number; className?: string }) {
+  const { st } = useHospital()
   const [notes, setNotes] = useState<MemoryFeed | null>(null)
   const [picked, setPicked] = useState<string | null>(null)
   const box = useRef<HTMLDivElement>(null)
@@ -40,7 +40,7 @@ export function MemoryGraph({ windowMin = 60, className = "" }: { windowMin?: nu
       .then((m) => alive && setNotes(m))
       .catch(() => {})
     pull()
-    const t = setInterval(pull, 6000)
+    const t = setInterval(pull, 2500) // fast enough that a note visibly fades out of the web
     return () => { alive = false; clearInterval(t) }
   }, [])
 
@@ -62,8 +62,7 @@ export function MemoryGraph({ windowMin = 60, className = "" }: { windowMin?: nu
         {size.w > 0 && (
           <MemoryCanvas
             st={st}
-            feed={ev.feed || []}
-            windowMin={windowMin}
+            maxAgeS={ageMin * 60}
             notes={notes}
             width={size.w}
             height={size.h}

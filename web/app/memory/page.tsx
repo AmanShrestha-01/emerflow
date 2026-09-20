@@ -3,15 +3,13 @@
 import { useState } from "react"
 import { Nav } from "@/components/emer/nav"
 import { MemoryGraph } from "@/components/emer/memory-graph"
-import { AGENTS } from "@/lib/emer/agents"
-import { useHospital } from "@/lib/emer/hospital"
 
-const WINDOWS = [30, 60, 180]
+// How far back into each agent's memory to draw. 15 minutes is everything they hold (WINDOW_S in
+// backend/agents/memory.py); the shorter settings show only what is freshest in mind.
+const AGES = [1, 5, 15]
 
 export default function MemoryPage() {
-  const { st, ev } = useHospital()
-  const [win, setWin] = useState(60)
-  const moves = (ev.feed || []).filter((e) => e.type?.startsWith("move.")).length
+  const [age, setAge] = useState(15)
 
   return (
     <main className="relative min-h-screen pb-16">
@@ -21,52 +19,55 @@ export default function MemoryPage() {
           <div className="max-w-2xl">
             <h1 className="font-heading text-3xl font-bold tracking-tight text-ink">What the swarm is holding in mind</h1>
             <p className="mt-1 text-[15px] text-ink-soft">
-              Every line is one decision an agent made about one patient. Pull a node and the whole web follows; click
-              one to fly to it. Lines fade as they age and are gone at the end of the window, so a surge fills this in
-              and a quiet spell dissolves it.
+              Every line is one note an agent is holding right now, and every agent reads its own notes back before
+              it speaks again. Pull a node and the web follows; click one to fly to it. A note lives fifteen minutes,
+              so a surge fills this in and a quiet spell dissolves it.
             </p>
           </div>
-          <div role="radiogroup" aria-label="How far back to show" className="flex rounded-2xl bg-white/70 p-1 ring-1 ring-ink/10">
-            {WINDOWS.map((m) => (
+          <div role="radiogroup" aria-label="How far back into memory to show" className="flex rounded-2xl bg-white/70 p-1 ring-1 ring-ink/10">
+            {AGES.map((m) => (
               <button
                 key={m}
                 role="radio"
-                aria-checked={win === m}
-                onClick={() => setWin(m)}
-                className={`rounded-xl px-3.5 py-1.5 text-sm font-semibold ${win === m ? "bg-ink text-white" : "text-ink-soft"}`}
+                aria-checked={age === m}
+                onClick={() => setAge(m)}
+                className={`rounded-xl px-3.5 py-1.5 text-sm font-semibold ${age === m ? "bg-ink text-white" : "text-ink-soft"}`}
               >
-                {m} min
+                {m === 15 ? "All 15 min" : `Last ${m} min`}
               </button>
             ))}
           </div>
         </div>
 
-        <MemoryGraph windowMin={win} className="w-full" />
+        <MemoryGraph ageMin={age} className="w-full" />
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Agents</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Where it lives</p>
             <p className="mt-1 text-[15px] text-ink">
-              {AGENTS.length} of them: ten departments and the coordinator. A bigger dot means more decisions in this window.
+              In the running server, beside the hospital it describes. Each agent holds up to 40 notes for fifteen
+              real minutes; the oldest are dropped.
             </p>
           </div>
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Patients</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Who writes it</p>
             <p className="mt-1 text-[15px] text-ink">
-              {(st?.patients || []).length} in the hospital, each sitting by the unit holding them. Red is critical.
+              Code, never the models. A note only exists if the hospital actually saw it happen, so an agent cannot
+              remember something it invented.
             </p>
           </div>
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Decisions</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">What it changes</p>
             <p className="mt-1 text-[15px] text-ink">
-              {moves} moves in the live feed. A dashed line is a move the hospital rules refused.
+              An agent that offered a bed last round is told whether it happened, and says so. Without this, every
+              round started from nothing.
             </p>
           </div>
         </div>
 
         <p className="text-xs leading-relaxed text-ink-soft">
-          Drawn from the same live feed as the board: nothing here is stored, and nothing is sent anywhere. All patients
-          are synthetic.
+          Read live from the same server the board talks to. Nothing is stored anywhere else, and nothing is sent
+          anywhere. All patients are synthetic.
         </p>
       </div>
     </main>
