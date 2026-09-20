@@ -17,13 +17,14 @@ from typing import Callable
 from backend.agents.coordinator import Coordinator, question_for
 from backend.agents.departments import BY_NAME, DEPARTMENTS, OWNER, DepartmentAgent
 from backend.agents.llm import LLM
+from backend.agents import memory as mem
 from backend.agents.schemas import DeptAnswer, DeptStatus, Plan
 from backend.sim import approvals, fastlane
 from backend.sim.hospital import Hospital
 from backend.sim.models import Move
 from backend.sim.ladder import rule_plan
 from backend.sim.pipeline import commit
-from backend.sim.words import plain
+from backend.sim.words import place, plain, to_place
 
 MAX_HOPS = 2
 PERSONA = {d.name: d.archetype for d in DEPARTMENTS} | {"COORDINATOR": "Prism"}
@@ -41,6 +42,7 @@ class Swarm:
         self.llm = llm
         self.depts = {d.name: DepartmentAgent(d, llm) for d in DEPARTMENTS}
         self.coordinator = Coordinator(llm)
+        self.memory: dict[str, mem.Memory] = {d.name: mem.Memory() for d in DEPARTMENTS}
         self.cycles = 0
         self._msg = 0
 
@@ -68,12 +70,24 @@ class Swarm:
 
         async def one(name: str, agent: DepartmentAgent) -> None:
             thinking(name, ["COORDINATOR"], "status")
-            st, how = await agent.status(h)
+            st, how = await agent.status(h, mem.block(self.memory.get(name), h))
             statuses[name] = st
+            m = self.memory[name]
+            m.add("said", f'you said: "{plain(st.line, h)}"', h.clock)
+            for o in st.can_free[:3]:
+                ready = f", ready in {o.ready_in_min} min" if o.ready_in_min else ""
+                m.add("offered", f"you offered to move {mem.name(h, o.pid)} {to_place(o.to_unit)}{ready}",
+                      h.clock, o.pid, key=f"offer:{o.pid}>{o.to_unit}", dest=o.to_unit)
             ev("agent.status", {"unit": name, **st.model_dump(), "stale": how == "stale", "how": how}, "status")
             say(name, ["COORDINATOR"], "status", st.line, "status", [o.pid for o in st.can_free], how)
 
         await asyncio.gather(*(one(n, a) for n, a in self.depts.items()))
+
+        # The hospital's own record holds the last round to account. Code writes this, so it appears
+        # even offline, when the agents are speaking their rule-based lines.
+        note = mem.follow_up(self.memory, h)
+        if note:
+            say("VALIDATOR", ["COORDINATOR"], "system", note[0], "status", note[1])
 
         # 2. QUESTION (only on contention): coordinator asks; departments may ask each other directly.
         answers: dict[str, DeptAnswer] = {}
@@ -104,6 +118,18 @@ class Swarm:
         say("COORDINATOR", ["ALL"], "plan", plan.summary, "plan", [m.pid for m in plan.moves], how)
         orders = self._orders(h, plan)
         for dept, lines in orders.items():
+            if dept in self.memory:
+                # One note per patient, carrying their id. The order used to be a single line naming up
+                # to three people with no id attached, and a note with no id cannot be filtered when a
+                # patient goes home — so the coordinator's instruction about someone already discharged
+                # stayed in the prompt.
+                for ln in lines[:3]:
+                    pid = ln.split(" ")[0]
+                    if pid not in h.patients:
+                        continue
+                    asked = plain(ln.split(" (")[0], h).replace(" → ", " to ").replace(" to home", " home")
+                    self.memory[dept].add("ordered", f"the coordinator asked you to move {mem.readable(asked)}",
+                                          h.clock, pid, key=f"ordered:{pid}")
             say("COORDINATOR", [dept], "plan", "; ".join(lines[:6]) + ("; …" if len(lines) > 6 else ""), "plan",
                 [ln.split(" ")[0] for ln in lines], how)
 

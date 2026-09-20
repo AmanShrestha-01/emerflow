@@ -25,9 +25,37 @@ PLACE_WORDS: dict[str, str] = {
 }
 
 _PID = re.compile(r"\b(?:IN|MC|WI|RD|TR|HB)-\d+\b")
-_UNIT = re.compile(r"\b(STEPDOWN|PACU|RESUS|HALLWAY|LOUNGE)\b")
-_UNIT_PLAIN = {"STEPDOWN": "close-watch beds", "PACU": "recovery room", "RESUS": "critical care room",
-               "HALLWAY": "extra hallway beds", "LOUNGE": "going-home lounge"}
+# Every unit code that can end up inside a sentence a human reads. The validator's reasons and the
+# coordinator's orders both carry raw codes, and "(OR is full)" means nothing to anyone outside a hospital.
+# Every unit code that can end up inside a sentence a human reads. The validator's reasons and the
+# coordinator's orders both carry raw codes, and "(OR is full)" means nothing to anyone outside a
+# hospital. Each replacement brings its own article, so the pattern swallows one in front of the code:
+# "the OR" becomes "surgery", not "the surgery", and "an ICU bed" becomes "intensive care bed".
+_UNIT = re.compile(r"\b(?:a|an|the)\s+(?=[A-Z])|\b(STEPDOWN|PACU|RESUS|HALLWAY|LOUNGE|ICU|WARD|OR|ER|HOME|PARTNER)\b")
+_UNIT_PLAIN = {"STEPDOWN": "the close-watch beds", "PACU": "the recovery room", "RESUS": "the critical care room",
+               "HALLWAY": "the hallway beds", "LOUNGE": "the going-home lounge", "ICU": "intensive care",
+               "WARD": "the ward", "OR": "surgery", "ER": "the emergency department", "HOME": "home",
+               "PARTNER": "another hospital"}
+_PLURAL = re.compile(r"\bbeds (is|was|has)\b")
+
+
+def _unit_words(text: str) -> str:
+    """Codes to words, dropping an article in front of one so the replacement's own article stands."""
+    out, i = [], 0
+    for m in _UNIT.finditer(text):
+        if m.group(1) is None:                      # an article: keep it unless a code follows
+            nxt = _UNIT.search(text, m.end())
+            if nxt and nxt.start() == m.end() and nxt.group(1):
+                out.append(text[i:m.start()])
+                i = m.end()
+            continue
+        out.append(text[i:m.start()])
+        out.append(_UNIT_PLAIN[m.group(1)])
+        i = m.end()
+    out.append(text[i:])
+    said = "".join(out)
+    # a plural place needs a plural verb: "close-watch beds is full" is not English
+    return _PLURAL.sub(lambda m: "beds " + {"is": "are", "was": "were", "has": "have"}[m.group(1)], said)
 
 
 def facts_phrase(facts: list[str]) -> str:
@@ -39,14 +67,19 @@ def place(unit: str | None) -> str:
     return PLACE_WORDS.get(unit or "", unit or "")
 
 
+def to_place(unit: str | None) -> str:
+    """"to a ward bed", but "home" — you go home, you do not go to home."""
+    where = place(unit)
+    return where if where in ("home",) else f"to {where}"
+
+
 def plain(text: str, h: "Hospital") -> str:
     """Replace patient codes with names, and unit codes with everyday words."""
     def name(m: re.Match) -> str:
         p = h.patients.get(m.group(0))
         return p.name if p else "a patient"
     text = _PID.sub(name, text or "")
-    text = _UNIT.sub(lambda m: _UNIT_PLAIN[m.group(0)], text)
-    return close_watch(text)
+    return close_watch(_unit_words(text))
 
 
 _STEP_VERB = re.compile(r"\bstep down\b", re.I)

@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import random
 import re
 import statistics
 import uuid
 
+from backend.agents import memory as agent_memory
 from backend.agents.cycle import Swarm
 from backend.agents.llm import LLM
 from backend.agents.schemas import RadioParse, RadioPatient
@@ -23,6 +25,7 @@ from backend import gate
 from backend.deepchart.access import Access
 from backend.deepchart.portal import Portal
 
+log = logging.getLogger("emerflow.engine")
 DEMO_KEY = os.environ.get("EMERFLOW_DEMO_KEY", "demo")
 CYCLE_GAP = 2        # min sim-minutes between cycles when patients are waiting
 CYCLE_IDLE = 5       # otherwise, a cycle every 5 sim-minutes if a unit is >= 85%
@@ -103,6 +106,7 @@ def _radio_stub(text: str) -> RadioParse:
 
 DEFAULT_INCIDENT = "bus crash"  # what the board calls a surge nobody named
 SPEEDS = (0.25, 0.5, 1, 2, 5)  # sim-minutes per real second; 1 is the default demo pace
+IDLE_GRACE_S = 20.0  # how long the last browser can be gone before the hospital stops
 
 
 class Engine:
@@ -111,6 +115,12 @@ class Engine:
         self.llm = llm or LLM()
         self.paused = False
         self.speed: float = 1.0  # one hospital minute a second: rounds follow each other without dead air
+        # Nobody has opened the site yet, so the hospital sits still. It starts the moment a browser opens
+        # the live feed and stops again a little after the last one closes: no clock, no Gemini calls, no
+        # bill, while nobody is looking.
+        self.watchers = 0
+        self.idle = True
+        self._idle_task: asyncio.Task | None = None
         self.drafts: dict[str, list[RadioPatient]] = {}
         self._loop_task: asyncio.Task | None = None
         self._cycle_task: asyncio.Task | None = None
@@ -144,6 +154,19 @@ class Engine:
         self.bus.emit(type_, data, clock=t, cycle_id=cycle_id, round_=round_)
         if type_ in AUDITED:
             self.audit.append(audit_row(type_, data, t, cycle_id))
+        if type_ in ("move.applied", "move.flagged", "move.held", "move.dropped"):
+            # Whoever moved the patient — the swarm, the fast lane, the clock, or a human clearing a
+            # records hold — the departments concerned remember it.
+            swarm = getattr(self, "swarm", None)
+            if swarm is not None:
+                # This runs inside pipeline.commit(), after the patient has already been moved, and emit
+                # is also called from the clock and the fast lane, outside the cycle's own guard. A raise
+                # here would stop the hospital's clock for good. Memory is ornamental; moving patients is
+                # not, so it never gets to take the run down with it.
+                try:
+                    agent_memory.record_move(swarm.memory, self.h, type_, data)
+                except Exception as exc:  # noqa: BLE001 - deliberately swallowing to protect the clock
+                    log.warning("memory: could not record %s for %s: %s", type_, data.get("pid"), exc)
         if type_ in ("move.held", "move.flagged"):
             for c in data.get("conflicts", []):
                 self.caught.add((data["pid"], c["fact"]))
@@ -153,8 +176,40 @@ class Engine:
     async def run_forever(self) -> None:
         while True:
             await asyncio.sleep(1 / self.speed)
-            if not self.paused:
-                self.step()
+            if not self.paused and not self.idle:
+                try:
+                    self.step()
+                except Exception:
+                    # Without this the task dies and never restarts: the clock stops, no new events
+                    # arrive, and state() still says the hospital is running because nothing set paused.
+                    # asyncio would not even print the traceback, because _loop_task holds a reference.
+                    log.exception("the clock hit an error on minute %s; carrying on", self.h.clock)
+                    self.emit("notice", {"text": "One minute of the simulation could not be worked out. "
+                                                 "The hospital is still running."})
+
+    # ---------- nobody watching ----------
+    def watch(self) -> None:
+        """A browser opened the live feed. Start the hospital back up if it was sitting still."""
+        self.watchers += 1
+        if self.idle:
+            self.idle = False
+            self.emit("notice", {"text": "Someone is watching. The clock is running."})
+
+    def unwatch(self) -> None:
+        """A browser closed the live feed. Wait out the grace period before stopping: a page reload drops
+        the stream for a moment and should not pause the hospital."""
+        self.watchers = max(0, self.watchers - 1)
+        if self.watchers == 0 and self._idle_task is None:
+            self._idle_task = asyncio.create_task(self._go_idle())
+
+    async def _go_idle(self) -> None:
+        try:
+            await asyncio.sleep(IDLE_GRACE_S)
+            if self.watchers == 0 and not self.idle:
+                self.idle = True
+                self.emit("notice", {"text": "Nobody is watching. The clock is stopped until someone opens the site."})
+        finally:
+            self._idle_task = None
 
     def start(self) -> None:
         if self._loop_task is None:
@@ -191,7 +246,9 @@ class Engine:
         try:
             await self.swarm.run_cycle(self.h, self.emit, trigger)
         except Exception as exc:  # the board must keep moving
-            self.emit("notice", {"text": f"swarm cycle failed ({exc}); code fallback continues"})
+            log.exception("swarm cycle failed")
+            self.emit("notice", {"text": "The AI round could not finish. The hospital rules are still "
+                                         "placing patients."})
 
     # ---------- inputs ----------
     def surge(self, n: int = 25, incident: str = "") -> int:
@@ -250,9 +307,11 @@ Use at most 30 patients. Do not add anyone not described.""",
             self.paused = True
         elif action == "resume":
             self.paused = False
+            self.idle = False  # a board whose live feed died is still a person asking for the clock
         elif action == "speed" and speed in SPEEDS:
             self.speed = speed
             self.paused = False
+            self.idle = False
         elif action == "reset":
             if key != DEMO_KEY:
                 raise PermissionError("reset needs the demo key")
@@ -264,7 +323,8 @@ Use at most 30 patients. Do not add anyone not described.""",
     # ---------- outputs ----------
     def state(self, include_feed: bool = True) -> dict:
         s = self.h.snapshot()
-        s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused, "speed": self.speed,
+        s.update({"level_name": escalation.NAMES[self.h.level], "paused": self.paused or self.idle,
+                  "idle": self.idle, "watchers": self.watchers, "speed": self.speed,
                   "mode": self.llm.mode if not self.llm.breaker_open else "fallback",
                   "clock_start": CLOCK_START, "metrics": metrics(self.h), "bus_crash_at": self.bus_crash_at, "run": self.run_id, "incident": self.incident,
                   "model": self.llm.model_name,

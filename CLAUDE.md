@@ -44,18 +44,28 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 - `coordinator.py`: one Gemini call per cycle; code writes its contention question.
 - **All agents use `gemini-2.5-flash`** (set in `.env`). Each department has its own persona (role, voice, what it pushes for / back on) and temperature in `departments.py`.
 - `cycle.py`: status (parallel) → optional question → plan → apply at live state → approvals → fallback.
+- `memory.py`: what each department remembers. Code writes one short note per round (what it said, offered,
+  was asked, and what became of those patients); the agent reads its own notes back in the next prompt.
+  Notes fade after 5 hours, 60 per agent, and never mention a patient who has left. **Counts never live in
+  memory** — a status line keeps only its newest copy, so no stale bed number reaches a prompt. Served at
+  `GET /api/memory`, drawn as a 3D graph on `/memory`. The coordinator has no memory of its own.
 - `llm.py`: the Vertex client, timeouts, circuit breaker, stub mode, and recording to `replays/live.jsonl`.
 - `schemas.py`: the answer form each agent kind must use.
 
 **Engine and API:**
 - `backend/engine.py`: the running loop, cycle triggers, radio intake, metrics, and the headless three-arm `compare()`.
-  Speed is sim-minutes per real second: `SPEEDS = (0.25, 0.5, 1, 2, 5)`, default 0.5.
+  Speed is sim-minutes per real second: `SPEEDS = (0.25, 0.5, 1, 2, 5)`, default 1.
+  **The clock only runs while a browser holds `/api/events` open**: a fresh server sits still, the first
+  viewer starts it, and it stops `IDLE_GRACE_S` (20s) after the last one leaves. No Gemini calls, no bill,
+  while nobody is looking.
 - `backend/main.py`: FastAPI (REST plus SSE at `/api/events`). Serves `web/out` first (its pages, including DeepChart `/doctor` and every `/p/...` → `web/out/p/index.html`), then falls back to `frontend/dist`. Unknown `/api/...` paths get a 404, never a page. GET and HEAD.
 - When the AI plan asks for no big action, the rules (`ladder.rule_plan(escalate=True)`) may still suggest one; it still needs a person's approval.
 
 **Frontend: `web/`** (Next.js 16 app router, TypeScript, Tailwind v4, shadcn in `components/ui`). Pages:
 - `/`: the EMS map (`app/ems/page.tsx`, also at `/ems`). Built on Robert's capacity-map UI vendored in `components/capacity/` (map, simulator, hooks, recorded Baltimore fixtures). The nearest/fastest list and the ER report are ours. `lib/emer/capacity.ts` overlays our live ER onto Johns Hopkins; every other hospital is simulated. Robert's live server is used only if `NEXT_PUBLIC_SWARM_URL` is set.
 - `/board`: command board (needs login). KPI cards, bed wall (occupied / empty / getting ready / just arrived), big decisions, live AI chat, speed control, Bus crash / Busy night, and the 5-step **guided demo** (`/board?demo=1`, `components/emer/board/demo-story.tsx`).
+- `/memory`: the swarm's memory as a 3D force-directed sphere (`components/emer/memory-graph.tsx` plus
+  `memory-canvas.tsx`, which is WebGL and loads in the browser only). Every line is one live note.
 - `/workflow`: the AI round on a 3D stage, live. `/overview`: the swarm landing page (hero, 3D agent sphere, meet the agents). `/login`.
 - `/doctor`: DeepChart (`app/doctor/page.tsx`, API client `lib/emer/portal.ts`), doctor login only, **blue** background (`.theme-doctor` in `globals.css`). `/p/<token>`: the patient link (`app/p/page.tsx`, one static page; FastAPI serves it for every `/p/...`), asks for the date of birth first. The board hospital is Johns Hopkins; the two outside hospitals are fictional (`backend/deepchart/records.py`); doctors pick their name at login (`DOCTORS` in `backend/deepchart/access.py`). Board hold cards (`Decisions` in `components/emer/board/parts.tsx`) link to `/doctor?pid=&hold=`.
 - Data: `lib/emer/useEvents.js` + `api.js` + `mock.js` (copied from `frontend/src`), shared through `lib/emer/hospital.tsx` (`useHospital()`).

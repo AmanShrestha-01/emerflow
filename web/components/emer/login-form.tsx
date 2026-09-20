@@ -45,7 +45,12 @@ export function LoginForm({ className = "", autoFocus = true }: { className?: st
       if (s.role === "doctor") router.replace(safe?.startsWith("/doctor") ? safe : "/doctor")
       else router.replace(safe && !safe.startsWith("/doctor") ? safe : "/board")
     } catch (err) {
-      setError((err as Error).message)
+      // A browser reports an unreachable server as a bare "Failed to fetch", which on stage reads as
+      // "the login is broken" rather than "the server is not up".
+      const msg = (err as Error).message
+      setError(/failed to fetch|networkerror|load failed/i.test(msg)
+        ? "Can't reach the hospital server. Is the backend running?"
+        : msg)
       setBusy(false)
     }
   }

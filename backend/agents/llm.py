@@ -20,15 +20,22 @@ from typing import Callable
 from pydantic import BaseModel
 
 def model_label(model: str) -> str:
-    """"gemini-2.5-flash" -> "Gemini 2.5 Flash", for the pages that name the model."""
-    return " ".join(w.capitalize() if not w[0].isdigit() else w for w in model.split("-"))
+    """"gemini-3.1-pro-preview" -> "Gemini 3.1 Pro", for the pages that name the model.
+
+    The "-preview" suffix is which release channel we are on, not a different model, so it is dropped:
+    the pages should say what the model is called."""
+    parts = [w for w in model.split("-") if w != "preview"]
+    return " ".join(w.capitalize() if not w[0].isdigit() else w for w in parts)
 
 
-def _thinking(types, model: str):
-    """Keep the agents quick. Gemini 3.x names this a level; 2.5 takes a token budget and rejects a level."""
+def _thinking(types, model: str, tier: str):
+    """Gemini 3.x names this a level; 2.5 takes a token budget and rejects a level outright.
+
+    Thinking is kept low: a round is a dozen calls, and thinking tokens are charged on every one of
+    them. Set EMERFLOW_THINKING=high to let the model reason harder, and expect a slower, dearer round."""
     if model.startswith("gemini-2."):
         return types.ThinkingConfig(thinking_budget=0)  # 2.5 Flash: no thinking tokens, the fastest setting
-    return types.ThinkingConfig(thinking_level="low")
+    return types.ThinkingConfig(thinking_level=os.environ.get("EMERFLOW_THINKING", "low"))
 
 
 PRO_MODEL = os.environ.get("GEMINI_PRO_MODEL", "gemini-2.5-flash")
@@ -140,7 +147,7 @@ class LLM:
                         response_mime_type="application/json",
                         response_schema=schema,
                         temperature=temperature,
-                        thinking_config=_thinking(types, PRO_MODEL if tier == "pro" else LITE_MODEL),
+                        thinking_config=_thinking(types, PRO_MODEL if tier == "pro" else LITE_MODEL, tier),
                     ),
                 ),
                 timeout=timeout,

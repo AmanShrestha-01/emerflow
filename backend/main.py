@@ -70,6 +70,7 @@ def state():
 async def events(request: Request):
     async def stream():
         q = engine.bus.subscribe()
+        engine.watch()  # the hospital runs while at least one browser has this open
         try:
             snap = {"id": 0, "type": "snapshot", "clock": engine.h.clock, "cycle_id": None, "round": None,
                     "data": engine.state()}
@@ -86,6 +87,7 @@ async def events(request: Request):
                     yield ": heartbeat\n\n"
         finally:
             engine.bus.unsubscribe(q)
+            engine.unwatch()
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -119,18 +121,20 @@ def radio_confirm(draft_id: str):
 
 @app.post("/api/approvals/{approval_id}")
 def approve(approval_id: str, body: ApproveIn):
-    if approval_id not in engine.h.approvals:
+    try:
+        return {"ok": True, "detail": engine.approve(approval_id, body.approve)}
+    except KeyError:  # someone else resolved it, or the clock expired it, between the click and here
         raise HTTPException(404, "approval no longer pending")
-    return {"ok": True, "detail": engine.approve(approval_id, body.approve)}
 
 
 @app.post("/api/holds/{hold_id}/resolve")
 def resolve(hold_id: str, body: ResolveIn):
-    if hold_id not in engine.h.holds:
-        raise HTTPException(404, "hold no longer pending")
     if body.outcome not in ("proceed", "cancel"):
         raise HTTPException(400, "outcome must be proceed or cancel")
-    return {"ok": True, "detail": engine.resolve_hold(hold_id, body.outcome)}
+    try:
+        return {"ok": True, "detail": engine.resolve_hold(hold_id, body.outcome)}
+    except KeyError:  # the board and DeepChart can both resolve a hold
+        raise HTTPException(404, "hold no longer pending")
 
 
 @app.post("/api/control")
@@ -177,6 +181,13 @@ async def ems_dispatch(body: DispatchIn):
         raise HTTPException(400, "no hospitals")
     plan, how = await d.dispatch(engine.llm, body)
     return {"how": how, **plan.model_dump()}
+
+
+@app.get("/api/memory")
+def agent_memory():
+    """What each agent is holding in mind right now: short notes written by code, newest first."""
+    from backend.agents import memory as mem
+    return mem.as_json(engine.swarm.memory, engine.h)
 
 
 @app.get("/api/audit")
