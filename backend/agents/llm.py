@@ -20,8 +20,12 @@ from typing import Callable
 from pydantic import BaseModel
 
 def model_label(model: str) -> str:
-    """"gemini-2.5-flash" -> "Gemini 2.5 Flash", for the pages that name the model."""
-    return " ".join(w.capitalize() if not w[0].isdigit() else w for w in model.split("-"))
+    """"gemini-3.1-pro-preview" -> "Gemini 3.1 Pro", for the pages that name the model.
+
+    The "-preview" suffix is which release channel we are on, not a different model, so it is dropped:
+    the pages should say what the model is called."""
+    parts = [w for w in model.split("-") if w != "preview"]
+    return " ".join(w.capitalize() if not w[0].isdigit() else w for w in parts)
 
 
 def _thinking(types, model: str, tier: str):
