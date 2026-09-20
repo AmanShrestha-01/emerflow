@@ -76,7 +76,8 @@ class Swarm:
             m.add("said", f'you said: "{plain(st.line, h)}"', h.clock)
             for o in st.can_free[:3]:
                 ready = f", ready in {o.ready_in_min} min" if o.ready_in_min else ""
-                m.add("offered", f"you offered to move {mem.name(h, o.pid)} {to_place(o.to_unit)}{ready}", h.clock, o.pid)
+                m.add("offered", f"you offered to move {mem.name(h, o.pid)} {to_place(o.to_unit)}{ready}",
+                      h.clock, o.pid, key=f"offer:{o.pid}>{o.to_unit}", dest=o.to_unit)
             ev("agent.status", {"unit": name, **st.model_dump(), "stale": how == "stale", "how": how}, "status")
             say(name, ["COORDINATOR"], "status", st.line, "status", [o.pid for o in st.can_free], how)
 
@@ -118,9 +119,17 @@ class Swarm:
         orders = self._orders(h, plan)
         for dept, lines in orders.items():
             if dept in self.memory:
-                asked = plain("; ".join(ln.split(" (")[0] for ln in lines[:3]), h).replace(" → ", " to ").replace(" to home", " home")
-                asked = mem.readable(asked)
-                self.memory[dept].add("ordered", f"the coordinator asked you to move {asked}", h.clock)
+                # One note per patient, carrying their id. The order used to be a single line naming up
+                # to three people with no id attached, and a note with no id cannot be filtered when a
+                # patient goes home — so the coordinator's instruction about someone already discharged
+                # stayed in the prompt.
+                for ln in lines[:3]:
+                    pid = ln.split(" ")[0]
+                    if pid not in h.patients:
+                        continue
+                    asked = plain(ln.split(" (")[0], h).replace(" → ", " to ").replace(" to home", " home")
+                    self.memory[dept].add("ordered", f"the coordinator asked you to move {mem.readable(asked)}",
+                                          h.clock, pid, key=f"ordered:{pid}")
             say("COORDINATOR", [dept], "plan", "; ".join(lines[:6]) + ("; …" if len(lines) > 6 else ""), "plan",
                 [ln.split(" ")[0] for ln in lines], how)
 

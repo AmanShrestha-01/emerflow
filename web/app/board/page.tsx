@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { BedDouble, Sparkles, Workflow } from "lucide-react"
-import { Nav } from "@/components/emer/nav"
+import { LiveBadge, Nav } from "@/components/emer/nav"
 import { LiveChat } from "@/components/emer/live-chat"
 import { Arrivals, BedWall, Decisions, Kpis, PatientSheet, SpeedMeter, StopButton } from "@/components/emer/board/parts"
 import { DemoStory, useStory } from "@/components/emer/board/demo-story"
@@ -98,6 +98,8 @@ function Board() {
           </div>
           {st && (
             <div className="flex flex-wrap items-center gap-2">
+              {/* A dead backend used to be invisible here: the board froze and looked perfectly healthy. */}
+              <LiveBadge />
               <StopButton st={st} />
               <SpeedMeter st={st} />
             </div>

@@ -1,6 +1,7 @@
 """What each agent remembers: written by code, faded by time, never about someone who has gone home."""
 import asyncio
 import random
+import re
 
 from backend.agents import memory as mem
 from backend.agents.cycle import Swarm
@@ -31,10 +32,11 @@ def _rounds(h, rng, swarm, n: int, emit=None):
 
 def test_a_note_past_the_window_is_forgotten():
     m = mem.Memory()
-    m.add("said", "old news", 1)
+    m.add("happened", "old news", 1)  # an accumulating kind: "said" keeps only one note either way
     m.notes[0].at -= mem.WINDOW_S + 1  # pretend it was written before the window
-    m.add("said", "fresh", 2)
-    assert [n.text for n in m.live()] == ["fresh"]
+    m.add("happened", "fresh", 2)
+    assert len(m.notes) == 2          # both are still stored...
+    assert [n.text for n in m.live()] == ["fresh"]  # ...but only one is still in mind
 
 
 def test_memory_never_grows_past_the_cap():
@@ -110,6 +112,8 @@ def test_the_follow_up_line_counts_promises_kept():
     text, pids = note
     assert text.startswith("Following up:")
     assert all(p in h.patients for p in pids)
+    kept, total = (int(n) for n in re.search(r"Following up: (\d+) of (\d+)", text).groups())
+    assert 0 <= kept <= total, text
 
 
 def test_a_second_round_still_keeps_the_swarm_invariants():
@@ -186,5 +190,80 @@ def test_notes_are_written_in_words_not_codes():
     text = memories["STEPDOWN"].live()[0].text
     assert "the close-watch beds are full" in text, text
     assert "STEPDOWN" not in text
-    assert mem.readable("X to the ward") == "an unidentified patient to the ward"
     assert mem.readable("X-ray is busy") == "X-ray is busy"  # not every X is a patient
+
+    # a casualty nobody has identified is literally named X, and the validator's reasons quote patient
+    # codes, so the raw name came back through the reason even though the subject was sanitised
+    nameless = next(iter(h.patients.values()))
+    nameless.name = "X"
+    mem.record_move(memories, h, "move.dropped",
+                    {"pid": nameless.pid, "to_unit": "OR", "reason": f"{nameless.pid} is waiting for a scan"})
+    got = memories["ER"].live()[-1].text if memories["ER"].live() else ""
+    got = [n.text for n in memories["OR"].live()][-1] if "OR" in memories else got
+    assert " X " not in f" {got} ", got
+
+
+def _depts():
+    return {d: mem.Memory() for d in ("ER", "ICU", "STEPDOWN", "OR", "STAFFING", "IMAGING", "XRAY", "LAB",
+                                      "BLOODBANK", "EMS")}
+
+
+def test_a_promise_is_a_patient_and_a_place():
+    """Matching on the patient alone credited a department for a move it did not make: it offered a ward
+    bed, somebody else took the patient to the critical care room, and the board called it kept."""
+    h, _ = _surged()
+    memories = _depts()
+    p = next(x for x in h.patients.values() if x.state in mem.HERE)
+    memories["ER"].add("offered", f"you offered to move {p.name} to a ward bed", h.clock, p.pid,
+                       key=f"offer:{p.pid}>WARD", dest="WARD")
+    mem.record_move(memories, h, "move.applied", {"pid": p.pid, "from_unit": "ER", "to_unit": "RESUS"})
+
+    text, _ = mem.follow_up(memories, h)
+    assert text.startswith("Following up: 0 of 1"), text  # they moved, but not where it was promised
+
+    mem.record_move(memories, h, "move.applied", {"pid": p.pid, "from_unit": "RESUS", "to_unit": "WARD"})
+    text, _ = mem.follow_up(memories, h)
+    assert text.startswith("Following up: 1 of 1"), text  # now the promise is kept
+
+
+def test_a_life_saving_move_is_not_reported_as_a_broken_promise():
+    """A records conflict on a life-saving move comes back "flagged", and that event used to carry no
+    source unit — so the department that offered the patient never learned it had happened, and the
+    board announced it had broken its word about a patient already lying in the new bed."""
+    h, _ = _surged()
+    memories = _depts()
+    p = next(x for x in h.patients.values() if x.unit == "ER")
+    memories["ER"].add("offered", f"you offered to move {p.name} to an intensive care bed", h.clock, p.pid,
+                       key=f"offer:{p.pid}>ICU", dest="ICU")
+    mem.record_move(memories, h, "move.flagged", {"pid": p.pid, "from_unit": "ER", "to_unit": "ICU"})
+
+    assert any(n.kind == "happened" and n.ok for n in memories["ER"].live()), "the source never learned"
+    text, _ = mem.follow_up(memories, h)
+    assert text.startswith("Following up: 1 of 1"), text
+    assert "still here" not in text
+
+
+def test_a_department_that_owns_no_beds_still_hears_the_answer():
+    """Five of the ten departments speak for no unit. They can still offer a patient, and used to be
+    named on the board every round for a promise that had in fact been kept."""
+    h, _ = _surged()
+    memories = _depts()
+    p = next(x for x in h.patients.values() if x.state in mem.HERE)
+    memories["LAB"].add("offered", f"you offered to move {p.name} to a ward bed", h.clock, p.pid,
+                        key=f"offer:{p.pid}>WARD", dest="WARD")
+    mem.record_move(memories, h, "move.applied", {"pid": p.pid, "from_unit": "ER", "to_unit": "WARD"})
+    assert [n.text for n in memories["LAB"].live() if n.kind == "happened"], "the lab never heard"
+    text, _ = mem.follow_up(memories, h)
+    assert text.startswith("Following up: 1 of 1"), text
+
+
+def test_an_order_about_a_discharged_patient_leaves_the_prompt():
+    """An order used to be one line naming three people with no id attached, and a note with no id
+    cannot be filtered when a patient goes home."""
+    h, _ = _surged()
+    m = mem.Memory()
+    p = next(x for x in h.patients.values() if x.state in mem.HERE)
+    m.add("ordered", f"the coordinator asked you to move {p.name} home", h.clock, p.pid, key=f"ordered:{p.pid}")
+    assert p.name in mem.block(m, h)
+    p.state = "discharged"
+    assert mem.block(m, h) == ""

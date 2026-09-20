@@ -56,11 +56,12 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
                                "because": m.because, "conflicts": conflicts_json(verdict)}, **ev)
             return "held"
         p.records_flag = True
+        was_in = p.unit  # before the move, so the department losing the bed can be told about it too
         h.apply_move(m)
         about = facts_phrase([c.fact for c in verdict.conflicts])
         p.note, p.note_by = (f"Moved to {place(m.to_unit)} straight away to save their life. Two hospitals' records "
                              f"disagree about {about}, so a person should check.", BY.get(m.source, m.source))
-        emit("move.flagged", {"pid": p.pid, "to_unit": m.to_unit, "because": m.because,
+        emit("move.flagged", {"pid": p.pid, "from_unit": was_in, "to_unit": m.to_unit, "because": m.because,
                               "conflicts": conflicts_json(verdict)}, **ev)
         return "flagged"
     from_unit = p.unit

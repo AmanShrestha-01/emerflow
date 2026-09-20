@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import random
 import re
@@ -24,6 +25,7 @@ from backend import gate
 from backend.deepchart.access import Access
 from backend.deepchart.portal import Portal
 
+log = logging.getLogger("emerflow.engine")
 DEMO_KEY = os.environ.get("EMERFLOW_DEMO_KEY", "demo")
 CYCLE_GAP = 2        # min sim-minutes between cycles when patients are waiting
 CYCLE_IDLE = 5       # otherwise, a cycle every 5 sim-minutes if a unit is >= 85%
@@ -157,7 +159,14 @@ class Engine:
             # records hold — the departments concerned remember it.
             swarm = getattr(self, "swarm", None)
             if swarm is not None:
-                agent_memory.record_move(swarm.memory, self.h, type_, data)
+                # This runs inside pipeline.commit(), after the patient has already been moved, and emit
+                # is also called from the clock and the fast lane, outside the cycle's own guard. A raise
+                # here would stop the hospital's clock for good. Memory is ornamental; moving patients is
+                # not, so it never gets to take the run down with it.
+                try:
+                    agent_memory.record_move(swarm.memory, self.h, type_, data)
+                except Exception as exc:  # noqa: BLE001 - deliberately swallowing to protect the clock
+                    log.warning("memory: could not record %s for %s: %s", type_, data.get("pid"), exc)
         if type_ in ("move.held", "move.flagged"):
             for c in data.get("conflicts", []):
                 self.caught.add((data["pid"], c["fact"]))

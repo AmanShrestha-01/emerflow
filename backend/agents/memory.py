@@ -41,13 +41,16 @@ class Note:
     text: str           # one short plain-English line
     pid: str = ""       # the patient it is about, when there is one
     key: str = ""       # notes sharing a key describe the same thing: only the newest is true
+    dest: str = ""      # where they were headed, so a promise can be matched to its outcome
+    ok: bool = False    # for an outcome: did they actually go
 
 
 @dataclass
 class Memory:
     notes: deque[Note] = field(default_factory=lambda: deque(maxlen=CAP))
 
-    def add(self, kind: str, text: str, clock: int, pid: str = "", key: str = "") -> None:
+    def add(self, kind: str, text: str, clock: int, pid: str = "", key: str = "",
+            dest: str = "", ok: bool = False) -> None:
         """Remember one thing.
 
         Saying the same thing again refreshes the note rather than adding another: a department that
@@ -68,7 +71,7 @@ class Memory:
                 if old.kind == kind and old.text == text and old.pid == pid:
                     self.notes.remove(old)
                     break
-        self.notes.append(Note(time.monotonic(), clock, kind, text, pid, key))
+        self.notes.append(Note(time.monotonic(), clock, kind, text, pid, key, dest, ok))
 
     def live(self, now: float | None = None) -> list[Note]:
         """The notes still inside the window, oldest first."""
@@ -97,7 +100,8 @@ def record_move(memories: dict[str, "Memory"], h: Hospital, type_: str, d: dict)
         return
     who = name(h, pid)
     where = to_place(to_unit)
-    if type_ in MOVED:
+    went = type_ in MOVED
+    if went:
         text = f"{who} moved {where}"
     elif type_ == "move.held":
         text = f"{who} did not move {where}: the records check paused it for a person to look at"
@@ -107,11 +111,19 @@ def record_move(memories: dict[str, "Memory"], h: Hospital, type_: str, d: dict)
 
     # the department losing the bed and the one gaining it; for a move that never happened, only the one
     # that was being asked to take them
-    from_unit = d.get("from_unit") or (h.patients[pid].unit if type_ not in MOVED else None)
-    for dept in {OWNER.get(from_unit or "", ""), OWNER.get(to_unit, "")}:
+    text = readable(text)
+    from_unit = d.get("from_unit") or (None if went else h.patients[pid].unit)
+    told = {OWNER.get(from_unit or "", ""), OWNER.get(to_unit, "")}
+    # and whoever promised this move, even if they own neither end of it. Five of the ten departments
+    # speak for no unit at all, so without this they could offer a patient and never hear the answer —
+    # and follow_up() would name them on the board every round for a promise that was in fact kept.
+    told |= {unit for unit, m in memories.items()
+             if any(n.kind == "offered" and n.pid == pid and n.dest == to_unit for n in m.live())}
+    for dept in told:
         if dept in memories:
             # keyed on patient and destination: a later answer about the same move replaces the earlier
-            memories[dept].add("happened", text, h.clock, pid, key=f"move:{pid}>{to_unit}")
+            memories[dept].add("happened", text, h.clock, pid, key=f"move:{pid}>{to_unit}",
+                               dest=to_unit, ok=went)
 
 
 def here(h: Hospital, pid: str) -> bool:
@@ -158,16 +170,24 @@ def follow_up(memories: dict[str, "Memory"], h: Hospital) -> tuple[str, list[str
     This is the part that still shows follow-through offline: with no model running the agents speak
     fixed rule text, but this line is ours.
     """
-    kept: list[str] = []
-    owed: list[tuple[str, str]] = []  # (department, patient) offered and still here
-    cut = time.monotonic() - RECENT_S  # an offer made an hour ago is history, not an open promise
+    kept: set[str] = set()
+    owed: list[tuple[str, str]] = []   # (department, patient) promised and still waiting
+    seen: set[tuple[str, str]] = set()  # a promise is one promise even if two departments made it
+    cut = time.monotonic() - RECENT_S   # an offer made hours ago is history, not an open promise
     for unit, m in memories.items():
         notes = [n for n in m.live() if n.at >= cut]
-        offered = {n.pid for n in notes if n.kind == "offered" and n.pid}
-        moved = {n.pid for n in notes if n.kind == "happened" and n.pid and " moved to " in n.text}
-        for pid in offered:
-            if pid in moved:
-                kept.append(pid)
+        # A promise is a patient AND a destination. Matching on the patient alone credited a department
+        # for a move it did not make: it offered a ward bed, the fast lane took the patient to the
+        # critical care room instead, and the board reported the promise kept.
+        offered = {(n.pid, n.dest) for n in notes if n.kind == "offered" and n.pid}
+        done = {(n.pid, n.dest) for n in notes if n.kind == "happened" and n.ok and n.pid}
+        for promise in offered:
+            if promise in seen:
+                continue
+            seen.add(promise)
+            pid = promise[0]
+            if promise in done:
+                kept.add(pid)
             elif here(h, pid):
                 owed.append((unit, pid))
     if not kept and not owed:
@@ -175,12 +195,12 @@ def follow_up(memories: dict[str, "Memory"], h: Hospital) -> tuple[str, list[str
     total = len(kept) + len(owed)
     said = f"Following up: {len(kept)} of {total} offered moves happened"
     if kept:
-        said += f" ({', '.join(name(h, p) for p in sorted(set(kept))[:3])})"
+        said += f" ({', '.join(name(h, p) for p in sorted(kept)[:3])})"
     said += "."
     if owed:
         unit, pid = owed[0]
         said += f" {UNIT_SAYS.get(unit, unit)} offered {name(h, pid)} and they are still here."
-    return said, sorted(set(kept))[:3] + [p for _, p in owed[:1]]
+    return said, sorted(kept)[:3] + [p for _, p in owed[:1]]
 
 
 UNIT_SAYS = {"ER": "The emergency department", "ICU": "Intensive care", "STEPDOWN": "Close-watch",
