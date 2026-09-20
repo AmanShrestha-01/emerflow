@@ -41,6 +41,7 @@ export const api = {
     request('POST', `/api/holds/${encodeURIComponent(holdId)}/resolve`, { outcome }),
   control: (action, extra = {}) => request('POST', '/api/control', { action, ...extra }),
   patient: (pid) => request('GET', `/api/patient/${encodeURIComponent(pid)}`),
+  memory: () => request('GET', '/api/memory'),
   compare: () => request('GET', '/api/compare'),
   results: () => request('GET', '/api/results'),
 }

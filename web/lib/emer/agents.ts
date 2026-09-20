@@ -36,6 +36,11 @@ export const UNIT_NAME: Record<string, string> = {
   STEPDOWN: "Close-watch beds", WARD: "Ward", OR: "Surgery", PACU: "Recovery room", LOUNGE: "Going-home lounge",
   HOME: "Home", PARTNER: "Another hospital",
 }
+// Which department speaks for each place. Mirrors OWNER in backend/agents/departments.py.
+export const OWNER: Record<string, AgentId> = {
+  RESUS: "ER", ER: "ER", HALLWAY: "ER", ICU: "ICU", STEPDOWN: "STEPDOWN", WARD: "STEPDOWN",
+  LOUNGE: "STEPDOWN", OR: "OR", PACU: "OR", HOME: "STEPDOWN", PARTNER: "EMS",
+}
 export const PLACE: Record<string, string> = {
   RESUS: "the critical care room", ER: "an emergency bed", HALLWAY: "a hallway bed", ICU: "intensive care",
   STEPDOWN: "a close-watch bed", WARD: "a ward bed", OR: "surgery", PACU: "recovery", LOUNGE: "the going-home lounge",
