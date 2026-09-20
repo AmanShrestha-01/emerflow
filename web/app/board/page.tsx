@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { BedDouble, Sparkles, Workflow } from "lucide-react"
-import { LiveBadge, Nav } from "@/components/emer/nav"
-import { TextReveal } from "@/components/ui/text-reveal"
+import { Nav } from "@/components/emer/nav"
 import { LiveChat } from "@/components/emer/live-chat"
-import { Arrivals, BedWall, Decisions, Kpis, PatientSheet, ScenarioButtons, SpeedMeter, StopButton } from "@/components/emer/board/parts"
+import { Arrivals, BedWall, Decisions, Kpis, PatientSheet, SpeedMeter, StopButton } from "@/components/emer/board/parts"
 import { DemoStory, useStory } from "@/components/emer/board/demo-story"
 import { MyUnit } from "@/components/emer/board/my-unit"
 import { useBedGroups } from "@/lib/emer/beds"
@@ -89,9 +88,8 @@ function Board() {
                 <span className="font-[Georgia,'Times_New_Roman',serif] text-[19px] leading-none tracking-tight text-[#1a2e5a]">Johns Hopkins Hospital</span>
               </span>
               <p className="tabular text-sm font-medium text-ink-soft">{st ? clockText(st) : "--:--"}</p>
-              <LiveBadge />
             </div>
-            <TextReveal as="h1" per="char" preset="fade-in-blur" speedReveal={1.5} className="mt-1 font-heading text-4xl font-bold tracking-tight text-ink">Command board</TextReveal>
+            <h1 className="sr-only">Command board</h1>
             <p className="mt-1 text-[15px] font-medium text-ink-soft" aria-live="polite">
               {st ? status(st) : "Connecting to the hospital…"}
               {(st?.level ?? 0) >= 2 && <span className="ml-2 font-bold text-human">The hospital is very full, so extra beds are in use.</span>}
@@ -101,7 +99,6 @@ function Board() {
             <div className="flex flex-wrap items-center gap-2">
               <StopButton st={st} />
               <SpeedMeter st={st} />
-              <ScenarioButtons st={st} />
             </div>
           )}
         </div>

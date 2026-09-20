@@ -70,15 +70,13 @@ function ReportCards({ hospitals, onPick }: { hospitals: RankedHospital[] | { er
     { k: "Waiting to be seen", v: String(waiting), cap: `Typical ER wait ${formatWait(median(hospitals.map((h) => h.er_wait_min)))}`, dot: "bg-[#ffc861]", icon: Users, pick: "all" as const },
   ]
   return (
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <div className="card-dark flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl px-5 py-3">
       {cards.map(({ k, v, cap, dot, icon: I, pick }) => (
-        <button key={k} onClick={() => onPick(pick)} className="card-dark rounded-2xl p-6 text-left transition-transform hover:-translate-y-0.5">
-          <span className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-[15px] text-white/80"><span className={`size-2 rounded-full ${dot}`} />{k}</span>
-            <I className="size-5 text-white/40" strokeWidth={1.75} />
-          </span>
-          <span className="tabular mt-4 block text-4xl font-bold leading-none">{v}</span>
-          <span className="mt-3 block text-[15px] text-white/70">{cap}</span>
+        <button key={k} onClick={() => onPick(pick)} title={cap} className="flex items-center gap-2.5 text-left">
+          <span className={`size-2 shrink-0 rounded-full ${dot}`} />
+          <I className="size-4 shrink-0 text-white/40" strokeWidth={1.75} />
+          <span className="tabular text-2xl font-bold leading-none">{v}</span>
+          <span className="text-sm text-white/70">{k}</span>
         </button>
       ))}
     </div>
@@ -214,7 +212,7 @@ function buildReport(
 export default function EmsPage() {
   const { st } = useHospital()
   const region = useRegion(source)
-  const sim = useSimulation(simSource)
+  const sim = useSimulation(simSource, { frameMs: 1400 })
   const edas = useEdas()
   const loc = useLocation()
   const [sortBy, setSortBy] = useState<SortBy>("fastest")

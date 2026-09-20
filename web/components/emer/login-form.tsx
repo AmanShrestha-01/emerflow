@@ -6,8 +6,8 @@ import { KeyRound, Loader2, ShieldCheck, Stethoscope } from "lucide-react"
 import { HOME, login, saveSession } from "@/lib/emer/session"
 
 const ROLES = [
-  { id: "commander", title: "Hospital", sub: "The command board", icon: ShieldCheck },
-  { id: "doctor", title: "Doctor", sub: "DeepChart records", icon: Stethoscope },
+  { id: "commander", title: "Hospital", icon: ShieldCheck },
+  { id: "doctor", title: "Doctor", icon: Stethoscope },
 ] as const
 
 const noop = () => () => {}
@@ -65,10 +65,7 @@ export function LoginForm({ className = "", autoFocus = true }: { className?: st
               <label key={r.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl p-3.5 ring-1 transition ${role === r.id ? "bg-white ring-2 ring-jade" : "bg-white/60 ring-ink/10"}`}>
                 <input type="radio" name="role" className="sr-only" checked={role === r.id} onChange={() => setRole(r.id)} />
                 <r.icon className={`size-5 ${role === r.id ? "text-jade" : "text-ink-soft"}`} />
-                <span>
-                  <span className="block text-[15px] font-bold text-ink">{r.title}</span>
-                  <span className="block text-xs text-ink-soft">{r.sub}</span>
-                </span>
+                <span className="text-[15px] font-bold text-ink">{r.title}</span>
               </label>
             ))}
           </div>

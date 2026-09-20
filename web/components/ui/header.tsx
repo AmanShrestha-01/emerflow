@@ -33,7 +33,6 @@ const navigationItems: {
     {
         title: "Hospital Swarm",
         description: "Eleven AI agents agree where every patient goes. The hospital rules check each move, and a person makes the big calls.",
-        cta: { label: "Open the command board", href: "/board" },
         items: [
             { title: "Command board", href: "/board" },
             { title: "AI workflow", href: "/workflow" },
@@ -130,13 +129,7 @@ function Header1() {
                     </NavigationMenu>
                 </div>}
                 <div className="ml-auto flex justify-end gap-4">
-                    {signedIn ? (
-                        <Link href="/board" className={cn(buttonVariants(), "h-10 px-4")}>
-                            Open the board
-                        </Link>
-                    ) : (
-                        <SignInPanel className={cn(buttonVariants(), "h-10 px-4")} />
-                    )}
+                    {!signedIn && <SignInPanel className={cn(buttonVariants(), "h-10 px-4")} />}
                 </div>
                 {signedIn && <div className="flex w-12 shrink lg:hidden items-end justify-end">
                     <button

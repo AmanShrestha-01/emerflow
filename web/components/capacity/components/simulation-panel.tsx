@@ -1,7 +1,7 @@
 "use client";
 
 import "../effects.css";
-import { Bot, MapPin, Play, RotateCcw, Users } from "lucide-react";
+import { MapPin, Play, RotateCcw, Users } from "lucide-react";
 import { STATUS, miles } from "../geo";
 import type { SimulationState } from "../use-simulation";
 import type { Hospital, LatLon, Simulation, TriageGroup } from "../types";
@@ -233,22 +233,15 @@ function Results({ result, byId, sim }: { result: Simulation; byId: Record<strin
 
   return (
     <div className="space-y-5 px-5 py-4">
-      {d && (
-        <div className="emf-pop card-dark rounded-2xl px-5 py-4">
-          <p className="flex items-center gap-2 text-sm text-white/70">
-            <Bot className="size-4" />
-            {ai ? "AI dispatcher (Gemini Flash)" : "Rule-based dispatcher (AI offline)"}
-          </p>
-          <p className="mt-2 text-[15px] leading-relaxed text-white">{d.briefing}</p>
-          {Object.values(d.moved ?? {}).some((n) => n > 0) && (
-            <p className="mt-2 text-xs text-white/60">The software adjusted a few picks to keep waits short. The groups below show where everyone actually goes.</p>
-          )}
-          <p className="mt-2 flex items-center gap-2 text-xs text-white/60">
-            <Users className="size-3.5" /> {result.incident.casualties} hurt · {result.assignments.length} hospitals ·{" "}
-            {c.without_bed === 0 ? `everyone in a bed within ${mins(c.longest_to_bed_min)}` : `${c.without_bed} still waiting after 3 h`}
-          </p>
-        </div>
-      )}
+      <div className="emf-pop card-dark rounded-2xl px-5 py-4">
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white/60">
+          <Users className="size-3.5" /> Where everyone is going
+        </p>
+        <p className="mt-2 text-[15px] leading-relaxed text-white">
+          {result.incident.casualties} hurt · {result.assignments.length} hospitals ·{" "}
+          {c.without_bed === 0 ? `everyone in a bed within ${mins(c.longest_to_bed_min)}` : `${c.without_bed} still waiting after 3 h`}
+        </p>
+      </div>
 
       <div>
         <p className="font-semibold text-ink">Who needs what</p>

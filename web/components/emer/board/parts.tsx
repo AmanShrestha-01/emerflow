@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
-import { Ambulance, BedDouble, Bus, Clock3, Flame, Hand, HeartPulse, Pause, Play, Siren, Sparkles, Square, UserRound } from "lucide-react"
+import { Ambulance, BedDouble, Clock3, Hand, HeartPulse, Pause, Play, Siren, Sparkles, Square, UserRound } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
 import { api, type Approval, type HState, type Patient, useHospital } from "@/lib/emer/hospital"
@@ -27,17 +27,15 @@ export function Kpis({ st }: { st: HState }) {
     { k: "Arriving by ambulance", v: incoming.length, cap: incoming.length ? `Next one in ${next} min` : "None on the way", icon: Ambulance, dot: "bg-[#a99bff]" },
   ]
   return (
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <div className="card-dark flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl px-5 py-3">
       {tiles.map(({ k, v, cap, icon: I, dot }) => (
-        <div key={k} className="card-dark rounded-2xl p-6">
-          <div className="flex items-center justify-between">
-            <p className="flex items-center gap-2 text-[15px] text-white/80"><span className={`size-2 rounded-full ${dot}`} />{k}</p>
-            <I className="size-5 text-white/40" strokeWidth={1.75} />
-          </div>
-          <motion.p key={v} initial={{ y: 6, opacity: 0.4 }} animate={{ y: 0, opacity: 1 }} className="tabular mt-4 text-5xl font-bold leading-none">
+        <div key={k} className="flex items-center gap-2.5" title={cap}>
+          <span className={`size-2 shrink-0 rounded-full ${dot}`} />
+          <I className="size-4 shrink-0 text-white/40" strokeWidth={1.75} />
+          <motion.span key={v} initial={{ y: 3, opacity: 0.5 }} animate={{ y: 0, opacity: 1 }} className="tabular text-2xl font-bold leading-none">
             {v}
-          </motion.p>
-          <p className="mt-3 text-[15px] text-white/70">{cap}</p>
+          </motion.span>
+          <span className="text-sm text-white/70">{k}</span>
         </div>
       ))}
     </div>
@@ -259,6 +257,8 @@ export function Arrivals({ st, recent, onOpen }: { st: HState; recent: Set<strin
   const fromIncident = all.filter((p) => p.incident)
   const everyday = all.filter((p) => !p.incident).slice(0, 6)
   const incidentName = fromIncident[0]?.incident || st.incident
+  const stillComing = fromIncident.filter((p) => p.state === "incoming" || p.state === "waiting").length
+  const placedRecently = fromIncident.length - stillComing
   if (!all.length) return <p className="rounded-2xl bg-white/50 px-4 py-3 text-sm text-ink-soft">No one is on the way. Press Bus crash or Busy night to put the hospital under pressure.</p>
   return (
     <div className="space-y-4">
@@ -266,7 +266,13 @@ export function Arrivals({ st, recent, onOpen }: { st: HState; recent: Set<strin
         <div className="rounded-2xl bg-critical-soft/70 p-3.5 ring-1 ring-critical/20">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-critical">
             <Siren className="size-4" /> From the {incidentName}
-            <span className="ml-auto rounded-full bg-critical px-2 py-0.5 text-[11px] font-bold text-white">{fromIncident.length}</span>
+            <span className="ml-auto rounded-full bg-critical px-2 py-0.5 text-[11px] font-bold text-white">
+              {stillComing || fromIncident.length}
+            </span>
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-ink-soft">
+            {stillComing ? `${stillComing} still on the way or waiting` : "Everyone has arrived"}
+            {placedRecently ? ` · ${placedRecently} just placed` : ""}
           </p>
           <ArrivalRows rows={fromIncident.slice(0, 8)} onOpen={onOpen} />
         </div>
@@ -421,28 +427,3 @@ export function SpeedMeter({ st }: { st: HState }) {
   )
 }
 
-export function ScenarioButtons({ st }: { st: HState }) {
-  const { surge, run } = useHospital()
-  const [busy, setBusy] = useState<string | null>(null)
-  const busyLeft = st.busy_until != null ? st.busy_until - (st.clock ?? 0) : 0
-  const go = async (kind: "bus" | "busy") => {
-    setBusy(kind)
-    try {
-      await run(() => surge(kind), (r: any) => (kind === "bus" ? `Bus crash: ${r?.incoming ?? 25} patients on the way` : "Busy night: more everyday patients for the next hour")) // eslint-disable-line @typescript-eslint/no-explicit-any
-    } catch {
-      /* toast shown */
-    } finally {
-      setBusy(null)
-    }
-  }
-  return (
-    <>
-      <button onClick={() => go("busy")} disabled={!!busy} className={`glass inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-bold ${busyLeft > 0 ? "text-human" : "text-ink"}`}>
-        <Flame className="size-4" /> {busyLeft > 0 ? `Busy night · ${busyLeft}m` : "Busy night"}
-      </button>
-      <button onClick={() => go("bus")} disabled={!!busy} className="inline-flex h-11 items-center gap-2 rounded-xl bg-critical px-4 text-sm font-semibold text-white">
-        <Bus className="size-4" /> {busy === "bus" ? "Sending…" : "Bus crash"}
-      </button>
-    </>
-  )
-}
