@@ -27,6 +27,11 @@ export const AGENTS: Agent[] = [
   { id: "COORDINATOR", name: "Coordinator", persona: "Prism", ini: "CO", role: "Reads every report and writes one plan", pushesFor: "The best plan for the whole hospital, not one ward", from: "#6d5df6", to: "#1f8a70" },
 ]
 
+/** A casualty nobody has identified is called X on the board; a heading needs words. */
+export function patientName(name?: string | null): string {
+  return !name || name === "X" ? "Unidentified patient" : name
+}
+
 export const AGENT: Record<string, Agent> = Object.fromEntries(AGENTS.map((a) => [a.id, a]))
 export const DEPARTMENTS = AGENTS.filter((a) => a.id !== "COORDINATOR")
 

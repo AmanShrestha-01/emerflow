@@ -177,7 +177,15 @@ class Engine:
         while True:
             await asyncio.sleep(1 / self.speed)
             if not self.paused and not self.idle:
-                self.step()
+                try:
+                    self.step()
+                except Exception:
+                    # Without this the task dies and never restarts: the clock stops, no new events
+                    # arrive, and state() still says the hospital is running because nothing set paused.
+                    # asyncio would not even print the traceback, because _loop_task holds a reference.
+                    log.exception("the clock hit an error on minute %s; carrying on", self.h.clock)
+                    self.emit("notice", {"text": "One minute of the simulation could not be worked out. "
+                                                 "The hospital is still running."})
 
     # ---------- nobody watching ----------
     def watch(self) -> None:
@@ -238,7 +246,9 @@ class Engine:
         try:
             await self.swarm.run_cycle(self.h, self.emit, trigger)
         except Exception as exc:  # the board must keep moving
-            self.emit("notice", {"text": f"swarm cycle failed ({exc}); code fallback continues"})
+            log.exception("swarm cycle failed")
+            self.emit("notice", {"text": "The AI round could not finish. The hospital rules are still "
+                                         "placing patients."})
 
     # ---------- inputs ----------
     def surge(self, n: int = 25, incident: str = "") -> int:
@@ -297,9 +307,11 @@ Use at most 30 patients. Do not add anyone not described.""",
             self.paused = True
         elif action == "resume":
             self.paused = False
+            self.idle = False  # a board whose live feed died is still a person asking for the clock
         elif action == "speed" and speed in SPEEDS:
             self.speed = speed
             self.paused = False
+            self.idle = False
         elif action == "reset":
             if key != DEMO_KEY:
                 raise PermissionError("reset needs the demo key")

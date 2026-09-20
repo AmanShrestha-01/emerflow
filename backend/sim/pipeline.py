@@ -77,7 +77,9 @@ def commit(h: Hospital, m: Move, emit: Emit = _noop, *, verified: bool = False, 
 
 def resolve_hold(h: Hospital, hold_id: str, outcome: str, emit: Emit = _noop) -> str:
     """A human resolved a records conflict. "proceed" re-validates against live state; "cancel" undoes the hold."""
-    hold = h.holds.pop(hold_id)
+    hold = h.holds.pop(hold_id, None)
+    if hold is None:  # the board and DeepChart can both resolve a hold; whoever loses gets a clean 404
+        raise KeyError(hold_id)
     p = h.patients[hold.move.pid]
     h.locked.discard(p.pid)
     p.state = "placed" if p.unit else "waiting"

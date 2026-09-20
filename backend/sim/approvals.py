@@ -67,7 +67,9 @@ def request(h: Hospital, e: PlanEscalation, emit: Emit = _noop, **ev) -> Approva
 
 
 def resolve(h: Hospital, approval_id: str, approve: bool, emit: Emit = _noop) -> str:
-    a = h.approvals.pop(approval_id)
+    a = h.approvals.pop(approval_id, None)
+    if a is None:  # two people resolved it at once, or the clock expired it first
+        raise KeyError(approval_id)
     e, p = a.escalation, a.escalation.params
     if e.action == "transfer_out":
         h.locked.difference_update(p.get("pids") or [])

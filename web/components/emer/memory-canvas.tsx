@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import ForceGraph3D from "react-force-graph-3d"
 import SpriteText from "three-spritetext"
 import { LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, SphereGeometry, WireframeGeometry } from "three"
-import { AGENT, AGENTS, OWNER, UNIT_NAME } from "@/lib/emer/agents"
+import { AGENT, AGENTS, OWNER, UNIT_NAME, patientName } from "@/lib/emer/agents"
 import type { HState, Patient } from "@/lib/emer/hospital"
 
 const UNITS = ["ER", "RESUS", "HALLWAY", "ICU", "STEPDOWN", "WARD", "OR", "PACU", "LOUNGE"]
@@ -117,7 +117,7 @@ export function MemoryCanvas({
     for (const u of UNITS) put(`unit:${u}`, "unit", UNIT_NAME[u] || u, "a place in the hospital", AGENT[OWNER[u]]?.to || "#6b7d78", 2.4)
     for (const p of (st?.patients || []) as Patient[]) {
       if (p.state !== "waiting" && p.state !== "placed" && p.state !== "held") continue
-      put(p.pid, "patient", p.name || p.pid, `${p.complaint}${p.age ? `, ${p.age}` : ""}`, SEV(p.severity), 0.5)
+      put(p.pid, "patient", patientName(p.name), `${p.complaint}${p.age ? `, ${p.age}` : ""}`, SEV(p.severity), 0.5)
     }
 
     // the hospital underneath: departments report to the coordinator and speak for their own places,

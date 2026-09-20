@@ -6,7 +6,7 @@
 
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AGENT, AGENTS, OWNER, UNIT_NAME } from "@/lib/emer/agents"
+import { AGENT, AGENTS, OWNER, UNIT_NAME, patientName } from "@/lib/emer/agents"
 import { api, useHospital } from "@/lib/emer/hospital"
 import type { MemoryFeed } from "./memory-canvas"
 
@@ -127,7 +127,9 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
                 <li key={i} className="rounded-xl bg-white/60 p-2.5 text-[13px] leading-snug text-ink">
                   <span className="text-[10px] font-bold uppercase tracking-wide text-ink-soft">{KIND_WORD[n.kind] || n.kind}</span>
                   <p className="mt-0.5">{asSentence(n.text)}</p>
-                  <p className="mt-1 text-[11px] text-ink-soft">{fade(n.age_s, notes?.window_s || 18000)}</p>
+                  <p className="mt-1 text-[11px] text-ink-soft">
+                    {hospitalTime(n.clock, st?.clock_start ?? 1260)} · {fade(n.age_s, notes?.window_s || 18000)}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -157,7 +159,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
 
         {picked && !agent && !place && (
           <>
-            <p className="font-heading text-lg font-bold text-ink">{who?.name || picked}</p>
+            <p className="font-heading text-lg font-bold text-ink">{who ? patientName(who.name) : picked}</p>
             <p className="text-xs text-ink-soft">
               {who ? `${who.complaint}${who.age ? `, ${who.age}` : ""} · ${whereIs(who)}` : ""}
             </p>
@@ -180,6 +182,9 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
                     ))}
                   </span>
                   <p className="mt-0.5">{asSentence(n.text)}</p>
+                  <p className="mt-1 text-[11px] text-ink-soft">
+                    {hospitalTime(n.clock, st?.clock_start ?? 1260)} · {fade(n.age_s, notes?.window_s || 18000)}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -190,7 +195,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
   )
 }
 
-type Held = { text: string; kind: string; units: string[] }
+type Held = { text: string; kind: string; units: string[]; age_s: number; clock: number }
 
 function groupNotes(notes: MemoryFeed | null, pid: string): Held[] {
   const by = new Map<string, Held>()
@@ -198,11 +203,21 @@ function groupNotes(notes: MemoryFeed | null, pid: string): Held[] {
     for (const n of a.notes) {
       if (n.pid !== pid) continue
       const had = by.get(n.text)
-      if (had) { if (!had.units.includes(a.unit)) had.units.push(a.unit) }
-      else by.set(n.text, { text: n.text, kind: n.kind, units: [a.unit] })
+      if (had) {
+        if (!had.units.includes(a.unit)) had.units.push(a.unit)
+        if (n.age_s < had.age_s) { had.age_s = n.age_s; had.clock = n.clock }  // the freshest copy dates it
+      } else {
+        by.set(n.text, { text: n.text, kind: n.kind, units: [a.unit], age_s: n.age_s, clock: n.clock })
+      }
     }
   }
-  return [...by.values()]
+  return [...by.values()].sort((x, y) => x.age_s - y.age_s)  // newest first
+}
+
+/** The hospital's own clock when this happened. Mirrors clockText on the board. */
+function hospitalTime(minute: number, start: number): string {
+  const t = start + minute
+  return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`
 }
 
 /** Where a patient is, in plain words. */
@@ -217,7 +232,8 @@ function fade(age: number, window: number): string {
   const left = Math.max(0, window - age)
   if (left < 60) return "being forgotten now"
   const ago = age < 90 ? "just now" : `${Math.round(age / 60)} min ago`
-  const h = Math.floor(left / 3600)
-  const m = Math.round((left % 3600) / 60)
+  const mins = Math.round(left / 60)          // round once, or 1h 59.6m prints as "1h 60m"
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
   return `${ago} · forgotten in ${h ? `${h}h ${m}m` : `${m} min`}`
 }

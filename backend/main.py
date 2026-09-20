@@ -121,18 +121,20 @@ def radio_confirm(draft_id: str):
 
 @app.post("/api/approvals/{approval_id}")
 def approve(approval_id: str, body: ApproveIn):
-    if approval_id not in engine.h.approvals:
+    try:
+        return {"ok": True, "detail": engine.approve(approval_id, body.approve)}
+    except KeyError:  # someone else resolved it, or the clock expired it, between the click and here
         raise HTTPException(404, "approval no longer pending")
-    return {"ok": True, "detail": engine.approve(approval_id, body.approve)}
 
 
 @app.post("/api/holds/{hold_id}/resolve")
 def resolve(hold_id: str, body: ResolveIn):
-    if hold_id not in engine.h.holds:
-        raise HTTPException(404, "hold no longer pending")
     if body.outcome not in ("proceed", "cancel"):
         raise HTTPException(400, "outcome must be proceed or cancel")
-    return {"ok": True, "detail": engine.resolve_hold(hold_id, body.outcome)}
+    try:
+        return {"ok": True, "detail": engine.resolve_hold(hold_id, body.outcome)}
+    except KeyError:  # the board and DeepChart can both resolve a hold
+        raise HTTPException(404, "hold no longer pending")
 
 
 @app.post("/api/control")
