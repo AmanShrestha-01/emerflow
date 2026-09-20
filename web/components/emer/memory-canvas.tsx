@@ -83,10 +83,11 @@ export function MemoryCanvas({
   const fg = useRef<any>(null)
   const store = useRef({ n: new Map<string, N>(), l: new Map<string, L>(), shape: "" })
   const labels = useRef(new Map<string, Label>())
-  const touched = useRef(false) // once the viewer moves the camera, stop re-framing it for them
+  const touched = useRef(false)
+  const settledAt = useRef(0) // how many nodes there were when the layout was last pinned // once the viewer moves the camera, stop re-framing it for them
   const [data, setData] = useState<{ nodes: N[]; links: L[] }>({ nodes: [], links: [] })
   const [hot, setHot] = useState<{ nodes: Set<string>; links: Set<string> }>({ nodes: new Set(), links: new Set() })
-  const [spin, setSpin] = useState(true)
+  const [spin, setSpin] = useState(false)
 
   // Rebuild the web out of what the agents are holding right now. Every line is one live note; when the
   // note ages out of memory on the server the line is simply not here any more. Nodes are kept across
@@ -163,6 +164,13 @@ export function MemoryCanvas({
 
     // Only hand React a new graph when the shape changed; otherwise repaint in place, so a quiet minute
     // does not shake the web apart.
+    // The layout is held still once settled, which means a surge would otherwise pile new patients onto a
+    // stale shape. If a quarter of the web is new, let it all go once and find its balance again.
+    if (settledAt.current && Math.abs(want.size - settledAt.current) / settledAt.current > 0.25) {
+      for (const n of want.values()) { n.fx = undefined; n.fy = undefined; n.fz = undefined }
+      settledAt.current = 0
+    }
+
     const shape = `${[...want.keys()].join()}|${drawn.map((l) => l.key).join()}`
     store.current.n = want
     store.current.l = new Map(drawn.map((l) => [l.key, l]))
@@ -283,9 +291,13 @@ export function MemoryCanvas({
         linkWidth={(l: L) => (STRUCTURE.has(l.kind) ? (hot.links.has(l.key) ? 0.7 : 0.35) : hot.links.has(l.key) ? 2 : 0.7 + l.fade * 0.9)}
         linkOpacity={1}
         linkCurvature={(l: L) => (l.kind === "offered" || l.kind === "kept" || l.kind === "missed" ? 0.22 : 0)}
-        linkDirectionalParticles={(l: L) => (l.fade > 0.94 && l.kind === "kept" ? 2 : 0)}
-        linkDirectionalParticleWidth={1.6}
-        linkDirectionalParticleSpeed={0.012}
+        // A light runs down every memory line, always from the agent that remembers to the patient it is
+        // about, so the whole web reads as one direction of travel and nothing ever flows backwards. The
+        // fresher the note, the quicker its light.
+        linkDirectionalParticles={(l: L) => (STRUCTURE.has(l.kind) || l.fade < 0.12 ? 0 : 1)}
+        linkDirectionalParticleWidth={(l: L) => (hot.links.has(l.key) ? 2.6 : 1.7)}
+        linkDirectionalParticleSpeed={(l: L) => 0.003 + l.fade * 0.009}
+        linkDirectionalParticleColor={(l: L) => (dim && !hot.links.has(l.key) ? withAlpha(l.color, 0.12) : l.color)}
         onNodeHover={light as any}
         onNodeClick={((n: N) => {
           setSpin(false)
@@ -294,9 +306,17 @@ export function MemoryCanvas({
           fg.current?.cameraPosition({ x: (n.x || 0) * d, y: (n.y || 0) * d, z: (n.z || 0) * d }, n, 900)
         }) as any}
         onNodeDrag={(() => setSpin(false)) as any}
-        onNodeDragEnd={((n: N) => { n.fx = undefined; n.fy = undefined; n.fz = undefined; fg.current?.d3ReheatSimulation() }) as any}
+        onNodeDragEnd={((n: N) => { n.fx = n.x; n.fy = n.y; n.fz = n.z }) as any}
         onBackgroundClick={() => { light(null); fg.current?.cameraPosition({ x: 0, y: 0, z: 460 }, { x: 0, y: 0, z: 0 }, 900) }}
         cooldownTime={2500}
+        onEngineStop={() => {
+          // Settled. Hold everything still so the web stops drifting under the pointer and a node can
+          // actually be clicked; a patient arriving later is the only thing free to move.
+          for (const n of store.current.n.values()) {
+            if (n.x !== undefined) { n.fx = n.x; n.fy = n.y; n.fz = n.z }
+          }
+          settledAt.current = store.current.n.size
+        }}
       />
       <div className="pointer-events-none absolute left-4 top-4 space-y-1.5 text-[11px] text-[#9fb9b1]">
         <p className="font-bold uppercase tracking-wide text-[#7f9a92]">Every line is a note still in mind</p>
@@ -307,14 +327,27 @@ export function MemoryCanvas({
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
         <p className="text-xs text-[#7f9a92]">
-          {held} notes held · drag a node to pull the web · click one to fly to it · scroll to zoom
+          {held} notes held · drag the background to turn it · click a node to fly to it · scroll to zoom
         </p>
-        <button
-          onClick={() => setSpin((s) => !s)}
-          className="pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-[#cfe3dc] ring-1 ring-white/15 hover:bg-white/20"
-        >
-          {spin ? "Stop spin" : "Spin"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              // let the whole web loose and find its shape again
+              for (const n of store.current.n.values()) { n.fx = undefined; n.fy = undefined; n.fz = undefined }
+              settledAt.current = 0
+              fg.current?.d3ReheatSimulation()
+            }}
+            className="pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-[#cfe3dc] ring-1 ring-white/15 hover:bg-white/20"
+          >
+            Re-arrange
+          </button>
+          <button
+            onClick={() => setSpin((s) => !s)}
+            className="pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-[#cfe3dc] ring-1 ring-white/15 hover:bg-white/20"
+          >
+            {spin ? "Stop spin" : "Spin"}
+          </button>
+        </div>
       </div>
     </div>
   )

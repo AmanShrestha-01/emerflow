@@ -20,8 +20,8 @@ export default function MemoryPage() {
             <h1 className="font-heading text-3xl font-bold tracking-tight text-ink">What the swarm is holding in mind</h1>
             <p className="mt-1 text-[15px] text-ink-soft">
               Every line is one note an agent is holding right now, and every agent reads its own notes back before
-              it speaks again. Pull a node and the web follows; click one to fly to it. Notes fade with age and are
-              gone after two hours, so a surge fills this in and a quiet spell dissolves it.
+              it speaks again. Drag the background to turn it, click a node to fly to it. Notes fade with age and
+              are gone after two hours, so a surge fills this in and a quiet spell dissolves it.
             </p>
           </div>
           <div role="radiogroup" aria-label="How far back into memory to show" className="flex rounded-2xl bg-white/70 p-1 ring-1 ring-ink/10">
