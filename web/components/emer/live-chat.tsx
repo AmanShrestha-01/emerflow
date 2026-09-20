@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import { ShieldCheck } from "lucide-react"
 import { AGENT, plainText } from "@/lib/emer/agents"
@@ -39,14 +39,23 @@ export function LiveChat({ cid: forced, limit = 30, className = "" }: { cid?: st
   // Between rounds nobody speaks for a few seconds; say so rather than leaving the panel still.
   const ended = !forced && !!cid && ev.feed.some((e: { type: string; cycle_id?: string | null }) => e.type === "cycle.end" && e.cycle_id === cid)
   const waiting = ended && !typing.length
+  // Follow the conversation only while the reader is at the bottom. Scroll up to read and it stays put,
+  // with a button to come back; otherwise every new message yanks the box away mid-sentence.
+  const [following, setFollowing] = useState(true)
+  const onScroll = () => {
+    const el = box.current
+    if (!el) return
+    setFollowing(el.scrollHeight - el.scrollTop - el.clientHeight < 48)
+  }
   useEffect(() => {
     // Instant, not smooth: a smooth scroll that is still animating when the next message lands leaves a
     // message half-hidden under the top of the box.
-    box.current?.scrollTo({ top: box.current.scrollHeight })
-  }, [list.length, typing.length])
+    if (following) box.current?.scrollTo({ top: box.current.scrollHeight })
+  }, [list.length, typing.length, following])
 
   return (
-    <div ref={box} className={`space-y-3 overflow-y-auto pr-1 ${className}`} aria-live="polite">
+    <div className="relative">
+    <div ref={box} onScroll={onScroll} className={`space-y-3 overflow-y-auto pr-1 ${className}`} aria-live="polite">
       {!cid && <p className="text-sm text-ink-soft">The agents meet when patients are waiting or beds run low.</p>}
       <AnimatePresence initial={false}>
         {list.map((m) => {
@@ -91,6 +100,18 @@ export function LiveChat({ cid: forced, limit = 30, className = "" }: { cid?: st
           {typing.length === 1 ? `${AGENT[typing[0]].name} is typing…` : `${typing.length} agents are typing…`}
         </div>
       )}
+    </div>
+    {!following && (
+      <button
+        onClick={() => {
+          setFollowing(true)
+          box.current?.scrollTo({ top: box.current.scrollHeight })
+        }}
+        className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
+      >
+        Latest ↓
+      </button>
+    )}
     </div>
   )
 }

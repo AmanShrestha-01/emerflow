@@ -102,7 +102,7 @@ def _radio_stub(text: str) -> RadioParse:
 
 
 DEFAULT_INCIDENT = "bus crash"  # what the board calls a surge nobody named
-SPEEDS = (0.25, 0.5, 1, 2, 5)  # sim-minutes per real second; 0.5 is the default demo pace
+SPEEDS = (0.25, 0.5, 1, 2, 5)  # sim-minutes per real second; 1 is the default demo pace
 
 
 class Engine:
@@ -110,7 +110,7 @@ class Engine:
         self.bus = EventBus()
         self.llm = llm or LLM()
         self.paused = False
-        self.speed: float = 0.5
+        self.speed: float = 1.0  # one hospital minute a second: rounds follow each other without dead air
         self.drafts: dict[str, list[RadioPatient]] = {}
         self._loop_task: asyncio.Task | None = None
         self._cycle_task: asyncio.Task | None = None
