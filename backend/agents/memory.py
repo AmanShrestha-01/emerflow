@@ -5,9 +5,16 @@ said, what it offered, what the coordinator ordered it, and what became of those
 never write memory; they only read it. That is what keeps memory from becoming a place to hallucinate.
 
 Notes fade: anything older than WINDOW_S real seconds is dropped, and each agent keeps at most CAP of
-them, so a long session can never bloat a prompt. In practice CAP is the binding limit — an agent holds
-its last CAP notes, for up to WINDOW_S. Memory lives on the Swarm, so `Engine.reset()` clears it: memory
-dies with the hospital it describes.
+them, so a long session can never bloat a prompt. Memory lives on the Swarm, so `Engine.reset()` clears
+it: memory dies with the hospital it describes.
+
+CAP used to be 60, which read like a safe bound and was in fact the only bound that ever fired: on a live
+board the four departments that own beds sat pinned at exactly 60 notes, and the busiest of them held
+nothing older than two minutes. Every page and every slide says notes last five hours, and none of them
+did. Worse, `follow_up()` holds an agent to promises made in the last RECENT_S (fifteen minutes) — so the
+cap was deleting kept promises before they could be counted, and the board under-reported its own swarm.
+CAP is now high enough to be a backstop rather than the rule. It costs nothing in prompt size: `block()`
+sends the last eight lines whatever the store holds.
 
 What reaches a model is still small and recent: `block()` sends the last handful of lines, and
 `follow_up()` only holds an agent to what it promised in the last RECENT_S.
@@ -24,7 +31,8 @@ from backend.sim.words import plain, to_place
 
 WINDOW_S = 18000.0  # 5 real hours: a whole shift, and then some
 RECENT_S = 900.0   # but only the last 15 minutes count as a promise still owed
-CAP = 60           # notes per agent
+CAP = 800          # notes per agent: a backstop against a runaway session, not the everyday limit
+SERVE = 120        # how many of an agent's newest notes /api/memory hands the browser
 BLOCK_CHARS = 600  # how much of it may reach a prompt
 HERE = ("waiting", "placed", "held")  # a patient who has gone home is not "still with you"
 # A status line is a statement about right now, not an event, and it often quotes a bed count ("we have
@@ -219,7 +227,9 @@ def as_json(memories: dict[str, Memory], h: Hospital) -> dict:
                 "notes": [
                     {"age_s": round(now - n.at, 1), "clock": n.clock, "kind": n.kind, "pid": n.pid,
                      "name": name(h, n.pid) if n.pid else "", "text": n.text, "here": not n.pid or here(h, n.pid)}
-                    for n in reversed(mem.live(now))
+                    # newest first, and only as many as a page can use: the graph draws far fewer than
+                    # this per agent, and an hours-deep store should not be re-sent every five seconds.
+                    for n in list(reversed(mem.live(now)))[:SERVE]
                 ],
             }
             for unit, mem in memories.items()

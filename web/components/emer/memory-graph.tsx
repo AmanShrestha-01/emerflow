@@ -169,8 +169,8 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
               </p>
             ) : (
               <p className="mt-3 text-[15px] text-ink">
-                Nobody is holding a note about them. No agent has offered or moved them in this window, so there is
-                nothing to remember — the line you can see is where they are lying, not a memory.
+                No note yet — this one is waiting on a person. It is on the board as a decision somebody has to
+                make, so it is drawn here even though no agent has offered or moved them.
               </p>
             )}
             <ul className="mt-2 space-y-2 overflow-y-auto pr-1">

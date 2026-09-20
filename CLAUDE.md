@@ -44,18 +44,28 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 **Agents** (`backend/agents/`):
 - `departments.py`: 10 department agents (CT is `IMAGING`; `XRAY` and `LAB` run real queues in `clock.py`). One class, 10 configs (view, goal, limits, rule-based stub).
 - `coordinator.py`: one Gemini call per cycle; code writes its contention question.
-- **All agents use one model**, `gemini-3.1-pro-preview` — `GEMINI_LITE_MODEL` / `GEMINI_PRO_MODEL` in `.env`,
+- **All agents use one model**, `gemini-2.5-flash` — `GEMINI_LITE_MODEL` / `GEMINI_PRO_MODEL` in `.env`,
   and **hardcoded again in `deploy.sh` and `.github/workflows/deploy.yml`**, which is what Cloud Run reads
   (`.env` is git-ignored). Change all three or the live site runs a different model from the one the page
-  names. Each department has its own persona (role, voice, what it pushes for / back on) and temperature
+  names. **Check a model before pinning it.** `gemini-3.1-pro-preview` was pinned for a day and returned
+  `429 RESOURCE_EXHAUSTED` to every single call — the board ran 903 cycles entirely on rule-based
+  fallbacks while the page named a model it had never once reached. `gemini-3.1-flash` does not exist
+  (404). On this project `gemini-2.5-flash` answers a whole round's twelve concurrent calls in about a
+  second, and `gemini-2.5-pro` works but is slower. One line proves it before you deploy:
+  `client.models.generate_content(model=..., contents="Reply with the single word: ok")`. The instrument
+  that catches it afterwards is `GET /api/results` — `answers` must show `live`, not only `fallback`. Each department has its own persona (role, voice, what it pushes for / back on) and temperature
   in `departments.py`. Thinking is `low`; `EMERFLOW_THINKING=high` costs thinking tokens on every one of
   the dozen calls a round makes, and overran `COORD_TIMEOUT` when tried.
 - **Tokens are spent per call, not per department.** A round is ~10 department calls + a plan + acks, and a
   question round only when a ward is over `ASK_ABOVE` (85%).
 - `cycle.py`: status (parallel) → optional question → plan → apply at live state → approvals → fallback.
 - `memory.py`: what each department remembers — `said`, `offered`, `ordered`, `happened`. Code writes them,
-  the agent reads its own back in the next prompt. Notes fade after 5 hours, 60 per agent, and never name a
-  patient who has left. **Counts never live in memory** (a status line keeps only its newest copy, so no
+  the agent reads its own back in the next prompt. Notes fade after 5 hours, 800 per agent, and never name
+  a patient who has left. (`CAP` was 60, which sounded safe and was in fact the only limit that ever
+  fired: the four bed-owning departments sat pinned at 60 notes and the busiest held nothing older than
+  two minutes, so every "notes last five hours" claim was false and `follow_up()` was deleting kept
+  promises before it could count them. `block()` sends the last 8 lines whatever the store holds, so the
+  cap costs nothing in prompt size; `/api/memory` serves at most `SERVE` per agent.) **Counts never live in memory** (a status line keeps only its newest copy, so no
   stale bed number reaches a prompt) and **notes are written in plain words**, never unit or patient codes —
   `words.plain()`. Two notes about the same patient and destination supersede, so "could not move" never
   sits beside "moved". `record_move()` is called from `Engine.emit()`, **not** from the swarm's apply loop:
@@ -78,7 +88,11 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 - `/board`: command board (needs login). KPI cards, bed wall (occupied / empty / getting ready / just arrived), big decisions, live AI chat, speed control, Bus crash / Busy night, and the 5-step **guided demo** (`/board?demo=1`, `components/emer/board/demo-story.tsx`).
 - `/memory`: the swarm's memory as a 3D force-directed sphere (`components/emer/memory-graph.tsx` plus
   `memory-canvas.tsx` — three.js + react-force-graph-3d, WebGL, loaded in the browser only). Every line is
-  one live note, read from `/api/memory` every 5s; a line exists only while its note does. The layout is
+  one live note, read from `/api/memory` every 5s; a line exists only while its note does. **Patient nodes
+  are drawn from the notes, not from `/api/state`** — plus anyone waiting on a human, so a pending
+  decision still shows. Drawing every patient meant most nodes were census, not memory: on a full board
+  182 of 241 had no note at all, and clicking one said "nothing here", which reads as a broken graph.
+  The layout is
   pinned once it settles (it re-balances when a quarter of it is new) so nodes can be clicked, and the
   motion is the light running along each line, agent → patient. `mock.js` has no `/api/memory` route, so
   the page is empty under `?mock=1`.

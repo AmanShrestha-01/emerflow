@@ -267,3 +267,32 @@ def test_an_order_about_a_discharged_patient_leaves_the_prompt():
     assert p.name in mem.block(m, h)
     p.state = "discharged"
     assert mem.block(m, h) == ""
+
+
+def test_a_busy_department_keeps_a_promise_long_enough_to_be_counted():
+    """The cap must not delete a promise before `follow_up()` has finished with it.
+
+    With CAP at 60 the four departments that own beds sat pinned at the cap on a live board, and the
+    busiest of them held nothing older than two minutes — while `follow_up()` holds an agent to anything
+    promised in the last fifteen. So kept promises were being evicted before they could be counted, and
+    the board under-reported its own swarm. The cap has to outlast RECENT_S under a realistic load.
+    """
+    m = mem.Memory()
+    m.add("offered", "we can take Iris Park in the ward", 1, "WI-1", key="offer:WI-1>WARD", dest="WARD")
+    # a busy hour: a department that owns beds writes a few notes a minute for fifteen minutes
+    for i in range(240):
+        m.add("happened", f"someone else moved to a ward bed {i}", 2 + i, f"WI-{100 + i}",
+              key=f"move:WI-{100 + i}>WARD", dest="WARD", ok=True)
+    assert any(n.pid == "WI-1" for n in m.live()), "the promise was evicted before it could be counted"
+
+
+def test_the_browser_is_never_sent_the_whole_store():
+    """`/api/memory` is polled every five seconds; an hours-deep store is not a payload."""
+    h, _ = build_hospital(7)
+    m = mem.Memory()
+    pid = next(p.pid for p in h.patients.values() if p.state in mem.HERE)
+    for i in range(mem.SERVE * 2):
+        m.add("happened", f"line {i}", i, pid, key=f"k{i}")
+    served = mem.as_json({"ER": m}, h)["agents"][0]["notes"]
+    assert len(served) == mem.SERVE
+    assert served[0]["text"] == f"line {mem.SERVE * 2 - 1}"  # newest first, and it is the newest

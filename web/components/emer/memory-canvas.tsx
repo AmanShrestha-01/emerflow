@@ -115,8 +115,23 @@ export function MemoryCanvas({
 
     for (const a of AGENTS) put(a.id, "agent", a.name, a.role, a.to, a.id === "COORDINATOR" ? 9 : 6)
     for (const u of UNITS) put(`unit:${u}`, "unit", UNIT_NAME[u] || u, "a place in the hospital", AGENT[OWNER[u]]?.to || "#6b7d78", 2.4)
+
+    // Only the people memory actually knows about. This page is the swarm's memory, not its census: a
+    // patient nobody has offered, ordered or moved is a node you can click and be told "nothing here",
+    // which reads like a broken graph rather than an honest one. On a full board that was most of them —
+    // a hundred and thirty of two hundred and forty were sitting in the waiting room untouched. The
+    // patients waiting on a person keep their node either way: a pending decision belongs on this page.
+    const known = new Set<string>()
+    for (const a of notes?.agents || []) {
+      for (const n of a.notes) if (n.pid && n.here && n.age_s <= maxAgeS) known.add(n.pid)
+    }
+    for (const hold of (st?.holds || []) as { pid?: string }[]) if (hold.pid) known.add(hold.pid)
+    for (const ap of (st?.approvals || []) as { params?: { pids?: string[] } }[]) {
+      for (const pid of ap.params?.pids || []) known.add(pid)
+    }
     for (const p of (st?.patients || []) as Patient[]) {
       if (p.state !== "waiting" && p.state !== "placed" && p.state !== "held") continue
+      if (!known.has(p.pid)) continue
       put(p.pid, "patient", patientName(p.name), `${p.complaint}${p.age ? `, ${p.age}` : ""}`, SEV(p.severity), 0.5)
     }
 

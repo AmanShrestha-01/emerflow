@@ -10,5 +10,5 @@ REGION="${REGION:-us-east4}"
   --project "$PROJECT" --region "$REGION" --source . \
   --min-instances 1 --max-instances 1 --no-cpu-throttling \
   --timeout 3600 --memory 1Gi \
-  --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=global,EMERFLOW_MODE=${MODE:-live},GEMINI_PRO_MODEL=gemini-3.1-pro-preview,GEMINI_LITE_MODEL=gemini-3.1-pro-preview,EMERFLOW_DEMO_KEY=${DEMO_KEY:-demo}" \
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=global,EMERFLOW_MODE=${MODE:-live},GEMINI_PRO_MODEL=gemini-2.5-flash,GEMINI_LITE_MODEL=gemini-2.5-flash,EMERFLOW_DEMO_KEY=${DEMO_KEY:-demo}" \
   --allow-unauthenticated
