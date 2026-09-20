@@ -24,8 +24,8 @@ from backend.deepchart.access import Access
 from backend.deepchart.portal import Portal
 
 DEMO_KEY = os.environ.get("EMERFLOW_DEMO_KEY", "demo")
-CYCLE_GAP = 3        # min sim-minutes between cycles when patients are waiting
-CYCLE_IDLE = 10      # otherwise, a cycle every 10 sim-minutes if a unit is >= 90%
+CYCLE_GAP = 2        # min sim-minutes between cycles when patients are waiting
+CYCLE_IDLE = 5       # otherwise, a cycle every 5 sim-minutes if a unit is >= 85%
 CLOCK_START = 21 * 60
 BUSY_MINUTES = 60
 CENSUS_EVERY = 5      # sim-minutes between occupancy samples for the census chart
@@ -172,7 +172,7 @@ class Engine:
         busy = self._cycle_task is not None and not self._cycle_task.done()
         if busy:
             return
-        pressure = any(h.occupancy(u) >= 90 for u in ("ER", "ICU", "STEPDOWN", "WARD"))
+        pressure = any(h.occupancy(u) >= 85 for u in ("ER", "ICU", "STEPDOWN", "WARD"))
         if (h.waiting() and h.clock - self.last_cycle >= CYCLE_GAP) or \
                 (pressure and h.clock - self.last_cycle >= CYCLE_IDLE):
             self.last_cycle = h.clock

@@ -178,6 +178,12 @@ function reducer(s, a) {
       for (const t of staleTyping) delete typing[t.from]
       return { ...s, flashes, pulses, typing }
     }
+    case 'events': {
+      // a frame's worth of events, applied in order as one render
+      let next = s
+      for (const ev of a.list) next = reducer(next, { type: 'event', ev, now: a.now })
+      return next
+    }
     case 'event': {
       const ev = a.ev
       if (ev.type === 'snapshot') {
@@ -239,9 +245,18 @@ export function useEvents() {
     const forceMock = params.get('mock') === '1'
     const neverMock = params.get('mock') === '0'
 
+    let queued = []
+    let flushing = null
+    const flush = () => {
+      flushing = null
+      const batch = queued
+      queued = []
+      if (!cancelled && batch.length) dispatch({ type: 'events', list: batch, now: Date.now() })
+    }
     const onEvent = (ev) => {
       if (cancelled || !ev || !ev.type) return
-      dispatch({ type: 'event', ev, now: Date.now() })
+      queued.push(ev)
+      if (flushing == null) flushing = requestAnimationFrame(flush)
       if (RECONCILE.has(ev.type)) scheduleRefetch()
     }
     const refetch = async () => {
@@ -311,6 +326,7 @@ export function useEvents() {
       es?.close()
       unsub?.()
       mock?.stop()
+      if (flushing != null) cancelAnimationFrame(flushing)
       if (mock) setMockBackend(null)
     }
   }, [])

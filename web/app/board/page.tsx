@@ -31,6 +31,7 @@ function clockText(st: { clock?: number; clock_start?: number }) {
   return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`
 }
 
+
 function Panel({ title, action, children, className = "" }: { title: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <section className={`glass rounded-2xl p-6 ${className}`}>
@@ -109,45 +110,47 @@ function Board() {
           <div className="glass grid h-64 place-items-center rounded-3xl text-ink-soft">Loading the hospital…</div>
         ) : (
           <>
-            <Kpis st={st} />
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
-              <Panel
-                title="Beds"
-                action={
-                  <div className="hidden flex-wrap items-center justify-end gap-x-3.5 gap-y-1.5 text-xs font-semibold text-ink-soft sm:flex">
-                    <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md bg-critical text-white"><BedDouble className="size-3" /></span>Critical</span>
-                    <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md bg-human text-white"><BedDouble className="size-3" /></span>Urgent</span>
-                    <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md bg-jade text-white"><BedDouble className="size-3" /></span>Stable</span>
-                    <span className="flex items-center gap-1.5"><span className="bed-filling size-5 rounded-md ring-1 ring-ai/30" />Getting ready</span>
-                    <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md border border-dashed border-jade/50 text-jade/60"><BedDouble className="size-3" strokeWidth={1.6} /></span>Empty</span>
+              <>
+                <Kpis st={st} />
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+                  <Panel
+                    title="Beds"
+                    action={
+                      <div className="hidden flex-wrap items-center justify-end gap-x-3.5 gap-y-1.5 text-xs font-semibold text-ink-soft sm:flex">
+                        <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md bg-critical text-white"><BedDouble className="size-3" /></span>Critical</span>
+                        <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md bg-human text-white"><BedDouble className="size-3" /></span>Urgent</span>
+                        <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md bg-jade text-white"><BedDouble className="size-3" /></span>Stable</span>
+                        <span className="flex items-center gap-1.5"><span className="bed-filling size-5 rounded-md ring-1 ring-ai/30" />Getting ready</span>
+                        <span className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-md border border-dashed border-jade/50 text-jade/60"><BedDouble className="size-3" strokeWidth={1.6} /></span>Empty</span>
+                      </div>
+                    }
+                  >
+                    <BedWall groups={groups} recent={recent} onOpen={setOpenPid} />
+                  </Panel>
+                  <div className="space-y-5">
+                    <Panel title="Big decisions for you">
+                      <Decisions st={st} />
+                    </Panel>
+                    <Panel
+                      title="AI meeting, live"
+                      action={
+                        <Link href="/workflow" className="inline-flex items-center gap-1.5 rounded-xl bg-white/70 px-3 py-1.5 text-xs font-bold text-ink">
+                          <Workflow className="size-3.5" /> Workflow
+                        </Link>
+                      }
+                    >
+                      <LiveChat limit={14} className="max-h-[420px]" />
+                      <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft"><Sparkles className="size-3.5 text-ai" /> Real messages between the department AIs, latest round.</p>
+                    </Panel>
+                    <Panel title="Arriving now">
+                      <Arrivals st={st} recent={recent} onOpen={setOpenPid} />
+                    </Panel>
                   </div>
-                }
-              >
-                <BedWall groups={groups} recent={recent} onOpen={setOpenPid} />
-              </Panel>
-              <div className="space-y-5">
-                <Panel title="Big decisions for you">
-                  <Decisions st={st} />
+                </div>
+                <Panel title="My unit: handoffs" className="mt-5">
+                  <MyUnit onOpen={setOpenPid} />
                 </Panel>
-                <Panel
-                  title="AI meeting, live"
-                  action={
-                    <Link href="/workflow" className="inline-flex items-center gap-1.5 rounded-xl bg-white/70 px-3 py-1.5 text-xs font-bold text-ink">
-                      <Workflow className="size-3.5" /> Workflow
-                    </Link>
-                  }
-                >
-                  <LiveChat limit={14} className="max-h-[420px]" />
-                  <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft"><Sparkles className="size-3.5 text-ai" /> Real messages between the department AIs, latest round.</p>
-                </Panel>
-                <Panel title="Arriving now">
-                  <Arrivals st={st} recent={recent} onOpen={setOpenPid} />
-                </Panel>
-              </div>
-            </div>
-            <Panel title="My unit: handoffs" className="mt-5">
-              <MyUnit onOpen={setOpenPid} />
-            </Panel>
+              </>
           </>
         )}
       </div>

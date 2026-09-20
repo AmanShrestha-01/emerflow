@@ -36,6 +36,9 @@ export function LiveChat({ cid: forced, limit = 30, className = "" }: { cid?: st
     return sayable.filter((m: Message) => m.cycle_id === previous).slice(-limit)
   }, [ev.messages, cid, forced, limit])
   const typing = Object.entries(ev.typing || {}).filter(([a, t]) => AGENT[a] && t?.cycle_id === cid).map(([a]) => a)
+  // Between rounds nobody speaks for a few seconds; say so rather than leaving the panel still.
+  const ended = !forced && !!cid && ev.feed.some((e: { type: string; cycle_id?: string | null }) => e.type === "cycle.end" && e.cycle_id === cid)
+  const waiting = ended && !typing.length
   useEffect(() => {
     // Instant, not smooth: a smooth scroll that is still animating when the next message lands leaves a
     // message half-hidden under the top of the box.
@@ -76,6 +79,12 @@ export function LiveChat({ cid: forced, limit = 30, className = "" }: { cid?: st
           )
         })}
       </AnimatePresence>
+      {waiting && (
+        <p className="flex items-center gap-2 text-[13px] text-ink-soft">
+          <span className="size-2 animate-pulse-dot rounded-full bg-ai" />
+          Round finished. The agents meet again in a moment.
+        </p>
+      )}
       {typing.length > 0 && (
         <div className="flex items-center gap-2 text-[13px] text-ink-soft">
           <span className="flex -space-x-1.5">{typing.slice(0, 4).map((t) => <AgentAvatar key={t} id={t} size={22} typing />)}</span>

@@ -8,7 +8,7 @@ import { useHospital, type Patient } from "@/lib/emer/hospital"
 // A charge nurse's handoff list for one unit: who arrived, who left, who could move on next, who is waiting.
 // Bed assignments only: it says where a patient goes and why a bed is needed, never what care to give.
 
-const GROUPS: { id: string; label: string; units: string[] }[] = [
+export const GROUPS: { id: string; label: string; units: string[] }[] = [
   { id: "ER", label: "Emergency", units: ["ER", "RESUS", "HALLWAY"] },
   { id: "ICU", label: "Intensive care", units: ["ICU"] },
   { id: "STEPDOWN", label: "Close-watch beds", units: ["STEPDOWN"] },
@@ -57,8 +57,8 @@ function Section({ icon: Icon, title, empty, children, count }: { icon: typeof C
   )
 }
 
-export function MyUnit({ onOpen }: { onOpen: (pid: string) => void }) {
-  const { st, ev, names } = useHospital()
+/** Which unit the person works on, remembered between visits. Shared by the board's nurse view. */
+export function useMyUnit(): [string, (id: string) => void] {
   const [group, setGroup] = useState(() => {
     try {
       const saved = localStorage.getItem(KEY) // the board renders only after login, in the browser
@@ -72,6 +72,14 @@ export function MyUnit({ onOpen }: { onOpen: (pid: string) => void }) {
       localStorage.setItem(KEY, id)
     } catch {}
   }
+  return [group, pick]
+}
+
+export function MyUnit({ onOpen, group: outer, onGroup, tabs = true }: { onOpen: (pid: string) => void; group?: string; onGroup?: (id: string) => void; tabs?: boolean }) {
+  const { st, ev, names } = useHospital()
+  const own = useMyUnit()
+  const group = outer ?? own[0]
+  const pick = onGroup ?? own[1]
   const units = GROUPS.find((g) => g.id === group)!.units
   const now = st?.clock ?? 0
 
@@ -104,14 +112,14 @@ export function MyUnit({ onOpen }: { onOpen: (pid: string) => void }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Choose your unit">
+      {tabs && <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Choose your unit">
         {GROUPS.map((g) => (
           <button key={g.id} role="tab" aria-selected={g.id === group} onClick={() => pick(g.id)}
             className={`rounded-xl px-3.5 py-1.5 text-sm font-semibold ring-1 transition ${g.id === group ? "bg-ink text-white ring-ink" : "bg-white/70 text-ink ring-ink/10"}`}>
             {g.label}
           </button>
         ))}
-      </div>
+      </div>}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Section icon={ArrowDownLeft} title="Came in" count={arrived.length} empty={`Nobody moved in over the last ${WINDOW} minutes.`}>
           {arrived.map((m) => <Row onOpen={onOpen} key={m.key} pid={m.pid} title={`${m.name}, from ${where(m.other)}`} sub={`${m.reason || "Moved in"} · ${m.by}`} tag={`${m.ago} min ago`} />)}
