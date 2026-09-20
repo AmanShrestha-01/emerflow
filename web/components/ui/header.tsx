@@ -36,6 +36,7 @@ const navigationItems: {
         items: [
             { title: "Command board", href: "/board" },
             { title: "AI workflow", href: "/workflow" },
+            { title: "Memory", href: "/memory" },
             { title: "How it works", href: "/overview" },
             { title: "Meet the agents", href: "/overview#agents" },
         ],

@@ -17,13 +17,14 @@ from typing import Callable
 from backend.agents.coordinator import Coordinator, question_for
 from backend.agents.departments import BY_NAME, DEPARTMENTS, OWNER, DepartmentAgent
 from backend.agents.llm import LLM
+from backend.agents import memory as mem
 from backend.agents.schemas import DeptAnswer, DeptStatus, Plan
 from backend.sim import approvals, fastlane
 from backend.sim.hospital import Hospital
 from backend.sim.models import Move
 from backend.sim.ladder import rule_plan
 from backend.sim.pipeline import commit
-from backend.sim.words import plain
+from backend.sim.words import place, plain
 
 MAX_HOPS = 2
 PERSONA = {d.name: d.archetype for d in DEPARTMENTS} | {"COORDINATOR": "Prism"}
@@ -41,6 +42,7 @@ class Swarm:
         self.llm = llm
         self.depts = {d.name: DepartmentAgent(d, llm) for d in DEPARTMENTS}
         self.coordinator = Coordinator(llm)
+        self.memory: dict[str, mem.Memory] = {d.name: mem.Memory() for d in DEPARTMENTS}
         self.cycles = 0
         self._msg = 0
 
@@ -68,12 +70,23 @@ class Swarm:
 
         async def one(name: str, agent: DepartmentAgent) -> None:
             thinking(name, ["COORDINATOR"], "status")
-            st, how = await agent.status(h)
+            st, how = await agent.status(h, mem.block(self.memory.get(name), h))
             statuses[name] = st
+            m = self.memory[name]
+            m.add("said", f'you said: "{st.line}"', h.clock)
+            for o in st.can_free[:3]:
+                ready = f", ready in {o.ready_in_min} min" if o.ready_in_min else ""
+                m.add("offered", f"you offered {mem.name(h, o.pid)} to {place(o.to_unit)}{ready}", h.clock, o.pid)
             ev("agent.status", {"unit": name, **st.model_dump(), "stale": how == "stale", "how": how}, "status")
             say(name, ["COORDINATOR"], "status", st.line, "status", [o.pid for o in st.can_free], how)
 
         await asyncio.gather(*(one(n, a) for n, a in self.depts.items()))
+
+        # The hospital's own record holds the last round to account. Code writes this, so it appears
+        # even offline, when the agents are speaking their rule-based lines.
+        note = mem.follow_up(self.memory, h)
+        if note:
+            say("VALIDATOR", ["COORDINATOR"], "system", note[0], "status", note[1])
 
         # 2. QUESTION (only on contention): coordinator asks; departments may ask each other directly.
         answers: dict[str, DeptAnswer] = {}
@@ -104,6 +117,9 @@ class Swarm:
         say("COORDINATOR", ["ALL"], "plan", plan.summary, "plan", [m.pid for m in plan.moves], how)
         orders = self._orders(h, plan)
         for dept, lines in orders.items():
+            if dept in self.memory:
+                asked = plain("; ".join(ln.split(" (")[0] for ln in lines[:3]), h)
+                self.memory[dept].add("ordered", f"the coordinator asked you for: {asked}", h.clock)
             say("COORDINATOR", [dept], "plan", "; ".join(lines[:6]) + ("; …" if len(lines) > 6 else ""), "plan",
                 [ln.split(" ")[0] for ln in lines], how)
 
@@ -139,6 +155,7 @@ class Swarm:
                 m.depends_on = [held_from[pm.to_unit]]
             result = commit(h, m, on_event(m))
             counts[result] += 1
+            self._remember_move(h, pm.pid, from_unit, pm.to_unit, result, rejected)
             if result == "held" and from_unit:
                 held_from[from_unit] = pm.pid
 
@@ -192,6 +209,23 @@ class Swarm:
         ms = round(1000 * (time.monotonic() - started))
         ev("cycle.end", {"cycle_id": cid, **counts, "ms": ms, "how": how})
         return counts
+
+    def _remember_move(self, h: Hospital, pid: str, from_unit: str | None, to_unit: str,
+                       result: str, rejected: list[tuple[str, str]]) -> None:
+        """One note for the department that was freeing the bed, and one for the department receiving.
+        Called inside the apply loop: after commit() the patient's unit has already changed."""
+        who = mem.name(h, pid)
+        where = place(to_unit)
+        if result in ("applied", "flagged"):
+            text = f"{who} moved to {where}"
+        elif result == "held":
+            text = f"{who} did not move to {where}: the records check paused it for a person"
+        else:
+            why = next((r for p, r in rejected if p == pid), "")
+            text = f"{who} could not move to {where}" + (f" ({why})" if why else "")
+        for dept in {OWNER.get(from_unit or "", ""), OWNER.get(to_unit or "", "")}:
+            if dept in self.memory:
+                self.memory[dept].add("happened", text, h.clock, pid)
 
     @staticmethod
     def _orders(h: Hospital, plan: Plan) -> dict[str, list[str]]:

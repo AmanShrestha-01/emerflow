@@ -289,19 +289,27 @@ call the STEPDOWN unit "the close-watch beds"),
 and short sentences."""
 
 
-def status_prompt(d: DeptConfig, view: dict) -> str:
+def status_prompt(d: DeptConfig, view: dict, mem: str = "") -> str:
+    # The record is written by code from moves that actually happened, so the agent may rely on it.
+    remembered = f"""
+What happened in the last few rounds, on the record (written by the hospital's own system, not by you):
+{mem}
+If something you offered has happened, say so in a few plain words. If it has not, say what is still
+outstanding. Do not offer a patient again once they have moved.
+""" if mem else ""
     return f"""{_who(d)}
 You are in a hospital command center during a surge.
 You only see your own department. Here is its current state (JSON):
 {json.dumps(view)}
-
+{remembered}
 Report your status in the required form:
 - line: one short plain-English sentence for the command board (no medical advice).
 - free_now: beds you can take right now.
 - can_free: patients you could move out to free space (use only patient ids from the state above).
 - needs and blockers: short phrases.
 Only use patient ids that appear in the state above. Never invent patients.
-Report only what the state shows: never claim something was approved, requested or done unless it appears in the state."""
+Report only what the state above or the record above shows: never claim something was approved, requested
+or done unless it appears in one of them."""
 
 
 def answer_prompt(d: DeptConfig, view: dict, question: str, asker: str = "The coordinator") -> str:
@@ -320,10 +328,10 @@ class DepartmentAgent:
         self.llm = llm
         self.last: DeptStatus | None = None
 
-    async def status(self, h: Hospital) -> tuple[DeptStatus, str]:
+    async def status(self, h: Hospital, mem: str = "") -> tuple[DeptStatus, str]:
         view = self.cfg.view(h)
         stub = lambda: self.cfg.stub(h)  # noqa: E731
-        out, how = await self.llm.call(f"dept:{self.cfg.name}", "lite", status_prompt(self.cfg, view),
+        out, how = await self.llm.call(f"dept:{self.cfg.name}", "lite", status_prompt(self.cfg, view, mem),
                                        DeptStatus, stub, DEPT_TIMEOUT, temperature=self.cfg.temperature)
         if how == "fallback" and self.last is not None:
             return self.last, "stale"

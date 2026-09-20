@@ -179,6 +179,13 @@ async def ems_dispatch(body: DispatchIn):
     return {"how": how, **plan.model_dump()}
 
 
+@app.get("/api/memory")
+def agent_memory():
+    """What each agent is holding in mind right now: short notes written by code, newest first."""
+    from backend.agents import memory as mem
+    return mem.as_json(engine.swarm.memory, engine.h)
+
+
 @app.get("/api/audit")
 def audit():
     return engine.audit
