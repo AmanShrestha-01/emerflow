@@ -92,13 +92,15 @@ async def events(request: Request):
 
 
 @app.post("/api/surge")
-def surge(body: SurgeIn | None = None):
+async def surge(body: SurgeIn | None = None):
     body = body or SurgeIn()
     if body.kind == "busy":
         return {"busy_until": engine.busy_night()}
     if body.kind != "bus":
         raise HTTPException(400, "kind must be bus or busy")
-    return {"incoming": engine.surge(max(1, min(body.n, 60)), body.incident or "")}
+    incoming = engine.surge(max(1, min(body.n, 60)), body.incident or "")
+    engine.kick_cycle(engine.surge_trigger(incoming))  # the agents start talking about them at once
+    return {"incoming": incoming}
 
 
 @app.post("/api/radio")

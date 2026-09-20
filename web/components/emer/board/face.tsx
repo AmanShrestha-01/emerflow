@@ -1,4 +1,8 @@
-// A flat cartoon headshot for a bed card. The face comes from the patient's id, so the same patient always
+"use client"
+
+import { useState } from "react"
+
+// A flat cartoon headshot for a bed card, used when a patient has no portrait. The face comes from the patient's id, so the same patient always
 // looks the same, and from their age: children have rounder faces and bigger eyes, older patients grey hair.
 // Drawings we generate for synthetic patients: no photos, no real faces.
 
@@ -21,8 +25,30 @@ function hash(s: string): number {
   return Math.abs(h)
 }
 
+// Portraits in web/public/faces, generated for this demo (tools/make_faces.py). Nobody in them exists.
+// Grouped the way they were generated, so a patient's portrait matches their age.
+const TEEN = [13, 14]
+const OLDER = [3, 4, 8, 11, 15, 16, 20, 23]
+const ADULT = [1, 2, 5, 6, 7, 9, 10, 12, 17, 18, 19, 21, 22, 24]
+
 export function PatientFace({ pid, severity, age, size = 36, className = "" }: { pid: string; severity?: number; age?: number; size?: number; className?: string }) {
   const h = hash(pid)
+  const [broken, setBroken] = useState(false)
+  const band = (age ?? 40) < 20 ? TEEN : (age ?? 40) >= 65 ? OLDER : ADULT
+  const n = band[h % band.length]
+  if (!broken) {
+    return (
+      <img
+        src={`/faces/p${String(n).padStart(2, "0")}.jpg`}
+        alt="Patient"
+        width={size}
+        height={size}
+        onError={() => setBroken(true)}
+        className={`object-cover ${className}`}
+        style={{ width: size, height: size }}
+      />
+    )
+  }
   const old = (age ?? 40) >= 65
   const child = (age ?? 40) < 16
   const skin = SKIN[h % SKIN.length]

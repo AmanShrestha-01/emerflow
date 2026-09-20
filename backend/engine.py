@@ -179,6 +179,14 @@ class Engine:
             trigger = f"{len(h.waiting())} waiting" if h.waiting() else "units near capacity"
             self._cycle_task = asyncio.create_task(self._cycle(trigger))
 
+    def kick_cycle(self, trigger: str) -> bool:
+        """Start a round now (a crash was just called in), unless one is already running."""
+        if self._cycle_task is not None and not self._cycle_task.done():
+            return False
+        self.last_cycle = self.h.clock
+        self._cycle_task = asyncio.create_task(self._cycle(trigger))
+        return True
+
     async def _cycle(self, trigger: str) -> None:
         try:
             await self.swarm.run_cycle(self.h, self.emit, trigger)
@@ -195,6 +203,9 @@ class Engine:
                             incident=self.incident)
         self.emit("notice", {"text": f"MASS CASUALTY: {self.incident}, {len(pts)} patients inbound"})
         return len(pts)
+
+    def surge_trigger(self, n: int) -> str:
+        return f"{n} casualties inbound from the {self.incident}"
 
     def busy_night(self, minutes: int = BUSY_MINUTES) -> int:
         """A busy night: everyday arrivals (mostly flu) triple for the next hour."""

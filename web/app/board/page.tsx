@@ -155,8 +155,9 @@ function Board() {
         )}
       </div>
       <p className="mx-auto mt-8 w-[min(1400px,calc(100%-24px))] text-xs leading-relaxed text-ink-soft">
-        Demo with synthetic data: every patient, bed and number on this board is simulated. Hospital names are used for
-        illustration only; EmerFlow is not affiliated with, endorsed by, or connected to these institutions.
+        Demo with synthetic data: every patient, bed and number on this board is simulated, and the patient portraits are
+        AI-generated pictures of people who do not exist. Hospital names are used for illustration only; EmerFlow is not
+        affiliated with, endorsed by, or connected to these institutions.
       </p>
       <PatientSheet pid={openPid} onClose={() => setOpenPid(null)} />
     </main>
