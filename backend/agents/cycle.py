@@ -24,7 +24,7 @@ from backend.sim.hospital import Hospital
 from backend.sim.models import Move
 from backend.sim.ladder import rule_plan
 from backend.sim.pipeline import commit
-from backend.sim.words import place, plain
+from backend.sim.words import place, plain, to_place
 
 MAX_HOPS = 2
 PERSONA = {d.name: d.archetype for d in DEPARTMENTS} | {"COORDINATOR": "Prism"}
@@ -73,10 +73,10 @@ class Swarm:
             st, how = await agent.status(h, mem.block(self.memory.get(name), h))
             statuses[name] = st
             m = self.memory[name]
-            m.add("said", f'you said: "{st.line}"', h.clock)
+            m.add("said", f'you said: "{plain(st.line, h)}"', h.clock)
             for o in st.can_free[:3]:
                 ready = f", ready in {o.ready_in_min} min" if o.ready_in_min else ""
-                m.add("offered", f"you offered {mem.name(h, o.pid)} to {place(o.to_unit)}{ready}", h.clock, o.pid)
+                m.add("offered", f"you offered to move {mem.name(h, o.pid)} {to_place(o.to_unit)}{ready}", h.clock, o.pid)
             ev("agent.status", {"unit": name, **st.model_dump(), "stale": how == "stale", "how": how}, "status")
             say(name, ["COORDINATOR"], "status", st.line, "status", [o.pid for o in st.can_free], how)
 
@@ -118,8 +118,9 @@ class Swarm:
         orders = self._orders(h, plan)
         for dept, lines in orders.items():
             if dept in self.memory:
-                asked = plain("; ".join(ln.split(" (")[0] for ln in lines[:3]), h)
-                self.memory[dept].add("ordered", f"the coordinator asked you for: {asked}", h.clock)
+                asked = plain("; ".join(ln.split(" (")[0] for ln in lines[:3]), h).replace(" → ", " to ").replace(" to home", " home")
+                asked = mem.readable(asked)
+                self.memory[dept].add("ordered", f"the coordinator asked you to move {asked}", h.clock)
             say("COORDINATOR", [dept], "plan", "; ".join(lines[:6]) + ("; …" if len(lines) > 6 else ""), "plan",
                 [ln.split(" ")[0] for ln in lines], how)
 
@@ -155,7 +156,6 @@ class Swarm:
                 m.depends_on = [held_from[pm.to_unit]]
             result = commit(h, m, on_event(m))
             counts[result] += 1
-            self._remember_move(h, pm.pid, from_unit, pm.to_unit, result, rejected)
             if result == "held" and from_unit:
                 held_from[from_unit] = pm.pid
 
@@ -209,25 +209,6 @@ class Swarm:
         ms = round(1000 * (time.monotonic() - started))
         ev("cycle.end", {"cycle_id": cid, **counts, "ms": ms, "how": how})
         return counts
-
-    def _remember_move(self, h: Hospital, pid: str, from_unit: str | None, to_unit: str,
-                       result: str, rejected: list[tuple[str, str]]) -> None:
-        """One note for the department that was freeing the bed, and one for the department receiving.
-        Called inside the apply loop: after commit() the patient's unit has already changed."""
-        who = mem.name(h, pid)
-        where = place(to_unit)
-        if result in ("applied", "flagged"):
-            text = f"{who} moved to {where}"
-        elif result == "held":
-            text = f"{who} did not move to {where}: the records check paused it for a person"
-        else:
-            why = next((r for p, r in rejected if p == pid), "")
-            text = f"{who} could not move to {where}" + (f" ({why})" if why else "")
-        for dept in {OWNER.get(from_unit or "", ""), OWNER.get(to_unit or "", "")}:
-            if dept in self.memory:
-                # Keyed on the patient and where they were headed: a later answer about the same move
-                # replaces the earlier one, so "could not" never sits beside "moved".
-                self.memory[dept].add("happened", text, h.clock, pid, key=f"move:{pid}>{to_unit}")
 
     @staticmethod
     def _orders(h: Hospital, plan: Plan) -> dict[str, list[str]]:

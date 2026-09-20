@@ -15,8 +15,18 @@ const MemoryCanvas = dynamic(() => import("./memory-canvas").then((m) => m.Memor
   loading: () => <div className="h-full w-full animate-pulse rounded-3xl bg-[#101d1c]" />,
 })
 
+// What each kind of note is, said out loud. The note itself is written to be read by the agent holding
+// it ("you offered..."), which is right for a prompt and reads oddly on a screen, so the card drops the
+// "you" and the label above says who and what.
 const KIND_WORD: Record<string, string> = {
-  said: "said", offered: "offered", ordered: "was asked", happened: "what happened", heard: "heard",
+  said: "Told the command board", offered: "Offered to move someone",
+  ordered: "The coordinator asked for", happened: "What actually happened",
+}
+
+/** The note as a sentence about the agent rather than a sentence to it. */
+function asSentence(text: string): string {
+  const t = text.replace(/^you /, "")
+  return t.charAt(0).toUpperCase() + t.slice(1)
 }
 
 export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; className?: string }) {
@@ -116,8 +126,8 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
               {own.map((n, i) => (
                 <li key={i} className="rounded-xl bg-white/60 p-2.5 text-[13px] leading-snug text-ink">
                   <span className="text-[10px] font-bold uppercase tracking-wide text-ink-soft">{KIND_WORD[n.kind] || n.kind}</span>
-                  <p className="mt-0.5">{n.text}</p>
-                  <p className="mt-1 text-[11px] text-ink-soft">{fade(n.age_s, notes?.window_s || 900)}</p>
+                  <p className="mt-0.5">{asSentence(n.text)}</p>
+                  <p className="mt-1 text-[11px] text-ink-soft">{fade(n.age_s, notes?.window_s || 7200)}</p>
                 </li>
               ))}
             </ul>
@@ -169,7 +179,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
                       <span key={u} style={{ color: AGENT[u]?.to }}>{AGENT[u]?.name || u}</span>
                     ))}
                   </span>
-                  <p className="mt-0.5">{n.text}</p>
+                  <p className="mt-0.5">{asSentence(n.text)}</p>
                 </li>
               ))}
             </ul>
@@ -205,8 +215,9 @@ function whereIs(p: { state: string; unit?: string | null }): string {
 /** How much life a note has left, in plain words. */
 function fade(age: number, window: number): string {
   const left = Math.max(0, window - age)
-  if (left < 60) return "fading now"
+  if (left < 60) return "being forgotten now"
   const ago = age < 90 ? "just now" : `${Math.round(age / 60)} min ago`
-  const gone = left < 5400 ? `${Math.round(left / 60)} min` : `${(left / 3600).toFixed(1)} hours`
-  return `${ago} · fades in ${gone}`
+  const h = Math.floor(left / 3600)
+  const m = Math.round((left % 3600) / 60)
+  return `${ago} · forgotten in ${h ? `${h}h ${m}m` : `${m} min`}`
 }

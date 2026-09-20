@@ -14,11 +14,13 @@ What reaches a model is still small and recent: `block()` sends the last handful
 """
 from __future__ import annotations
 
+import re
 import time
 from collections import deque
 from dataclasses import dataclass, field
 
 from backend.sim.hospital import Hospital
+from backend.sim.words import plain, to_place
 
 WINDOW_S = 7200.0  # 2 real hours: long enough that a whole shift is still in mind
 RECENT_S = 900.0   # but only the last 15 minutes count as a promise still owed
@@ -74,6 +76,44 @@ class Memory:
         return [n for n in self.notes if n.at >= cut]
 
 
+MOVED = ("move.applied", "move.flagged")  # the two events that mean the patient actually went
+
+
+def record_move(memories: dict[str, "Memory"], h: Hospital, type_: str, d: dict) -> None:
+    """Remember what became of a patient, whoever moved them.
+
+    Every move in the hospital passes through `pipeline.commit()` and comes out as one of these events, so
+    hanging memory here is what makes it complete. It used to be written from the swarm's own apply loop,
+    which meant an agent only ever remembered the moves the coordinator planned: the fast lane placing a
+    patient, the clock sending one home, the rule-based repair plan and a human clearing a records hold
+    were all invisible to it — roughly three moves in five. Worst of all, a department that offered a bed
+    and then watched the fast lane deliver it was scored as having broken its word.
+    """
+    from backend.agents.departments import OWNER  # here, so memory stays importable on its own
+
+    pid = d.get("pid")
+    to_unit = d.get("to_unit")
+    if not pid or not to_unit or pid not in h.patients:
+        return
+    who = name(h, pid)
+    where = to_place(to_unit)
+    if type_ in MOVED:
+        text = f"{who} moved {where}"
+    elif type_ == "move.held":
+        text = f"{who} did not move {where}: the records check paused it for a person to look at"
+    else:
+        why = plain(d.get("reason") or "", h)
+        text = f"{who} could not move {where}" + (f" — {why}" if why else "")
+
+    # the department losing the bed and the one gaining it; for a move that never happened, only the one
+    # that was being asked to take them
+    from_unit = d.get("from_unit") or (h.patients[pid].unit if type_ not in MOVED else None)
+    for dept in {OWNER.get(from_unit or "", ""), OWNER.get(to_unit, "")}:
+        if dept in memories:
+            # keyed on patient and destination: a later answer about the same move replaces the earlier
+            memories[dept].add("happened", text, h.clock, pid, key=f"move:{pid}>{to_unit}")
+
+
 def here(h: Hospital, pid: str) -> bool:
     """True while the patient is still in the hospital. Patients are never deleted from h.patients:
     apply_move only changes their state, so checking the dict is not enough."""
@@ -81,9 +121,19 @@ def here(h: Hospital, pid: str) -> bool:
     return bool(p and p.state in HERE)
 
 
+NO_NAME = "an unidentified patient"  # the board can show a bare "X"; a sentence cannot
+
+
 def name(h: Hospital, pid: str) -> str:
     p = h.patients.get(pid)
-    return p.name if p else pid
+    if not p:
+        return pid
+    return NO_NAME if p.name in ("", "X") else p.name
+
+
+def readable(text: str) -> str:
+    """A casualty nobody has identified is called X on the board. "move X to the ward" is not a sentence."""
+    return re.sub(r"(?<![\w-])X(?![\w-])", NO_NAME, text)
 
 
 def block(mem: Memory | None, h: Hospital, now: float | None = None) -> str:

@@ -63,15 +63,40 @@ def test_memory_says_nothing_about_a_patient_who_went_home():
 
 
 def test_a_round_records_what_the_code_saw():
+    """A round records what each department said and offered. Outcomes arrive separately, through
+    record_move, because they belong to every move and not only the ones the coordinator planned."""
     h, _ = _surged()
     rng = random.Random(7)
     swarm = Swarm(LLM(mode="stub", fake_latency=False))
     _rounds(h, rng, swarm, 2)
     notes = [n for m in swarm.memory.values() for n in m.live()]
     kinds = {n.kind for n in notes}
-    assert {"said", "happened"} <= kinds, kinds
+    assert {"said", "offered"} <= kinds, kinds
     # every note about a patient names a patient the hospital knows
     assert all(n.pid in h.patients for n in notes if n.pid)
+
+
+def test_an_outcome_is_remembered_whoever_caused_it():
+    """The fast lane, the clock and a human all move patients. None of them is the swarm, and the
+    departments used to remember none of it."""
+    h, _ = _surged()
+    memories = {d: mem.Memory() for d in ("ER", "ICU", "STEPDOWN", "OR", "STAFFING", "IMAGING", "XRAY",
+                                          "LAB", "BLOODBANK", "EMS")}
+    pid = next(p.pid for p in h.patients.values() if p.unit == "ER")
+    who = h.patients[pid].name
+
+    mem.record_move(memories, h, "move.applied", {"pid": pid, "from_unit": "ER", "to_unit": "WARD"})
+    er = [n.text for n in memories["ER"].live()]
+    ward = [n.text for n in memories["STEPDOWN"].live()]  # STEPDOWN speaks for the ward
+    assert er == [f"{who} moved to a ward bed"], er
+    assert ward == [f"{who} moved to a ward bed"], ward
+
+    # and the reason on a refusal reaches memory in plain words, not unit codes
+    mem.record_move(memories, h, "move.dropped",
+                    {"pid": pid, "to_unit": "ICU", "reason": "ICU is full"})
+    icu = [n.text for n in memories["ICU"].live()]
+    assert icu and "intensive care is full" in icu[0], icu
+    assert "ICU" not in icu[0]
 
 
 def test_the_follow_up_line_counts_promises_kept():
@@ -150,3 +175,16 @@ def test_a_different_destination_is_a_different_fact():
     m.add("happened", "Hana Ito could not move to a close-watch bed", 10, "P-2", key="move:P-2>STEPDOWN")
     m.add("happened", "Hana Ito moved to an intensive care bed", 12, "P-2", key="move:P-2>ICU")
     assert len(m.notes) == 2
+
+
+def test_notes_are_written_in_words_not_codes():
+    """A note is read by a person as well as by an agent: no unit codes, no patient codes, no bare X."""
+    h, _ = build_hospital(7)
+    memories = {"ER": mem.Memory(), "ICU": mem.Memory(), "STEPDOWN": mem.Memory()}
+    pid = next(p.pid for p in h.patients.values() if p.unit == "ER")
+    mem.record_move(memories, h, "move.dropped", {"pid": pid, "to_unit": "STEPDOWN", "reason": "STEPDOWN is full"})
+    text = memories["STEPDOWN"].live()[0].text
+    assert "the close-watch beds are full" in text, text
+    assert "STEPDOWN" not in text
+    assert mem.readable("X to the ward") == "an unidentified patient to the ward"
+    assert mem.readable("X-ray is busy") == "X-ray is busy"  # not every X is a patient

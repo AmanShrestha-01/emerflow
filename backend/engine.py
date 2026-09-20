@@ -8,6 +8,7 @@ import re
 import statistics
 import uuid
 
+from backend.agents import memory as agent_memory
 from backend.agents.cycle import Swarm
 from backend.agents.llm import LLM
 from backend.agents.schemas import RadioParse, RadioPatient
@@ -151,6 +152,12 @@ class Engine:
         self.bus.emit(type_, data, clock=t, cycle_id=cycle_id, round_=round_)
         if type_ in AUDITED:
             self.audit.append(audit_row(type_, data, t, cycle_id))
+        if type_ in ("move.applied", "move.flagged", "move.held", "move.dropped"):
+            # Whoever moved the patient — the swarm, the fast lane, the clock, or a human clearing a
+            # records hold — the departments concerned remember it.
+            swarm = getattr(self, "swarm", None)
+            if swarm is not None:
+                agent_memory.record_move(swarm.memory, self.h, type_, data)
         if type_ in ("move.held", "move.flagged"):
             for c in data.get("conflicts", []):
                 self.caught.add((data["pid"], c["fact"]))
