@@ -5,6 +5,8 @@ Fallback (stub mode, timeout, bad answer): the rule-based ladder planner.
 """
 from __future__ import annotations
 
+import os
+
 import json
 
 from backend.agents.llm import LLM
@@ -15,7 +17,11 @@ from backend.sim.ladder import rule_plan
 from backend.sim.models import DESTINATIONS, Move
 from backend.sim.rules import ESCALATION_ACTIONS, check_move
 
-COORD_TIMEOUT = 30.0
+# The coordinator is the one call that thinks properly (thinking_level="high" on Gemini 3.x), and
+# extended thinking does not fit in thirty seconds: it timed out every round and the rule planner quietly
+# wrote the plan instead, which is the opposite of what running a thinking model is for.
+COORD_TIMEOUT = float(os.environ.get("EMERFLOW_COORD_TIMEOUT", "45"))
+ASK_ABOVE = 85  # only ask a department a question when a ward is this full
 
 
 def movable_pids(h: Hospital) -> list[str]:
@@ -104,11 +110,14 @@ def question_for(h: Hospital) -> tuple[str, str] | None:
                        f"Who could move to the close-watch beds in the next 15 minutes?")
     if len(h.waiting()) >= 5 and h.units["STEPDOWN"].free == 0:
         return "STEPDOWN", "The close-watch beds are full and more people are waiting. Who can move to the ward or go home?"
-    # Every round: check in with the busiest department, so the agents plan ahead together, not only in a crisis.
+    # Otherwise, only when a ward is genuinely tight. This used to run every single round, which is a
+    # whole extra model call per round spent on a question nobody was waiting for.
     names = {"ICU": "intensive care", "STEPDOWN": "the close-watch beds", "ER": "the emergency department",
              "WARD": "the ward"}
     owner = {"ICU": "ICU", "STEPDOWN": "STEPDOWN", "ER": "ER", "WARD": "STEPDOWN"}
     unit = max(names, key=lambda u: h.occupancy(u))
+    if h.occupancy(unit) < ASK_ABOVE:
+        return None
     u = h.units[unit]
     return owner[unit], (f"{names[unit].capitalize()} is at {len(u.occupants)} of {u.beds} beds. "
                          f"If more patients arrive in the next 30 minutes, who could move on to make room?")
