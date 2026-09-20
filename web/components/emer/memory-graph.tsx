@@ -19,7 +19,7 @@ const KIND_WORD: Record<string, string> = {
   said: "said", offered: "offered", ordered: "was asked", happened: "what happened", heard: "heard",
 }
 
-export function MemoryGraph({ ageMin = 15, className = "" }: { ageMin?: number; className?: string }) {
+export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; className?: string }) {
   const { st } = useHospital()
   const [notes, setNotes] = useState<MemoryFeed | null>(null)
   const [picked, setPicked] = useState<string | null>(null)
@@ -40,7 +40,7 @@ export function MemoryGraph({ ageMin = 15, className = "" }: { ageMin?: number; 
       .then((m) => alive && setNotes(m))
       .catch(() => {})
     pull()
-    const t = setInterval(pull, 2500) // fast enough that a note visibly fades out of the web
+    const t = setInterval(pull, 5000)
     return () => { alive = false; clearInterval(t) }
   }, [])
 
@@ -76,8 +76,8 @@ export function MemoryGraph({ ageMin = 15, className = "" }: { ageMin?: number; 
           <>
             <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">What they are holding</p>
             <p className="mt-1 text-[15px] text-ink">
-              Hover any node to see it. Every agent keeps its own notes for {Math.round((notes?.window_s || 900) / 60)} real
-              minutes, then they fade out of mind.
+              Hover any node to see it. Every agent keeps its own notes for up to{" "}
+              {Math.round((notes?.window_s || 7200) / 3600)} hours, then they fade out of mind.
             </p>
             <ul className="mt-3 space-y-1.5 overflow-y-auto pr-1">
               {AGENTS.map((a) => {
@@ -166,5 +166,7 @@ export function MemoryGraph({ ageMin = 15, className = "" }: { ageMin?: number; 
 function fade(age: number, window: number): string {
   const left = Math.max(0, window - age)
   if (left < 60) return "fading now"
-  return `${Math.round(age / 60)} min ago · fades in ${Math.round(left / 60)} min`
+  const ago = age < 90 ? "just now" : `${Math.round(age / 60)} min ago`
+  const gone = left < 5400 ? `${Math.round(left / 60)} min` : `${(left / 3600).toFixed(1)} hours`
+  return `${ago} · fades in ${gone}`
 }

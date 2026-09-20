@@ -57,6 +57,7 @@ type N = {
   x?: number; y?: number; z?: number; vx?: number; vy?: number; vz?: number
   fx?: number; fy?: number; fz?: number
 }
+type Label = SpriteText & { material: { depthWrite: boolean }; position: { set(x: number, y: number, z: number): void } }
 type L = { key: string; source: string | N; target: string | N; kind: string; color: string; fade: number }
 
 const idOf = (e: string | N) => (typeof e === "string" ? e : e.id)
@@ -77,6 +78,7 @@ export function MemoryCanvas({
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const fg = useRef<any>(null)
   const store = useRef({ n: new Map<string, N>(), l: new Map<string, L>(), shape: "" })
+  const labels = useRef(new Map<string, Label>())
   const touched = useRef(false) // once the viewer moves the camera, stop re-framing it for them
   const [data, setData] = useState<{ nodes: N[]; links: L[] }>({ nodes: [], links: [] })
   const [hot, setHot] = useState<{ nodes: Set<string>; links: Set<string> }>({ nodes: new Set(), links: new Set() })
@@ -192,8 +194,13 @@ export function MemoryCanvas({
   }, [])
 
   useEffect(() => {
-    const c = fg.current?.controls?.()
-    if (c) { c.autoRotate = spin; c.autoRotateSpeed = 0.5 }
+    const apply = () => {
+      const c = fg.current?.controls?.()
+      if (c) { c.autoRotate = spin && !document.hidden; c.autoRotateSpeed = 0.5 }
+    }
+    apply()
+    document.addEventListener("visibilitychange", apply)
+    return () => document.removeEventListener("visibilitychange", apply)
   }, [spin, data])
 
   const light = useCallback((n: N | null) => {
@@ -221,11 +228,16 @@ export function MemoryCanvas({
 
   const nodeObject = useCallback((n: N) => {
     if (n.kind === "patient") return null
-    const t = new SpriteText(n.label) as SpriteText & { material: { depthWrite: boolean }; position: { set(x: number, y: number, z: number): void } }
-    t.color = n.kind === "agent" ? "#f5f0e4" : "#a7c4bb"
-    t.textHeight = n.kind === "agent" ? (n.id === "COORDINATOR" ? 7 : 5.5) : 3.4
-    t.fontWeight = n.kind === "agent" ? "700" : "500"
-    t.material.depthWrite = false // labels stay legible through the web instead of flickering behind it
+    // Building a text sprite draws a canvas, so keep each one: the web rebuilds often, the labels do not.
+    let t = labels.current.get(n.id)
+    if (!t) {
+      t = new SpriteText(n.label) as Label
+      t.color = n.kind === "agent" ? "#f5f0e4" : "#a7c4bb"
+      t.textHeight = n.kind === "agent" ? (n.id === "COORDINATOR" ? 7 : 5.5) : 3.4
+      t.fontWeight = n.kind === "agent" ? "700" : "500"
+      t.material.depthWrite = false // labels stay legible through the web instead of flickering behind it
+      labels.current.set(n.id, t)
+    }
     t.position.set(0, Math.cbrt(n.val) * 4 + (n.kind === "agent" ? 6 : 4), 0)
     return t
   }, [])
@@ -247,7 +259,7 @@ export function MemoryCanvas({
         nodeRelSize={4}
         nodeVal={(n: N) => n.val}
         nodeOpacity={0.92}
-        nodeResolution={12}
+        nodeResolution={8}
         nodeColor={nodeColor as any}
         nodeThreeObject={nodeObject as any}
         nodeThreeObjectExtend
@@ -261,7 +273,7 @@ export function MemoryCanvas({
         linkWidth={(l: L) => (hot.links.has(l.key) ? 2 : l.kind === "reports" || l.kind === "in" || l.kind === "owns" ? 0.35 : 0.7 + l.fade * 0.9)}
         linkOpacity={1}
         linkCurvature={(l: L) => (l.kind === "offered" || l.kind === "kept" || l.kind === "missed" ? 0.22 : 0)}
-        linkDirectionalParticles={(l: L) => (l.fade > 0.8 && (l.kind === "offered" || l.kind === "kept") ? 2 : 0)}
+        linkDirectionalParticles={(l: L) => (l.fade > 0.94 && l.kind === "kept" ? 2 : 0)}
         linkDirectionalParticleWidth={1.6}
         linkDirectionalParticleSpeed={0.012}
         onNodeHover={light as any}
@@ -274,8 +286,7 @@ export function MemoryCanvas({
         onNodeDrag={(() => setSpin(false)) as any}
         onNodeDragEnd={((n: N) => { n.fx = undefined; n.fy = undefined; n.fz = undefined; fg.current?.d3ReheatSimulation() }) as any}
         onBackgroundClick={() => { light(null); fg.current?.cameraPosition({ x: 0, y: 0, z: 460 }, { x: 0, y: 0, z: 0 }, 900) }}
-        cooldownTime={4000}
-        warmupTicks={40}
+        cooldownTime={2500}
       />
       <div className="pointer-events-none absolute left-4 top-4 space-y-1.5 text-[11px] text-[#9fb9b1]">
         <p className="font-bold uppercase tracking-wide text-[#7f9a92]">Every line is a note still in mind</p>

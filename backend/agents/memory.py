@@ -5,8 +5,12 @@ said, what it offered, what the coordinator ordered it, and what became of those
 never write memory; they only read it. That is what keeps memory from becoming a place to hallucinate.
 
 Notes fade: anything older than WINDOW_S real seconds is dropped, and each agent keeps at most CAP of
-them, so a long session can never bloat a prompt. Memory lives on the Swarm, so `Engine.reset()` clears
-it: memory dies with the hospital it describes.
+them, so a long session can never bloat a prompt. In practice CAP is the binding limit — an agent holds
+its last CAP notes, for up to WINDOW_S. Memory lives on the Swarm, so `Engine.reset()` clears it: memory
+dies with the hospital it describes.
+
+What reaches a model is still small and recent: `block()` sends the last handful of lines, and
+`follow_up()` only holds an agent to what it promised in the last RECENT_S.
 """
 from __future__ import annotations
 
@@ -16,8 +20,9 @@ from dataclasses import dataclass, field
 
 from backend.sim.hospital import Hospital
 
-WINDOW_S = 900.0   # 15 real minutes
-CAP = 40           # notes per agent
+WINDOW_S = 7200.0  # 2 real hours: long enough that a whole shift is still in mind
+RECENT_S = 900.0   # but only the last 15 minutes count as a promise still owed
+CAP = 60           # notes per agent
 BLOCK_CHARS = 600  # how much of it may reach a prompt
 HERE = ("waiting", "placed", "held")  # a patient who has gone home is not "still with you"
 
@@ -80,8 +85,9 @@ def follow_up(memories: dict[str, "Memory"], h: Hospital) -> tuple[str, list[str
     """
     kept: list[str] = []
     owed: list[tuple[str, str]] = []  # (department, patient) offered and still here
+    cut = time.monotonic() - RECENT_S  # an offer made an hour ago is history, not an open promise
     for unit, m in memories.items():
-        notes = m.live()
+        notes = [n for n in m.live() if n.at >= cut]
         offered = {n.pid for n in notes if n.kind == "offered" and n.pid}
         moved = {n.pid for n in notes if n.kind == "happened" and n.pid and " moved to " in n.text}
         for pid in offered:
