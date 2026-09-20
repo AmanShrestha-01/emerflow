@@ -19,9 +19,14 @@ test("drive time: 5 miles is about 16 minutes, never below 1", () => {
 })
 
 test("our wait grows with the queue and a full ER", () => {
-  assert.equal(ourWait(10, 0, 50), 10)
-  assert.equal(ourWait(10, 5, 50), 20)
-  assert.equal(ourWait(10, 5, 100), 35)
+  assert.equal(ourWait(10, 0, 50), 17)
+  assert.equal(ourWait(10, 5, 50), 27)
+  assert.equal(ourWait(10, 5, 100), 45)
+})
+
+test("a quiet ER of ours still reports a real wait, so it cannot beat every real hospital", () => {
+  assert.ok(ourWait(0, 0, 10) >= 9) // triage, a room, a nurse, a doctor: never zero
+  assert.ok(ourWait(0, 0, 95) > ourWait(0, 0, 10)) // and it grows as the department fills
 })
 
 test("synthetic numbers stay in range", () => {

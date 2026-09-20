@@ -7,13 +7,17 @@ from backend.sim import escalation
 from backend.sim.hospital import Hospital
 from backend.sim.models import Move
 from backend.sim.pipeline import Emit, _noop, commit
-from backend.sim.scenarios import walk_in
+from backend.sim.scenarios import planned_admission, walk_in
 
 CT_EVERY = 6          # minutes per CT scan
 XRAY_EVERY = 3        # minutes per X-ray image
 XRAY_ROOMS = 2        # X-ray rooms working at once
 LAB_MIN = 8           # no lab result sooner than this after arrival
 WALKIN_RATE = 0.10    # chance per minute of an everyday patient (~6 an hour)
+PLANNED_RATE = 0.25   # chance per minute of a planned admission upstairs while there is room below target
+WARD_TARGET = 0.8     # the ward sits about 80% full on a normal evening, leaving somewhere to move people
+ER_FLOOR = 8          # below this many patients the emergency department pulls in walk-ins faster
+STEPDOWN_TARGET = 0.75
 BUSY_FACTOR = 3       # a busy night triples everyday arrivals
 ER_VISIT_MIN = 90     # minor ER patients (severity 4-5) are treated and ready to go home after this
 SURGERY_MIN = 60      # an emergency operation
@@ -40,10 +44,22 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
             h.version += 1
             emit("patient.arrived", {"pid": p.pid, "severity": p.severity, "complaint": p.complaint}, clock=t)
     busy = bool(h.busy_until and h.busy_until > t)
-    if walkins and rng.random() < WALKIN_RATE * (BUSY_FACTOR if busy else 1):
+    er_rate = WALKIN_RATE * (BUSY_FACTOR if busy else 1)
+    # A quiet ER still has people in it: pull walk-ins in faster, but only while nobody is already waiting
+    # for a bed. Otherwise the department fills up and never drains.
+    if len(h.units["ER"].occupants) < ER_FLOOR and not h.waiting():
+        er_rate = max(er_rate, 0.4)
+    if walkins and rng.random() < er_rate:
         p = walk_in(h, rng, busy=busy)
         p.note = "Just arrived; waiting for a bed"
         emit("patient.arrived", {"pid": p.pid, "severity": p.severity, "complaint": p.complaint}, clock=t)
+
+    # Planned admissions keep the beds upstairs near full, the way they are on a real evening.
+    for unit, target in (("WARD", WARD_TARGET), ("STEPDOWN", STEPDOWN_TARGET)):
+        u = h.units[unit]
+        if len(u.occupants) < round(u.beds * target) and rng.random() < PLANNED_RATE:
+            p = planned_admission(h, rng, unit)
+            emit("notice", {"text": f"Planned admission: {p.name} to {'the ward' if unit == 'WARD' else 'a close-watch bed'}"}, clock=t)
 
     # Staff call-ins arriving.
     for item in list(h.callins):

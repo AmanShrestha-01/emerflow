@@ -19,7 +19,52 @@ function seeded(id: string) {
   return ((h >>> 0) % 1000) / 1000
 }
 
+// Fixed numbers for every hospital on the map, so the demo starts from the same picture every time and a
+// hospital's size matches what it really is. Occupancy is ours, not the hospital's: the page says so.
+// [ER in use, ER beds, intensive care in use, intensive care beds]
+const STATIC: Record<string, [number, number, number, number]> = {
+  "jhh": [10, 20, 8, 10],
+  "shock-trauma": [30, 48, 22, 30],
+  "ummc": [26, 44, 18, 26],
+  "mercy": [14, 28, 9, 14],
+  "midtown": [10, 20, 6, 10],
+  "bayview": [24, 36, 14, 20],
+  "sinai": [20, 34, 12, 18],
+  "st-agnes": [16, 26, 8, 12],
+  "union-memorial": [16, 32, 9, 14],
+  "good-sam": [12, 24, 7, 12],
+  "harbor": [10, 20, 5, 10],
+  "gbmc": [14, 28, 8, 14],
+  "northwest-hospital-center": [12, 24, 6, 12],
+  "medstar-franklin-square-medical-center": [18, 30, 10, 16],
+  "university-of-md-st-joseph-medical-center": [14, 26, 8, 14],
+  "johns-hopkins-howard-county-medical-center": [12, 24, 7, 12],
+  "university-of-md-baltimore-washington-medical-center": [18, 32, 10, 16],
+  "luminis-health-anne-arundel-medical-center": [16, 30, 9, 14],
+  "umd-upper-chesapeake-medical-center": [10, 22, 6, 10],
+}
+
 function simulate(c: CmsHospital): Hospital {
+  const fixed = STATIC[c.id]
+  if (fixed) {
+    const [occupied, capacity, icuOcc, icuCap] = fixed
+    const status: Status = occupied >= capacity ? "critical" : occupied / capacity >= 0.85 ? "busy" : "open"
+    return {
+      id: c.id,
+      name: c.name,
+      address: c.address,
+      lat: c.lat,
+      lon: c.lon,
+      trauma: c.trauma,
+      status,
+      er: { occupied, capacity, waiting: 0 },
+      icu: { occupied: icuOcc, capacity: icuCap, waiting: 0 },
+      beds_free: capacity - occupied + icuCap - icuOcc,
+      er_wait_min: status === "critical" ? 40 : status === "busy" ? 25 : 12,
+      receiving_incident: false,
+      cms: { cms_id: c.cms_id, ed_minutes: c.ed_minutes ?? null, left_unseen_pct: c.left_unseen_pct ?? null, volume: c.volume ?? null },
+    }
+  }
   const capacity = BEDS[c.volume ?? ""] ?? 24
   // 3.5 h typical ER stay ≈ 65% full; 6 h ≈ 90%. Plus up to ±10% for "today".
   const base = 0.65 + ((c.ed_minutes ?? 240) - 210) / 600
@@ -52,7 +97,8 @@ export function withCmsHospitals(region: RegionSnapshot): RegionSnapshot {
   const hospitals = cms.hospitals.map((c) => {
     const sim = simulate(c)
     const r = recorded[c.id]
-    return r ? { ...r, name: c.name, lat: c.lat, lon: c.lon, trauma: c.trauma ?? r.trauma, cms: sim.cms } : sim
+    // Our fixed numbers win over whatever the recorded snapshot held, so the map opens the same every time.
+    return r ? { ...r, ...sim, trauma: c.trauma ?? r.trauma } : sim
   })
   return { ...region, hospitals }
 }
@@ -66,8 +112,6 @@ export type EdasFeed = {
 }
 
 const EDAS_CODE: Record<string, string> = Object.fromEntries(cms.hospitals.filter((c) => c.edas_code).map((c) => [c.id, c.edas_code as string]))
-// Share of ER beds in use that each EDAS level stands for on the map (EDAS gives a level, not bed counts).
-const LEVEL_FULL = [0, 0.6, 0.8, 0.9, 1]
 
 /** Replaces simulated status with the live EDAS level where we have one: 1–2 open, 3 busy, 4 or any alert full. */
 export function withEdas(hospitals: Hospital[], feed: EdasFeed | null): Hospital[] {
@@ -76,13 +120,12 @@ export function withEdas(hospitals: Hospital[], feed: EdasFeed | null): Hospital
   return hospitals.map((h) => {
     const e = byCode[EDAS_CODE[h.id]]
     if (!e || e.level == null) return h
-    const status: Status = e.alerts.length || e.level >= 4 ? "critical" : e.level === 3 ? "busy" : "open"
-    const occupied = Math.round(h.er.capacity * LEVEL_FULL[Math.min(4, Math.max(1, e.level))])
+    const status: Status = e.alerts.length || e.level >= 3 ? "critical" : e.level === 2 ? "busy" : "open"
     return {
       ...h,
       status,
-      er: { ...h.er, occupied, waiting: 0 },
-      er_wait_min: status === "critical" ? 40 : status === "busy" ? 25 : e.level === 2 ? 15 : 10,
+      // The real ambulance delay where MIEMSS reports one; otherwise an estimate from the level.
+      er_wait_min: e.longest_stay_min > 0 ? e.longest_stay_min : status === "critical" ? 40 : status === "busy" ? 25 : 10,
       live: { ...e, fetched_at: feed.fetched_at ?? "" },
     }
   })

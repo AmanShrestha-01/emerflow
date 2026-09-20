@@ -7,7 +7,7 @@ import type { SimulationState } from "@/components/capacity/use-simulation"
 import { OUR_HOSPITAL_ID } from "@/lib/emer/capacity"
 import { HOME } from "@/lib/emer/session"
 import { api } from "@/lib/emer/api.js"
-import { DEMO_INCIDENT } from "@/lib/emer/incident"
+import { incidentName } from "@/lib/emer/incident"
 
 // The map's what-if decides where the casualties go; our share goes straight to the hospital board, so the same
 // incident carries on inside the hospital. The number is never invented: it is the simulator's own assignment.
@@ -22,6 +22,7 @@ export function IncidentHandoff({ sim, className = "" }: { sim: SimulationState;
   const mine = ours?.casualties ?? 0
   const total = result?.incident.casualties ?? 0
   const key = result ? `${result.incident.lat},${result.incident.lon},${total}` : ""
+  const name = incidentName(result ? [result.incident.lat, result.incident.lon] : null)
 
   useEffect(() => {
     if (!playing || !mine || done.current === key) return
@@ -29,13 +30,13 @@ export function IncidentHandoff({ sim, className = "" }: { sim: SimulationState;
     setSent(false)
     setError(null)
     api
-      .surge("bus", mine, DEMO_INCIDENT.name)
+      .surge("bus", mine, name)
       .then(() => setSent(true))
       .catch((e: Error) => {
         done.current = "" // let the next run try again
         setError(e.message)
       })
-  }, [playing, mine, key])
+  }, [playing, mine, key, name])
 
   if (!playing) return null
 
@@ -46,13 +47,13 @@ export function IncidentHandoff({ sim, className = "" }: { sim: SimulationState;
       </p>
       {mine === 0 ? (
         <p className="mt-2 text-[15px] leading-relaxed text-white">
-          The dispatch plan is sending none of the {total} casualties from the {DEMO_INCIDENT.name} to {HOME}: we are
+          The dispatch plan is sending none of the {total} casualties from the {name} to {HOME}: we are
           too full or on diversion, so ambulances are going to ERs with room.
         </p>
       ) : (
         <>
           <p className="mt-2 text-[17px] leading-snug text-white">
-            <span className="font-bold">{mine}</span> of the {total} casualties from the {DEMO_INCIDENT.name} are on
+            <span className="font-bold">{mine}</span> of the {total} casualties from the {name} are on
             their way to {HOME}
             {ours?.drive_min ? `, about ${ours.drive_min} min out` : ""}.
           </p>

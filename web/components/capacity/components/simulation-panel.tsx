@@ -7,16 +7,15 @@ import type { SimulationState } from "../use-simulation";
 import type { Hospital, LatLon, Simulation, TriageGroup } from "../types";
 
 const SIZES = [
-  { n: 15, label: "Small", sub: "a bus crash" },
-  { n: 40, label: "Large", sub: "a highway pileup" },
-  { n: 80, label: "Huge", sub: "a stadium crowd" },
+  { n: 18, label: "Small", sub: "a shooting" },
+  { n: 25, label: "Medium", sub: "a car crash" },
+  { n: 40, label: "Large", sub: "a major incident" },
 ];
 
 /** Ready-made incidents, so nobody has to guess where to click. */
 export const EXAMPLES: { title: string; where: string; point: LatLon; casualties: number }[] = [
-  { title: "Stadium crowd crush", where: "M&T Bank Stadium, downtown", point: [39.278, -76.6227], casualties: 80 },
-  { title: "Highway pileup", where: "I-95 near the Fort McHenry tunnel", point: [39.2615, -76.5795], casualties: 40 },
-  { title: "Bus crash", where: "York Road in Towson", point: [39.4015, -76.6019], casualties: 15 },
+  { title: "Car crash", where: "Orleans St, beside Johns Hopkins", point: [39.2966, -76.5975], casualties: 25 },
+  { title: "Mass shooting", where: "Lexington Market, downtown", point: [39.2919, -76.6216], casualties: 18 },
 ];
 
 function mins(m: number) {
@@ -99,8 +98,8 @@ export function SimulationPanel({
     <div className={`flex flex-col ${className}`}>
       <div className="flex items-start justify-between gap-3 border-b border-[#e6e0d2] px-5 py-4">
         <div>
-          <p className="text-sm text-ink-soft">What if a big crash happened now?</p>
-          <h2 className="mt-0.5 text-lg font-bold text-ink">Crash simulator</h2>
+          <p className="text-sm text-ink-soft">What if a crash or a shooting happened now?</p>
+          <h2 className="mt-0.5 text-lg font-bold text-ink">Mass casualty simulator</h2>
         </div>
         <button type="button" onClick={sim.exit} className="rounded-lg px-2.5 py-1 text-sm font-semibold text-ink-soft ring-1 ring-[#e6e0d2] hover:bg-vanilla hover:text-ink">
           Close
@@ -114,7 +113,7 @@ export function SimulationPanel({
             <div className="flex items-start gap-3 rounded-xl bg-vanilla p-4">
               <MapPin className="mt-0.5 size-5 shrink-0 text-critical" />
               <p className="text-[15px] leading-relaxed text-ink">
-                <b>Click anywhere on the map</b> to put the crash there. We&apos;ll work out which hospital each hurt person should go to.
+                <b>Click anywhere on the map</b> to put the incident there. We&apos;ll work out which hospital each hurt person should go to.
               </p>
             </div>
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Or try an example</p>
@@ -225,7 +224,7 @@ function Results({ result, byId, sim }: { result: Simulation; byId: Record<strin
   const ai = d && (d.how === "live" || d.how === "replay");
   const most = Math.max(...result.assignments.map((a) => a.casualties), 1);
   const name = (id: string) => byId[id]?.name ?? id;
-  // Only hospitals an ambulance from this crash would really consider (under ~30 min away).
+  // Only hospitals an ambulance from this incident would really consider (under ~30 min away).
   const nearby = (result.waits ?? []).filter((w) => w.to_bed_min - w.door_wait_min <= 33);
   const quickest = nearby.filter((w) => w.trauma).sort((a, b) => a.to_bed_min - b.to_bed_min).slice(0, 3);
   const longest = [...nearby].sort((a, b) => b.door_wait_min - a.door_wait_min).slice(0, 3);
@@ -331,7 +330,7 @@ function Results({ result, byId, sim }: { result: Simulation; byId: Record<strin
             ))}
           </ol>
           ) : (
-            <p className="mt-2 text-[13px] text-jade-deep">No ER near the crash would make someone wait for a bed right now.</p>
+            <p className="mt-2 text-[13px] text-jade-deep">No ER near the incident would make someone wait for a bed right now.</p>
           )}
         </div>
       </div>
@@ -388,7 +387,7 @@ export function SimulationTimeline({ sim, className = "" }: { sim: SimulationSta
       </button>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
-          <span className="font-semibold tabular-nums">{f.minute === 0 ? "The crash happens" : `${mins(f.minute)} after the crash`}</span>
+          <span className="font-semibold tabular-nums">{f.minute === 0 ? "It happens" : `${mins(f.minute)} later`}</span>
           <span className="tabular-nums text-white/80">
             {waiting === 0 ? "Everyone has a bed" : `${waiting} still waiting for a bed`}
             <span className="text-white/50"> · {f.without_bed.nearest} if all to one hospital</span>
@@ -400,7 +399,7 @@ export function SimulationTimeline({ sim, className = "" }: { sim: SimulationSta
           max={result.frames.length - 1}
           value={sim.frame}
           onChange={(e) => sim.seek(Number(e.target.value))}
-          aria-label="Time since the crash"
+          aria-label="Time since the incident"
           className="mt-1.5 w-full accent-white"
         />
       </div>

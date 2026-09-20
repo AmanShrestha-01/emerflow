@@ -58,7 +58,12 @@ export function driveMinutes(miles: number): number {
 // Estimated wait for a NEW arrival at our ED: the current average wait, plus 2 minutes for every patient already
 // waiting, plus 15 when the ER is full. A rough, labeled estimate, not a promise.
 export function ourWait(avgWait: number, waiting: number, erPercent: number): number {
-  return Math.round(Math.max(0, avgWait) + 2 * Math.max(0, waiting) + (erPercent >= 100 ? 15 : 0))
+  // A real ER has a wait even when nobody is queueing: triage, a room, a nurse, the doctor. Without this
+  // floor our own hospital reports 0 minutes and wins "fastest care" against every real ER, which is not
+  // a claim we can make. The floor rises with how full the department is.
+  const floor = erPercent >= 100 ? 45 : erPercent >= 90 ? 30 : erPercent >= 75 ? 20 : erPercent >= 50 ? 14 : 9
+  const queueing = Math.max(0, avgWait) + 2 * Math.max(0, waiting)
+  return Math.round(Math.max(floor, floor / 2 + queueing))
 }
 
 // Synthetic hospitals drift with the sim clock: busier and slower together, never below zero.

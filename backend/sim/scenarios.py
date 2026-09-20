@@ -23,7 +23,10 @@ LAST = ["Park", "Diaz", "Okafor", "Reyes", "Cho", "Singh", "Novak", "Haddad", "B
         "Kowalski", "Mensah", "Silva", "Grant", "Lopez", "Ahmed", "Moreau", "Kim", "Nguyen", "Garcia",
         "Rossi", "Bauer", "Ferreira", "Adeyemi", "Larsen", "Petrov", "Tanaka", "Hughes", "Costa", "Walsh"]
 
-MCI_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {  # (complaint, needs_ct, needs_blood)
+# What a mass casualty sends us, by how sick they are. (complaint, needs a CT, needs blood)
+# A car crash is blunt trauma: scans and fractures. A shooting is penetrating trauma: surgery and blood,
+# and a far heavier share of critical patients.
+CRASH_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {
     1: [("multiple trauma, unresponsive", True, True), ("internal bleeding, low pressure", True, True)],
     2: [("chest injury, hard to breathe", True, False), ("head injury, confused", True, False),
         ("open leg fracture", False, True)],
@@ -32,6 +35,27 @@ MCI_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {  # (complaint, needs
     4: [("cuts and bruises", False, False), ("sprained ankle", False, False)],
     5: [("minor scrapes", False, False), ("panic, no injury", False, False)],
 }
+SHOOTING_COMPLAINTS: dict[int, list[tuple[str, bool, bool]]] = {
+    1: [("gunshot wound to the abdomen", True, True), ("gunshot wound to the chest", True, True),
+        ("gunshot wound, heavy bleeding", False, True)],
+    2: [("gunshot wound to the leg, bleeding", False, True), ("gunshot wound to the arm", False, True),
+        ("shrapnel wounds, short of breath", True, False)],
+    3: [("graze wound, bleeding controlled", False, False), ("fall while running, broken wrist", False, False),
+        ("crush injury from the crowd", True, False)],
+    4: [("cuts from broken glass", False, False), ("bruising from the crowd", False, False)],
+    5: [("panic attack, unhurt", False, False), ("minor scrapes", False, False)],
+}
+MCI_COMPLAINTS = CRASH_COMPLAINTS  # the old name, kept for anything that still imports it
+
+# Severity mix per 25 casualties. A shooting is far deadlier than a pile-up.
+CRASH_MIX = [1] * 3 + [2] * 6 + [3] * 9 + [4] * 5 + [5] * 2
+SHOOTING_MIX = [1] * 6 + [2] * 8 + [3] * 6 + [4] * 3 + [5] * 2
+
+
+def incident_kind(name: str) -> str:
+    """"Orleans St shooting" -> "shooting". Anything else is blunt trauma."""
+    n = (name or "").lower()
+    return "shooting" if any(w in n for w in ("shoot", "gun", "firearm")) else "crash"
 WALKIN_COMPLAINTS = [  # (severity, complaint): an everyday emergency-department mix
     (1, "gunshot wound to the abdomen"), (1, "stab wound to the chest"), (2, "car crash, internal bleeding"),
     (2, "stroke symptoms"), (2, "chest pain, sweaty"), (2, "severe asthma attack"), (2, "sepsis, confused"),
@@ -201,11 +225,15 @@ def mass_casualty(h: Hospital, key: list[dict], seed: int = 7, n: int = 25, star
     """A bus crash: n patients arriving over the next ~4 minutes. Plants conflicts in some of them."""
     rng = random.Random(seed * 1000 + 1)
     start = h.clock if start is None else start
-    mix = [1] * 3 + [2] * 6 + [3] * 9 + [4] * 5 + [5] * 2
+    shooting = incident_kind(incident) == "shooting"
+    table = SHOOTING_COMPLAINTS if shooting else CRASH_COMPLAINTS
+    mix = list(SHOOTING_MIX if shooting else CRASH_MIX)
+    while len(mix) < n:  # a bigger incident keeps the same shape
+        mix += mix[:25]
     rng.shuffle(mix)
     out: list[Patient] = []
     for sev in mix[:n]:
-        complaint, ct, blood = rng.choice(MCI_COMPLAINTS[sev])
+        complaint, ct, blood = rng.choice(table[sev])
         p = _patient(h, rng, "MC", sev, complaint, arrived_at=start + 1 + (rng.randint(1, 12) - 1) // 3,
                      state="incoming", needs_ct=ct, needs_blood=blood)
         p.name = UNIDENTIFIED  # nobody at a crash arrives with a name
@@ -225,6 +253,26 @@ def mass_casualty(h: Hospital, key: list[dict], seed: int = 7, n: int = 25, star
         for p in pts:
             plant(p, fact, kind, key)
     return out
+
+
+PLANNED_COMPLAINTS = ["planned surgery, recovering", "pneumonia", "heart failure", "COPD flare", "cellulitis",
+                      "diabetes, poor control", "post-op recovery", "kidney infection"]
+
+
+def planned_admission(h: Hospital, rng: random.Random, unit: str) -> Patient:
+    """A patient admitted from clinic or theatre straight to a bed upstairs, so the hospital refills the way
+    a real one does: without these, every discharge drains the ward and the surge loses its bite."""
+    sev = 3 if unit == "STEPDOWN" else rng.randint(3, 4)
+    p = _patient(h, rng, "PL", sev, rng.choice(PLANNED_COMPLAINTS), arrived_at=h.clock, state="placed", unit=unit)
+    p.placed_at = h.clock
+    p.moved_at = h.clock
+    p.note = "Planned admission"
+    p.note_by = "The ward"
+    give_records(p, rng)
+    h.add_patient(p)
+    h.units[unit].occupants.append(p.pid)
+    h.version += 1
+    return p
 
 
 def walk_in(h: Hospital, rng: random.Random, busy: bool = False) -> Patient:

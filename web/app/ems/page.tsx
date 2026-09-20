@@ -7,7 +7,7 @@ import { TextReveal } from "@/components/ui/text-reveal"
 import { CapacityMap } from "@/components/capacity/components/capacity-map"
 import { SimulationKey, SimulationPanel, SimulationTimeline, SimulationVerdict } from "@/components/capacity/components/simulation-panel"
 import { IncidentHandoff } from "@/components/emer/incident-handoff"
-import { DEMO_INCIDENT } from "@/lib/emer/incident"
+import { incidentName } from "@/lib/emer/incident"
 import { StatusLegend } from "@/components/capacity/components/status-legend"
 import { countByStatus, directionsUrl, formatTime, formatWait, miles, rankHospitals, type RankedHospital } from "@/components/capacity/geo"
 import { recordedSource, swarmSource, withFallback, type RegionSource } from "@/components/capacity/sources"
@@ -59,6 +59,15 @@ function median(values: number[]) {
 }
 
 /* ---------- ER report: the four numbers ---------- */
+// MIEMSS's own definitions of its advisory levels (edas.miemss.org/reports): what share of the emergency
+// department's capacity its patients occupy. Level 3 and 4 mean the ER is over capacity, not merely busy.
+const LEVEL_WORDS: Record<number, string> = {
+  1: "ER under 75% of capacity",
+  2: "ER near capacity (76–100%)",
+  3: "ER over capacity (101–130%)",
+  4: "ER far over capacity (131%+)",
+}
+
 function ReportCards({ hospitals, onPick }: { hospitals: RankedHospital[] | { er: { occupied: number; capacity: number; waiting: number }; status: Status; er_wait_min: number }[]; onPick: (p: "accepting" | "full" | "all") => void }) {
   const c = countByStatus(hospitals as never)
   const openBeds = hospitals.reduce((s, h) => s + Math.max(0, h.er.capacity - h.er.occupied), 0)
@@ -139,6 +148,9 @@ function WhereToGo({
                     {ours && <span className="text-xs font-semibold text-jade-deep">our demo hospital · simulated numbers</span>}
                     {h.live && <span className="text-xs font-semibold text-jade-deep">live · MIEMSS</span>}
                     {best && <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-white">{sortBy === "fastest" ? "Fastest care" : "Nearest care"}</span>}
+                    {ours && h.icu?.capacity > 0 && h.icu.occupied >= h.icu.capacity && (
+                      <span className="rounded-full bg-human-soft px-2 py-0.5 text-[11px] font-semibold text-human">No intensive care beds</span>
+                    )}
                   </span>
                   <span className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
                     <Users className="size-3.5 text-ink-soft" />
@@ -150,10 +162,15 @@ function WhereToGo({
                   </span>
                   {h.live && (
                     <span className="block text-xs font-medium text-ink">
-                      ER crowding level {h.live.level} of 4
+                      Live: {LEVEL_WORDS[h.live.level ?? 1]}
                       {h.live.alerts.length > 0 && ` · ${h.live.alerts.join(", ")} alert`}
                       {` · ${h.live.at_hospital} ${h.live.at_hospital === 1 ? "ambulance" : "ambulances"} at the ER`}
                       {h.live.en_route > 0 && `, ${h.live.en_route} on the way`}
+                      {h.live.longest_stay_min > 0 && (
+                        <span className={h.live.longest_stay_min >= 60 ? "text-critical" : undefined}>
+                          {` · longest ambulance wait ${formatWait(h.live.longest_stay_min)}`}
+                        </span>
+                      )}
                     </span>
                   )}
                   {h.cms?.ed_minutes && (
@@ -224,7 +241,7 @@ export default function EmsPage() {
   // Recorded data gets every CMS emergency department around Baltimore; Robert's live server keeps its own list.
   const data = useMemo(() => (region.data && region.kind !== "live" ? withCmsHospitals(region.data) : region.data), [region.data, region.kind])
   const simulating = sim.phase !== "off"
-  const incidentLabel = DEMO_INCIDENT.name  // one named incident for the whole demo, wherever it is placed
+  const incidentLabel = incidentName(sim.point)  // the pin says which incident this is
   const frame = sim.result && (sim.phase === "playing" || sim.phase === "paused") ? sim.result.frames[sim.frame] : null
   // During a what-if run the map shows the simulated frame; otherwise Hopkins is live from our sim.
 
@@ -269,7 +286,7 @@ export default function EmsPage() {
             </TextReveal>
             <p className="mt-2 text-[17px] leading-relaxed text-ink-soft">
               How full every emergency room in Baltimore is, which one gets a patient cared for fastest, and what happens when a big
-              crash sends dozens of people at once.
+              crash or shooting sends dozens of people at once.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -287,7 +304,6 @@ export default function EmsPage() {
           <CapacityMap
             className="glass h-[460px] rounded-2xl lg:h-[640px]"
             hospitals={hospitals}
-            incidents={data?.incidents}
             location={location}
             locationLabel={inRegion ? "You are here" : "Downtown Baltimore"}
             selectedId={selectedId}
@@ -309,7 +325,7 @@ export default function EmsPage() {
               <StatusLegend className="pointer-events-auto" counts={countByStatus(hospitals)} visible={visible} onToggle={(s) => setVisible((v) => ({ ...v, [s]: !v[s] }))} />
               {!simulating && (
                 <button onClick={sim.begin} className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-critical px-3 py-2 text-xs font-semibold text-white">
-                  <Ambulance className="size-3.5" /> What if a crash happened here?
+                  <Ambulance className="size-3.5" /> What if a crash or shooting happened here?
                 </button>
               )}
               {sim.phase === "placing" && <p className="pointer-events-auto rounded-xl bg-ink px-3 py-2 text-sm font-semibold text-white">Click the map to put the crash there</p>}
