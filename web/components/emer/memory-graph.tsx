@@ -8,7 +8,7 @@ import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AGENT, AGENTS, OWNER, UNIT_NAME } from "@/lib/emer/agents"
 import { api, useHospital } from "@/lib/emer/hospital"
-import type { MemoryFeed, Note } from "./memory-canvas"
+import type { MemoryFeed } from "./memory-canvas"
 
 const MemoryCanvas = dynamic(() => import("./memory-canvas").then((m) => m.MemoryCanvas), {
   ssr: false,
@@ -50,9 +50,9 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
   // a place: the panel shows the department that speaks for it, not notes — places do not remember
   const place = picked?.startsWith("unit:") ? picked.slice(5) : null
   const own = notes?.agents.find((a) => a.unit === picked)?.notes.filter((n) => n.here) || []
-  const about = picked && !agent && !place
-    ? (notes?.agents || []).flatMap((a) => a.notes.filter((n) => n.pid === picked).map((n) => ({ ...n, unit: a.unit })))
-    : []
+  // Both the department freeing the bed and the one receiving keep their own copy of an outcome, which
+  // is right for them and reads as duplication here. One line per fact, naming everyone holding it.
+  const about = picked && !agent && !place ? groupNotes(notes, picked) : []
   const who = picked ? (st?.patients || []).find((p) => p.pid === picked) : undefined
   const speaker = place ? AGENT[OWNER[place] || "ER"] : null
   const inside = place ? (st?.patients || []).filter((p) => p.unit === place) : []
@@ -153,7 +153,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
             </p>
             {about.length ? (
               <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink-soft">
-                {about.length} note{about.length === 1 ? "" : "s"} across the swarm
+{about.length} thing{about.length === 1 ? "" : "s"} the swarm remembers about them
               </p>
             ) : (
               <p className="mt-3 text-[15px] text-ink">
@@ -164,8 +164,10 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
             <ul className="mt-2 space-y-2 overflow-y-auto pr-1">
               {about.map((n, i) => (
                 <li key={i} className="rounded-xl bg-white/60 p-2.5 text-[13px] leading-snug text-ink">
-                  <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: AGENT[(n as Note & { unit: string }).unit]?.to }}>
-                    {AGENT[(n as Note & { unit: string }).unit]?.name || (n as Note & { unit: string }).unit}
+                  <span className="flex flex-wrap gap-x-2 text-[10px] font-bold uppercase tracking-wide">
+                    {n.units.map((u) => (
+                      <span key={u} style={{ color: AGENT[u]?.to }}>{AGENT[u]?.name || u}</span>
+                    ))}
                   </span>
                   <p className="mt-0.5">{n.text}</p>
                 </li>
@@ -176,6 +178,21 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
       </aside>
     </div>
   )
+}
+
+type Held = { text: string; kind: string; units: string[] }
+
+function groupNotes(notes: MemoryFeed | null, pid: string): Held[] {
+  const by = new Map<string, Held>()
+  for (const a of notes?.agents || []) {
+    for (const n of a.notes) {
+      if (n.pid !== pid) continue
+      const had = by.get(n.text)
+      if (had) { if (!had.units.includes(a.unit)) had.units.push(a.unit) }
+      else by.set(n.text, { text: n.text, kind: n.kind, units: [a.unit] })
+    }
+  }
+  return [...by.values()]
 }
 
 /** Where a patient is, in plain words. */

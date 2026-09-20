@@ -225,7 +225,9 @@ class Swarm:
             text = f"{who} could not move to {where}" + (f" ({why})" if why else "")
         for dept in {OWNER.get(from_unit or "", ""), OWNER.get(to_unit or "", "")}:
             if dept in self.memory:
-                self.memory[dept].add("happened", text, h.clock, pid)
+                # Keyed on the patient and where they were headed: a later answer about the same move
+                # replaces the earlier one, so "could not" never sits beside "moved".
+                self.memory[dept].add("happened", text, h.clock, pid, key=f"move:{pid}>{to_unit}")
 
     @staticmethod
     def _orders(h: Hospital, plan: Plan) -> dict[str, list[str]]:

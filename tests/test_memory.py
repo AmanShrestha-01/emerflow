@@ -133,3 +133,20 @@ def test_only_the_newest_status_line_survives():
     said = [n.text for n in m.notes if n.kind == "said"]
     assert said == ['you said: "We have one bed open."']
     assert any(n.kind == "offered" for n in m.notes)  # events still accumulate
+
+
+def test_a_later_answer_replaces_the_earlier_one():
+    """Both halves of "could not move to surgery" / "moved to surgery" used to reach the next prompt."""
+    m = mem.Memory()
+    k = "move:P-1>OR"
+    m.add("happened", "Marco Ahmed could not move to surgery (OR is full)", 10, "P-1", key=k)
+    m.add("happened", "Marco Ahmed moved to surgery", 16, "P-1", key=k)
+    assert [n.text for n in m.notes] == ["Marco Ahmed moved to surgery"]
+
+
+def test_a_different_destination_is_a_different_fact():
+    """Refused by close-watch, then taken by intensive care: both are true and both are kept."""
+    m = mem.Memory()
+    m.add("happened", "Hana Ito could not move to a close-watch bed", 10, "P-2", key="move:P-2>STEPDOWN")
+    m.add("happened", "Hana Ito moved to an intensive care bed", 12, "P-2", key="move:P-2>ICU")
+    assert len(m.notes) == 2

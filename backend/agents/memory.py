@@ -38,17 +38,27 @@ class Note:
     kind: str           # said | offered | ordered | happened
     text: str           # one short plain-English line
     pid: str = ""       # the patient it is about, when there is one
+    key: str = ""       # notes sharing a key describe the same thing: only the newest is true
 
 
 @dataclass
 class Memory:
     notes: deque[Note] = field(default_factory=lambda: deque(maxlen=CAP))
 
-    def add(self, kind: str, text: str, clock: int, pid: str = "") -> None:
-        """Remember one thing. Saying the same thing again refreshes the note rather than adding another:
-        a department that reports "we have no O-negative blood" every round for an hour is holding one
-        fact, not sixty, and the cap should go on facts."""
-        if kind in LATEST_ONLY:
+    def add(self, kind: str, text: str, clock: int, pid: str = "", key: str = "") -> None:
+        """Remember one thing.
+
+        Saying the same thing again refreshes the note rather than adding another: a department that
+        reports "we have no O-negative blood" every round for an hour is holding one fact, not sixty.
+
+        A `key` goes further and supersedes: two notes about the same patient and the same destination
+        are two answers to one question, and only the last one is true. Without this a department ends up
+        holding "Marco Ahmed could not move to surgery (OR is full)" next to "Marco Ahmed moved to
+        surgery", and both reach its next prompt."""
+        if key:
+            for old in [n for n in self.notes if n.key == key]:
+                self.notes.remove(old)
+        elif kind in LATEST_ONLY:
             for old in [n for n in self.notes if n.kind == kind]:
                 self.notes.remove(old)
         else:
@@ -56,7 +66,7 @@ class Memory:
                 if old.kind == kind and old.text == text and old.pid == pid:
                     self.notes.remove(old)
                     break
-        self.notes.append(Note(time.monotonic(), clock, kind, text, pid))
+        self.notes.append(Note(time.monotonic(), clock, kind, text, pid, key))
 
     def live(self, now: float | None = None) -> list[Note]:
         """The notes still inside the window, oldest first."""
