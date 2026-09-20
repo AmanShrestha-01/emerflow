@@ -46,7 +46,7 @@ Settings come from `.env` (git-ignored; template in `.env.example`), loaded in `
 - `cycle.py`: status (parallel) → optional question → plan → apply at live state → approvals → fallback.
 - `memory.py`: what each department remembers. Code writes one short note per round (what it said, offered,
   was asked, and what became of those patients); the agent reads its own notes back in the next prompt.
-  Notes fade after 2 hours, 60 per agent, and never mention a patient who has left. **Counts never live in
+  Notes fade after 5 hours, 60 per agent, and never mention a patient who has left. **Counts never live in
   memory** — a status line keeps only its newest copy, so no stale bed number reaches a prompt. Served at
   `GET /api/memory`, drawn as a 3D graph on `/memory`. The coordinator has no memory of its own.
 - `llm.py`: the Vertex client, timeouts, circuit breaker, stub mode, and recording to `replays/live.jsonl`.

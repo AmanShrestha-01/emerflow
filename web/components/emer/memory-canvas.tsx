@@ -325,13 +325,6 @@ export function MemoryCanvas({
           settledAt.current = store.current.n.size
         }}
       />
-      <div className="pointer-events-none absolute left-4 top-4 space-y-1.5 text-[11px] text-[#9fb9b1]">
-        <p className="font-bold uppercase tracking-wide text-[#7f9a92]">Every line is a note still in mind</p>
-        <Key color="#d99a2b" text="offered — said it would move them" />
-        <Key color="#3fc3a4" text="kept — and it happened" />
-        <Key color="#9c8f7d" text="missed — it did not" />
-        <Key color="#3d5a54" text="the hospital underneath: who reports to whom, who is where" />
-      </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
         <p className="text-xs text-[#7f9a92]">
           {held} notes held · drag the background to turn it · click a node to fly to it · scroll to zoom
@@ -357,15 +350,6 @@ export function MemoryCanvas({
         </div>
       </div>
     </div>
-  )
-}
-
-function Key({ color, text }: { color: string; text: string }) {
-  return (
-    <p className="flex items-center gap-2">
-      <span className="h-0.5 w-5 shrink-0 rounded-full" style={{ background: color }} />
-      {text}
-    </p>
   )
 }
 

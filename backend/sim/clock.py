@@ -160,4 +160,9 @@ def tick(h: Hospital, rng: random.Random, emit: Emit = _noop, *, walkins: bool =
         for aid, a in list(h.approvals.items()):
             if a.escalation.level > new:
                 del h.approvals[aid]
+                # A transfer-out approval locks its patients while it waits for a human. Deleting it here
+                # used to leave them locked for the rest of the run: every destination refused, so nobody
+                # could place them and nothing said why.
+                if a.escalation.action == "transfer_out":
+                    h.locked.difference_update(a.escalation.params.get("pids") or [])
                 emit("approval.resolved", {"approval_id": aid, "approved": False, "expired": True}, clock=t)

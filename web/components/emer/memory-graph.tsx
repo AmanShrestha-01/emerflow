@@ -88,7 +88,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
             <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">What they are holding</p>
             <p className="mt-1 text-[15px] text-ink">
               Hover any node to see it. Every agent keeps its own notes for up to{" "}
-              {Math.round((notes?.window_s || 7200) / 3600)} hours, then they fade out of mind.
+              {Math.round((notes?.window_s || 18000) / 3600)} hours, then they fade out of mind.
             </p>
             <ul className="mt-3 space-y-1.5 overflow-y-auto pr-1">
               {AGENTS.map((a) => {
@@ -127,7 +127,7 @@ export function MemoryGraph({ ageMin = 30, className = "" }: { ageMin?: number; 
                 <li key={i} className="rounded-xl bg-white/60 p-2.5 text-[13px] leading-snug text-ink">
                   <span className="text-[10px] font-bold uppercase tracking-wide text-ink-soft">{KIND_WORD[n.kind] || n.kind}</span>
                   <p className="mt-0.5">{asSentence(n.text)}</p>
-                  <p className="mt-1 text-[11px] text-ink-soft">{fade(n.age_s, notes?.window_s || 7200)}</p>
+                  <p className="mt-1 text-[11px] text-ink-soft">{fade(n.age_s, notes?.window_s || 18000)}</p>
                 </li>
               ))}
             </ul>

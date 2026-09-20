@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from backend.sim.hospital import Hospital
 from backend.sim.words import plain, to_place
 
-WINDOW_S = 7200.0  # 2 real hours: long enough that a whole shift is still in mind
+WINDOW_S = 18000.0  # 5 real hours: a whole shift, and then some
 RECENT_S = 900.0   # but only the last 15 minutes count as a promise still owed
 CAP = 60           # notes per agent
 BLOCK_CHARS = 600  # how much of it may reach a prompt
