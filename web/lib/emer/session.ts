@@ -5,6 +5,9 @@ const KEY = "deepchart.session"
 export const HOME = "Johns Hopkins Hospital"
 // The classic app (DeepChart doctor portal) lives on the FastAPI server: same origin in production, :8000 in dev.
 export const CLASSIC = process.env.NODE_ENV === "development" ? "http://localhost:8000" : ""
+// Static demo build (Vercel, no backend): login is checked here and the board runs on the in-browser mock.
+// DeepChart has no mock, so the doctor role is not offered a session.
+export const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "1"
 
 export function loadSession(): Session | null {
   try {
@@ -23,6 +26,11 @@ export function saveSession(s: Session | null) {
   }
 }
 export async function login(hospital: string, role: string, pin: string, doctor?: string): Promise<Session> {
+  if (STATIC_DEMO) {
+    if (role === "doctor") throw new Error("The doctor portal needs the live server. This demo shows the hospital board.")
+    if (pin !== "demo") throw new Error("Wrong PIN (the demo PIN is demo)")
+    return { token: "static-demo", hospital, role: "commander" }
+  }
   const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hospital, role, pin, doctor }) })
   if (!r.ok) {
     let msg = "Login failed"
@@ -36,6 +44,7 @@ export async function login(hospital: string, role: string, pin: string, doctor?
 /** True when the stored session is still valid on the server (a restart logs everyone out). */
 export async function checkSession(s: Session | null): Promise<boolean> {
   if (!s) return false
+  if (STATIC_DEMO) return true
   try {
     const r = await fetch("/api/me", { headers: { "X-Session": s.token } })
     return r.ok
